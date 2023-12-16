@@ -1,0 +1,35 @@
+project(Match)
+
+# Set Window System
+option(USE_WAYLAND "Use Wayland" ON)
+option(USE_XCB "Use XCB" ON)
+option(USE_XLIB "Use XLIB" ON)
+option(USE_WIN32 "Use WIN32" OFF)
+
+# Add Shared Library
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+file(GLOB_RECURSE source CONFIGURE_DEPENDS src/Match/*.cpp)
+add_library(Match SHARED ${source})
+
+# Link spdlog
+target_link_libraries(Match PUBLIC spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+target_include_directories(Match PUBLIC include)
+
+# Link Render API
+set(Vulkan_DIR ${VULKAN_SDK})
+find_package(Vulkan REQUIRED)
+target_link_libraries(Match PUBLIC Vulkan::Vulkan)
+
+# Link Window System
+if(USE_WAYLAND)
+    target_compile_definitions(Match PUBLIC MATCH_WAYLAND)
+endif()
+if(USE_XCB)
+    target_compile_definitions(Match PUBLIC MATCH_XCB)
+endif()
+if(USE_XLIB)
+    target_compile_definitions(Match PUBLIC MATCH_XLIB)
+endif()
+if(USE_WIN32)
+    target_compile_definitions(Match PUBLIC MATCH_WIN32)
+endif()
