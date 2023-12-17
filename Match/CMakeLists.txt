@@ -33,3 +33,5 @@ endif()
 if(USE_WIN32)
     target_compile_definitions(Match PUBLIC MATCH_WIN32)
 endif()
+
+target_compile_definitions(Match PRIVATE MATCH_INNER_VISIBLE)
