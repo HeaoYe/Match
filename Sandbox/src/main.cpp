@@ -70,14 +70,24 @@ int main() {
             glm::vec3 color;
         };
         // 顶点数据
-        std::vector<Vertex> vertices = {
+        const std::vector<Vertex> vertices = {
             { { 0.0f, 0.5f }, { 0.5f, 0.2f, 0.2f } },
             { { 0.5f, -0.5f }, { 0.2f, 0.5f, 0.2f } },
             { { -0.5f, -0.5f }, { 0.2f, 0.2f, 0.5f } }
         };
+        const std::vector<uint16_t> indices = {
+            0, 1, 2
+        };
+        struct PosScaler {
+            float x_pos_scale;
+            float y_pos_scale;
+        };
+        struct ColorScaler {
+            float color_scale;
+        };
 
         // 创建顶点数据描述符
-        auto vertex_attr = factory->create_vertex_attribute();
+        auto vertex_attr = factory->create_vertex_attribute_set();
         vertex_attr->add_input_attribute(Match::VertexType::eFloat2);  // pos是两个float
         vertex_attr->add_input_attribute(Match::VertexType::eFloat3);  // color是三个float
         vertex_attr->add_input_binding(Match::InputRate::ePerVertex);  // 数据输入速率（每个顶点输入一份）
@@ -87,47 +97,74 @@ int main() {
         shader_program->bind_vertex_attribute_set(vertex_attr);
         shader_program->attach_vertex_shader(vert_shader, "main");
         shader_program->attach_fragment_shader(frag_shader, "main");
+        // 为shader_program添加资源描述符
+        shader_program->bind_vertex_shader_descriptor({
+            // { binding, descriptor type, sizeof uniform }
+            { 0, Match::DescriptorType::eUniform, sizeof(PosScaler) },
+            { 1, Match::DescriptorType::eUniform, sizeof(ColorScaler) },
+        });
         shader_program->compile({
             .cull_mode = Match::CullMode::eNone,  // 取消面剔除
         });
 
         // 创建VertexBuffer
         auto vert_buffer = factory->create_vertex_buffer(sizeof(Vertex), 1024);
+        // 创建IndexBuffer
+        auto index_buffer = factory->create_index_buffer(Match::IndexType::eUint16, 1024);
         // 映射到内存
-        void *data_ptr = vert_buffer->map();
+        void *vertex_ptr = vert_buffer->map();
+        uint16_t *index_ptr = (uint16_t *)index_buffer->map();
+        // 将顶点数据写回顶点缓存(VertexBuffer)
+        memcpy(vertex_ptr, vertices.data(), sizeof(Vertex) * vertices.size());
+        // 将内存数据刷新到显存中
+        memcpy(index_ptr, indices.data(), indices.size() * 2);
+        // unmap时会自动flush一次
+        // vert_buffer->flush();
+        // index_buffer->flush();
+        // 记得unmap顶点缓存（不unmap也行，buffer在析构时会自动unmap）
+        vert_buffer->unmap();
+        index_buffer->unmap();
 
-        Match::Renderer renderer(2);
+        // 获取两个uniform对应的buffer
+        auto pos_uniform = std::reinterpret_pointer_cast<Match::UniformBuffer>(shader_program->get_descriptor(0));
+        auto color_uniform = std::reinterpret_pointer_cast<Match::UniformBuffer>(shader_program->get_descriptor(1));
+
+        Match::Renderer renderer;
 
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
 
             // 动态变换的三角形
-            static float scale = 0.99;
-            if (vertices[0].pos.y < 0.05) {
-                scale = 1.01;
-            } else if (vertices[0].pos.y > 0.85) {
-                scale = 0.99;
-            }
-            vertices[0].pos *= scale;
-            vertices[1].pos *= scale;
-            vertices[2].pos *= scale;
-            vertices[0].color.r *= scale;
-            vertices[1].color.g *= scale;
-            vertices[2].color.b *= scale;
-            // 将顶点数据写回顶点缓存(VertexBuffer)
-            memcpy(data_ptr, vertices.data(), sizeof(Vertex) * vertices.size());
-            // 将内存数据刷新到显存中
-            vert_buffer->flush();
+            
+            // 起始时间
+            static auto start_time = std::chrono::high_resolution_clock::now();
+            // 当前时间
+            auto current_time = std::chrono::high_resolution_clock::now();
+            // cos(时间差)
+            float scale = std::cos(std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count() * 3);  // 加速3倍
+
+            // 将数据写入UniformBuffer
+            auto pos_scaler = (PosScaler *)pos_uniform->get_uniform_ptr();
+            auto color_scaler = (ColorScaler *)color_uniform->get_uniform_ptr();
+            // 将scale范围从[-1, 1]变换到[0.5, 1.5]
+            pos_scaler->x_pos_scale = (scale + 2) / 2;
+            // 将scale范围从[-1, 1]变换到[1.0, 3.0]
+            pos_scaler->y_pos_scale = (scale + 2);
+            // 将scale范围从[-1, 1]变换到[0.6, 1.3]
+            color_scaler->color_scale = (scale + 3) / 3;
 
             renderer.begin_render();
             renderer.bind_shader_program(shader_program);
             // 绑定VertexBuffer
             renderer.bind_vertex_buffers({ vert_buffer });
+            // 绑定IndexBuffer
+            renderer.bind_index_buffer(index_buffer);
             // DrawCall
-            renderer.draw(vertices.size(), 1, 0, 0);
+            // renderer.draw(vertices.size(), 1, 0, 0);
+            // IndexDrawCall
+            vkCmdDrawIndexed(renderer.get_command_buffer(), 3, 1, 0, 0, 0);
             renderer.end_render();
         }
-        vert_buffer->unmap();  // 记得unmap顶点缓存（不unmap也行）
     } // 离开作用域后所有创建的资源会被销毁
 
     // 销毁Match

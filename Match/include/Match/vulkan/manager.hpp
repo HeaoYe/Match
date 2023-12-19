@@ -8,6 +8,7 @@
 #include <Match/vulkan/renderpass.hpp>
 #include <Match/vulkan/framebuffer.hpp>
 #include <Match/vulkan/command_pool.hpp>
+#include <Match/vulkan/descriptor/descriptor_pool.hpp>
 
 namespace Match {
     struct APIInfo;
@@ -48,6 +49,7 @@ namespace Match {
         std::unique_ptr<Device> device;
         std::unique_ptr<Swapchain> swapchain;
         std::unique_ptr<CommandPool> command_pool;
+        std::unique_ptr<DescriptorPool> descriptor_pool;
         std::unique_ptr<RenderPassBuilder> render_pass_builder;
         std::unique_ptr<RenderPass> render_pass;
         std::unique_ptr<FrameBufferSet> framebuffer_set;

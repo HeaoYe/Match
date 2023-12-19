@@ -24,7 +24,7 @@ namespace Match {
             shaderc::Compiler compiler;
             auto module = compiler.CompileGlslToSpv(code.data(), code.size(), kind, filename.c_str(), {});
             if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-                MCH_ERROR("Compile {} faild: ", filename, module.GetErrorMessage());
+                MCH_ERROR("Compile {} faild: {}", filename, module.GetErrorMessage());
             }
             std::vector<uint32_t> spirv(module.cbegin(), module.cend());
             return std::make_shared<Shader>(spirv);
@@ -32,7 +32,7 @@ namespace Match {
         return std::make_shared<Shader>(code);
     }
 
-    std::shared_ptr<VertexAttributeSet> ResourceFactory::create_vertex_attribute() {
+    std::shared_ptr<VertexAttributeSet> ResourceFactory::create_vertex_attribute_set() {
         return std::make_shared<VertexAttributeSet>();
     }
     
@@ -42,5 +42,9 @@ namespace Match {
 
     std::shared_ptr<VertexBuffer> ResourceFactory::create_vertex_buffer(uint32_t vertex_size, uint32_t count) {
         return std::make_shared<VertexBuffer>(vertex_size, count);
+    }
+
+    std::shared_ptr<IndexBuffer> ResourceFactory::create_index_buffer(IndexType type, uint32_t count) {
+        return std::make_shared<IndexBuffer>(type, count);
     }
 }

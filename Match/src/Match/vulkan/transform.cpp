@@ -140,4 +140,27 @@ namespace Match {
         _case(VK_VERTEX_INPUT_RATE_INSTANCE, InputRate, ePerInstance)
         }
     }
+
+    template <>
+    VkIndexType transform<VkIndexType>(IndexType type) {
+        switch (type) {
+        _case(VK_INDEX_TYPE_UINT16, IndexType, eUint16)
+        _case(VK_INDEX_TYPE_UINT32, IndexType, eUint32)
+        }
+    }
+
+    template <>
+    uint32_t transform<uint32_t>(IndexType type) {
+        switch (type) {
+        _case(2, IndexType, eUint16)
+        _case(4, IndexType, eUint32)
+        }
+    }
+
+    template <>
+    VkDescriptorType transform<VkDescriptorType>(DescriptorType type) {
+        switch (type) {
+        _case(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, DescriptorType, eUniform)
+        }
+    }
 }

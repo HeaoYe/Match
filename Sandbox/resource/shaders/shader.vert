@@ -2,9 +2,17 @@
 
 layout(location = 0) in vec2 in_pos;
 layout(location = 1) in vec3 in_color;
+layout(binding = 0) uniform PosScaler {
+    float x_pos_scale;
+    float y_pos_scale;
+} pos_ubo;
+layout(binding = 1) uniform ColorScaler {
+    float color_scale;
+} color_ubo;
+
 layout(location = 0) out vec3 frag_color;
 
 void main() {
-    gl_Position = vec4(in_pos, 0, 1);
-    frag_color = in_color;
+    gl_Position = vec4(pos_ubo.x_pos_scale * in_pos.x, pos_ubo.y_pos_scale * in_pos.y, 0, 1);
+    frag_color = color_ubo.color_scale * in_color;
 }

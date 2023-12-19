@@ -73,6 +73,7 @@ namespace Match {
         initialize_vma();
         swapchain = std::make_unique<Swapchain>(*info);
         command_pool = std::make_unique<CommandPool>(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+        descriptor_pool = std::make_unique<DescriptorPool>();
         render_pass_builder = std::make_unique<RenderPassBuilder>();
     }
 
@@ -246,6 +247,7 @@ namespace Match {
         framebuffer_set.reset();
         render_pass.reset();
         render_pass_builder.reset();
+        descriptor_pool.reset();
         command_pool.reset();
         swapchain.reset();
         vmaDestroyAllocator(vma_allocator);

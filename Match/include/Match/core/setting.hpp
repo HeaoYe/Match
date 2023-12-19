@@ -11,6 +11,7 @@ namespace Match {
         std::string engine_name = "No Engine";
         uint32_t engine_version = 1;
         PlatformWindowSystem render_backend = PlatformWindowSystem::eNone;
+        uint32_t max_in_flight_frame = 2;
     };
 
     class RuntimeSetting {
@@ -26,6 +27,8 @@ namespace Match {
         bool vsync = true;
         WindowSize window_size;
         VkSampleCountFlagBits multisample_count = VK_SAMPLE_COUNT_1_BIT;
+    INNER_VISIBLE:
+        uint32_t current_in_flight = 0;
     };
 
     extern Setting setting;
