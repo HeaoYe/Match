@@ -80,7 +80,7 @@ namespace Match {
             swapchain_create_info.pQueueFamilyIndices = queue_family_indices;
             swapchain_create_info.queueFamilyIndexCount = 2;
         }
-        vk_assert(vkCreateSwapchainKHR(manager->device->device, &swapchain_create_info, manager->alloctor, &swapchain))
+        vk_assert(vkCreateSwapchainKHR(manager->device->device, &swapchain_create_info, manager->allocator, &swapchain))
         vkGetSwapchainImagesKHR(manager->device->device, swapchain, &image_count, nullptr);
 
         switch (present_mode) {
@@ -107,11 +107,11 @@ namespace Match {
 
     Swapchain::~Swapchain() {
         for (auto image_view : image_views) {
-            vkDestroyImageView(manager->device->device, image_view, manager->alloctor);
+            vkDestroyImageView(manager->device->device, image_view, manager->allocator);
         }
         images.clear();
         image_views.clear();
-        vkDestroySwapchainKHR(manager->device->device, swapchain, manager->alloctor);
+        vkDestroySwapchainKHR(manager->device->device, swapchain, manager->allocator);
         swapchain = VK_NULL_HANDLE;
     }
 

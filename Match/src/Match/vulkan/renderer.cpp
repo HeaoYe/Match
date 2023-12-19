@@ -2,30 +2,30 @@
 #include "inner.hpp"
 
 namespace Match {
-    Renderer::Renderer(CommandPool &command_pool, uint32_t max_in_flight_num) : current_in_flight(0), max_in_flight_num(max_in_flight_num) {
+    Renderer::Renderer(uint32_t max_in_flight_num) : current_in_flight(0), max_in_flight_num(max_in_flight_num) {
         command_buffers.resize(max_in_flight_num);
         image_available_semaphores.resize(max_in_flight_num);
         render_finished_semaphores.resize(max_in_flight_num);
         in_flight_fences.resize(max_in_flight_num);
 
-        command_pool.allocate_command_buffer(command_buffers.data(), max_in_flight_num);
+        manager->command_pool->allocate_command_buffer(command_buffers.data(), max_in_flight_num);
 
         VkSemaphoreCreateInfo semaphore_create_info { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
         VkFenceCreateInfo fence_create_info { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
         fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
         for (uint32_t i = 0; i < max_in_flight_num; i ++) {
-            vk_check(vkCreateSemaphore(manager->device->device, &semaphore_create_info, manager->alloctor, &image_available_semaphores[i]));
-            vk_check(vkCreateSemaphore(manager->device->device, &semaphore_create_info, manager->alloctor, &render_finished_semaphores[i]));
-            vk_check(vkCreateFence(manager->device->device, &fence_create_info, manager->alloctor, &in_flight_fences[i]));
+            vk_check(vkCreateSemaphore(manager->device->device, &semaphore_create_info, manager->allocator, &image_available_semaphores[i]));
+            vk_check(vkCreateSemaphore(manager->device->device, &semaphore_create_info, manager->allocator, &render_finished_semaphores[i]));
+            vk_check(vkCreateFence(manager->device->device, &fence_create_info, manager->allocator, &in_flight_fences[i]));
         }
     }
 
     Renderer::~Renderer() {
         vkDeviceWaitIdle(manager->device->device);
         for (uint32_t i = 0; i < max_in_flight_num; i ++) {
-            vkDestroySemaphore(manager->device->device, image_available_semaphores[i], manager->alloctor);
-            vkDestroySemaphore(manager->device->device, render_finished_semaphores[i], manager->alloctor);
-            vkDestroyFence(manager->device->device, in_flight_fences[i], manager->alloctor);
+            vkDestroySemaphore(manager->device->device, image_available_semaphores[i], manager->allocator);
+            vkDestroySemaphore(manager->device->device, render_finished_semaphores[i], manager->allocator);
+            vkDestroyFence(manager->device->device, in_flight_fences[i], manager->allocator);
         }
     }
 
@@ -87,6 +87,20 @@ namespace Match {
 
     void Renderer::bind_shader_program(std::shared_ptr<ShaderProgram> shader_program) {
         vkCmdBindPipeline(command_buffers[current_in_flight], shader_program->bind_point, shader_program->pipeline);
+    }
+
+    void Renderer::bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers) {
+        std::vector<VkBuffer> buffers(vertex_buffers.size());
+        std::vector<VkDeviceSize> sizes(vertex_buffers.size());
+        for (uint32_t i = 0; i < vertex_buffers.size(); i ++) {
+            buffers[i] = vertex_buffers[i]->buffer;
+            sizes[i] = 0;
+        }
+        vkCmdBindVertexBuffers(command_buffers[current_in_flight], 0, vertex_buffers.size(), buffers.data(), sizes.data());
+    }
+
+    void Renderer::draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {
+        vkCmdDraw(command_buffers[current_in_flight], vertex_count, instance_count, first_vertex, first_instance);
     }
 
     VkCommandBuffer Renderer::get_command_buffer() {

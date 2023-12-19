@@ -4,6 +4,43 @@
 #include "../inner.hpp"
 
 namespace Match {
+    VertexAttributeSet::VertexAttributeSet() {
+        current_binding = 0;
+        reset();
+    }
+
+    void VertexAttributeSet::reset() {
+        current_location = 0;
+        current_offset = 0;
+    }
+
+    VertexAttributeSet::location VertexAttributeSet::add_input_attribute(VertexType type) {
+        attributes.push_back({
+            .location = current_location,
+            .binding = current_binding,
+            .format = transform<VkFormat>(type),
+            .offset = current_offset,
+        });
+        auto location = current_location, size = transform<uint32_t>(type);
+        current_location += 1;
+        if (size > 16) {
+            current_location += 1;
+        }
+        current_offset += size;
+        return location;
+    }
+
+    VertexAttributeSet::binding VertexAttributeSet::add_input_binding(InputRate rate) {
+        bindings.push_back({
+            .binding = current_binding,
+            .stride = current_offset,
+            .inputRate = transform<VkVertexInputRate>(rate),
+        });
+        current_binding += 1;
+        reset();
+        return current_binding - 1;
+    }
+
     static VkPipelineShaderStageCreateInfo create_pipeline_shader_stage_create_info(VkShaderStageFlagBits stage, VkShaderModule module, const std::string &entry) {
         VkPipelineShaderStageCreateInfo create_info { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
         create_info.pSpecializationInfo = nullptr;
@@ -14,6 +51,11 @@ namespace Match {
     }
     
     ShaderProgram::ShaderProgram(const std::string &subpass_name) : subpass_name(subpass_name) {}
+
+    void ShaderProgram::bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute) {
+        vertex_attribute.reset();
+        vertex_attribute = std::move(attribute);
+    }
 
     void ShaderProgram::attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
         vertex_shader = std::dynamic_pointer_cast<Shader>(shader);
@@ -32,10 +74,17 @@ namespace Match {
         };
 
         VkPipelineVertexInputStateCreateInfo vertex_input_state { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
-        vertex_input_state.vertexBindingDescriptionCount = 0;
-        vertex_input_state.pVertexBindingDescriptions = nullptr;
-        vertex_input_state.vertexAttributeDescriptionCount = 0;
-        vertex_input_state.pVertexAttributeDescriptions = nullptr;
+        if (vertex_attribute.get() != nullptr) {
+            vertex_input_state.vertexBindingDescriptionCount = vertex_attribute->bindings.size();
+            vertex_input_state.pVertexBindingDescriptions = vertex_attribute->bindings.data();
+            vertex_input_state.vertexAttributeDescriptionCount = vertex_attribute->attributes.size();
+            vertex_input_state.pVertexAttributeDescriptions = vertex_attribute->attributes.data();
+        } else {
+            vertex_input_state.vertexBindingDescriptionCount = 0;
+            vertex_input_state.pVertexBindingDescriptions = nullptr;
+            vertex_input_state.vertexAttributeDescriptionCount = 0;
+            vertex_input_state.pVertexAttributeDescriptions = nullptr;
+        }
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly_state { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
         input_assembly_state.topology = transform<VkPrimitiveTopology>(options.topology);
@@ -103,7 +152,7 @@ namespace Match {
         pipeline_layout_create_info.pSetLayouts = nullptr;
         pipeline_layout_create_info.pushConstantRangeCount = 0;
         pipeline_layout_create_info.pPushConstantRanges = nullptr;
-        vk_check(vkCreatePipelineLayout(manager->device->device, &pipeline_layout_create_info, manager->alloctor, &layout));
+        vk_check(vkCreatePipelineLayout(manager->device->device, &pipeline_layout_create_info, manager->allocator, &layout));
 
         VkGraphicsPipelineCreateInfo create_info { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
         create_info.stageCount = stages.size();
@@ -123,11 +172,11 @@ namespace Match {
         create_info.basePipelineHandle = nullptr;
         create_info.basePipelineIndex = 0;
 
-        vk_check(vkCreateGraphicsPipelines(manager->device->device, nullptr, 1, &create_info, manager->alloctor, &pipeline));
+        vk_check(vkCreateGraphicsPipelines(manager->device->device, nullptr, 1, &create_info, manager->allocator, &pipeline));
     }
 
     ShaderProgram::~ShaderProgram() {
-        vkDestroyPipeline(manager->device->device, pipeline, manager->alloctor);
-        vkDestroyPipelineLayout(manager->device->device, layout, manager->alloctor);
+        vkDestroyPipeline(manager->device->device, pipeline, manager->allocator);
+        vkDestroyPipelineLayout(manager->device->device, layout, manager->allocator);
     }
 }

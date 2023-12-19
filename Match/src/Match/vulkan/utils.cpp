@@ -21,7 +21,7 @@ namespace Match {
             .layerCount = 1,
         };
         VkImageView view;
-        vk_check(vkCreateImageView(manager->device->device, &create_info, manager->alloctor, &view))
+        vk_check(vkCreateImageView(manager->device->device, &create_info, manager->allocator, &view))
         return view;
     }
     

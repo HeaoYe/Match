@@ -24,7 +24,7 @@ namespace Match {
         void build_render_pass();
         std::shared_ptr<RuntimeSetting> get_runtime_setting();
         std::shared_ptr<ResourceFactory> create_resource_factory(const std::string &root);
-        std::shared_ptr<CommandPool> create_command_pool(VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+        CommandPool &get_command_pool();
         void destroy();
     INNER_VISIBLE:
         static APIInfo &CreateAPIInfo();
@@ -35,16 +35,19 @@ namespace Match {
     private:
         void create_vk_instance();
         void create_vk_surface();
+        void initialize_vma();
     private:
         static std::unique_ptr<APIManager> manager;
         static std::unique_ptr<APIInfo> info;
     INNER_VISIBLE:
-        VkAllocationCallbacks* alloctor;
+        VkAllocationCallbacks* allocator;
+        VmaAllocator vma_allocator;
         VkInstance instance;
         VkSurfaceKHR surface;
         std::shared_ptr<RuntimeSetting> runtime_setting;
         std::unique_ptr<Device> device;
         std::unique_ptr<Swapchain> swapchain;
+        std::unique_ptr<CommandPool> command_pool;
         std::unique_ptr<RenderPassBuilder> render_pass_builder;
         std::unique_ptr<RenderPass> render_pass;
         std::unique_ptr<FrameBufferSet> framebuffer_set;

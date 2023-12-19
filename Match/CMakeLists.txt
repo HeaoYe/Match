@@ -16,9 +16,9 @@ target_link_libraries(Match PUBLIC spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 target_include_directories(Match PUBLIC include)
 
 # Link Render API
-set(Vulkan_DIR ${VULKAN_SDK})
-find_package(Vulkan REQUIRED)
 target_link_libraries(Match PUBLIC Vulkan::Vulkan)
+target_link_libraries(Match PUBLIC shaderc)
+target_link_libraries(Match PUBLIC VulkanMemoryAllocator)
 
 # Link Window System
 if(USE_WAYLAND)

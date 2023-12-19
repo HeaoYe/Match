@@ -14,11 +14,11 @@ namespace Match {
         framebuffer_create_info.attachmentCount = attachments.size();
         framebuffer_create_info.pAttachments = attachments.data();
 
-        vk_assert(vkCreateFramebuffer(manager->device->device, &framebuffer_create_info, manager->alloctor, &framebuffer));
+        vk_assert(vkCreateFramebuffer(manager->device->device, &framebuffer_create_info, manager->allocator, &framebuffer));
     }
 
     FrameBuffer::~FrameBuffer() {
-        vkDestroyFramebuffer(manager->device->device, framebuffer, manager->alloctor);
+        vkDestroyFramebuffer(manager->device->device, framebuffer, manager->allocator);
     }
 
     FrameBufferSet::FrameBufferSet() {

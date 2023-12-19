@@ -147,10 +147,10 @@ namespace Match {
 
     RenderPass::RenderPass(RenderPassBuilder &builder) {
         auto create_info = builder.build();
-        vk_assert(vkCreateRenderPass(manager->device->device, &create_info, manager->alloctor, &render_pass));
+        vk_assert(vkCreateRenderPass(manager->device->device, &create_info, manager->allocator, &render_pass));
     }
 
     RenderPass::~RenderPass() {
-        vkDestroyRenderPass(manager->device->device, render_pass, manager->alloctor);
+        vkDestroyRenderPass(manager->device->device, render_pass, manager->allocator);
     }
 }
