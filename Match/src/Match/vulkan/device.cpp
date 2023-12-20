@@ -100,7 +100,7 @@ namespace Match {
             device_create_info.ppEnabledLayerNames = nullptr;
         }
         device_create_info.pEnabledFeatures = &features;
-        vk_assert(vkCreateDevice(physical_device, &device_create_info, manager->alloctor, &device))
+        vk_assert(vkCreateDevice(physical_device, &device_create_info, manager->allocator, &device))
 
         vkGetDeviceQueue(device, graphics_family_index, 0, &graphics_queue);
         vkGetDeviceQueue(device, present_family_index, 0, &present_queue);
@@ -109,7 +109,7 @@ namespace Match {
     }
 
     Device::~Device() {
-        vkDestroyDevice(device, manager->alloctor);
+        vkDestroyDevice(device, manager->allocator);
     }
 
     bool Device::check_device_suitable(VkPhysicalDevice device) {

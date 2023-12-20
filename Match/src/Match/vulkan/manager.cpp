@@ -40,7 +40,7 @@ namespace Match {
     }
 
     APIManager::APIManager() {
-        alloctor = nullptr;
+        allocator = nullptr;
         create_vk_instance();
         this->runtime_setting = std::make_shared<RuntimeSetting>();
         ::Match::manager = this;
@@ -62,15 +62,18 @@ namespace Match {
         return std::make_shared<ResourceFactory>(root);
     }
 
-    std::shared_ptr<CommandPool> APIManager::create_command_pool(VkCommandPoolCreateFlags flags) {
-        return std::make_shared<CommandPool>(flags);
+    CommandPool &APIManager::get_command_pool() {
+        return *command_pool;
     }
 
     void APIManager::initialize() {
         MCH_INFO("Initialize Vulkan API")
         create_vk_surface();
         device = std::make_unique<Device>();
+        initialize_vma();
         swapchain = std::make_unique<Swapchain>(*info);
+        command_pool = std::make_unique<CommandPool>(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+        descriptor_pool = std::make_unique<DescriptorPool>();
         render_pass_builder = std::make_unique<RenderPassBuilder>();
     }
 
@@ -174,7 +177,7 @@ namespace Match {
             }
         }
 
-        vk_assert(vkCreateInstance(&instance_create_info, alloctor, &instance));
+        vk_assert(vkCreateInstance(&instance_create_info, allocator, &instance));
     }
 
     void APIManager::create_vk_surface() {
@@ -184,7 +187,7 @@ namespace Match {
             VkWaylandSurfaceCreateInfoKHR wayland_surface_create_info { VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR };
             wayland_surface_create_info.surface = info->wayland_surface;
             wayland_surface_create_info.display = info->wayland_display;
-            vk_check(vkCreateWaylandSurfaceKHR(instance, &wayland_surface_create_info, alloctor, &surface));
+            vk_check(vkCreateWaylandSurfaceKHR(instance, &wayland_surface_create_info, allocator, &surface));
             break;
         }
 #endif
@@ -193,7 +196,7 @@ namespace Match {
             VkXlibSurfaceCreateInfoKHR xlib_surface_create_info { VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
             xlib_surface_create_info.dpy = info->xlib_display;
             xlib_surface_create_info.window = info->xlib_window;
-            vk_check(vkCreateXlibSurfaceKHR(instance, &xlib_surface_create_info, alloctor, &surface));
+            vk_check(vkCreateXlibSurfaceKHR(instance, &xlib_surface_create_info, allocator, &surface));
             break;
         }
 #endif
@@ -202,7 +205,7 @@ namespace Match {
             VkXcbSurfaceCreateInfoKHR xcb_surface_create_info { VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR };
             xcb_surface_create_info.connection = info->xcb_connection;
             xcb_surface_create_info.window = info->xcb_window;
-            vk_check(vkCreateXcbSurfaceKHR(instance, &xcb_surface_create_info, alloctor, &surface));
+            vk_check(vkCreateXcbSurfaceKHR(instance, &xcb_surface_create_info, allocator, &surface));
             break;
         }
 #endif
@@ -211,7 +214,7 @@ namespace Match {
             VkWin32SurfaceCreateInfoKHR win32_surface_create_info { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
             win32_surface_create_info.hinstance = info->win32_hinstance;
             win32_surface_create_info.hwnd = info->win32_hwnd;
-            vk_check(vkCreateWin32SurfaceKHR(instance, &win32_surface_create_info, alloctor, &surface));
+            vk_check(vkCreateWin32SurfaceKHR(instance, &win32_surface_create_info, allocator, &surface));
             break;
         }
 #endif
@@ -219,6 +222,16 @@ namespace Match {
             MCH_FATAL("Unknown platform render backend, please set setting.render_backend")
             return;
         }
+    }
+
+    void APIManager::initialize_vma() {
+        VmaAllocatorCreateInfo create_info {};
+        create_info.flags = 0;
+        create_info.vulkanApiVersion = VK_API_VERSION_1_3;
+        create_info.instance = instance;
+        create_info.physicalDevice = device->physical_device;
+        create_info.device = device->device;
+        vmaCreateAllocator(&create_info, &vma_allocator);
     }
 
     void APIManager::recreate_swapchin() {
@@ -234,10 +247,13 @@ namespace Match {
         framebuffer_set.reset();
         render_pass.reset();
         render_pass_builder.reset();
+        descriptor_pool.reset();
+        command_pool.reset();
         swapchain.reset();
+        vmaDestroyAllocator(vma_allocator);
         device.reset();
         this->runtime_setting.reset();
-        vkDestroySurfaceKHR(instance, surface, alloctor);
-        vkDestroyInstance(instance, alloctor);
+        vkDestroySurfaceKHR(instance, surface, allocator);
+        vkDestroyInstance(instance, allocator);
     }
 }

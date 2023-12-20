@@ -15,6 +15,11 @@ namespace Match {
     
     ShaderProgram::ShaderProgram(const std::string &subpass_name) : subpass_name(subpass_name) {}
 
+    void ShaderProgram::bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set) {
+        vertex_attribute_set.reset();
+        vertex_attribute_set = std::move(attribute_set);
+    }
+
     void ShaderProgram::attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
         vertex_shader = std::dynamic_pointer_cast<Shader>(shader);
         vertex_shader_entry = entry;
@@ -32,10 +37,17 @@ namespace Match {
         };
 
         VkPipelineVertexInputStateCreateInfo vertex_input_state { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
-        vertex_input_state.vertexBindingDescriptionCount = 0;
-        vertex_input_state.pVertexBindingDescriptions = nullptr;
-        vertex_input_state.vertexAttributeDescriptionCount = 0;
-        vertex_input_state.pVertexAttributeDescriptions = nullptr;
+        if (vertex_attribute_set.get() != nullptr) {
+            vertex_input_state.vertexBindingDescriptionCount = vertex_attribute_set->bindings.size();
+            vertex_input_state.pVertexBindingDescriptions = vertex_attribute_set->bindings.data();
+            vertex_input_state.vertexAttributeDescriptionCount = vertex_attribute_set->attributes.size();
+            vertex_input_state.pVertexAttributeDescriptions = vertex_attribute_set->attributes.data();
+        } else {
+            vertex_input_state.vertexBindingDescriptionCount = 0;
+            vertex_input_state.pVertexBindingDescriptions = nullptr;
+            vertex_input_state.vertexAttributeDescriptionCount = 0;
+            vertex_input_state.pVertexAttributeDescriptions = nullptr;
+        }
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly_state { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
         input_assembly_state.topology = transform<VkPrimitiveTopology>(options.topology);
@@ -89,21 +101,31 @@ namespace Match {
         color_blend_state.attachmentCount = subpass.output_attachment_blend_states.size();
         color_blend_state.pAttachments = subpass.output_attachment_blend_states.data();
 
-        std::vector<VkDynamicState> dynamic_states = {
-            // VK_DYNAMIC_STATE_VIEWPORT,
-            // VK_DYNAMIC_STATE_SCISSOR,
-        };
-
         VkPipelineDynamicStateCreateInfo dynamic_state { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
-        dynamic_state.dynamicStateCount = dynamic_states.size();
-        dynamic_state.pDynamicStates = dynamic_states.data();
+        dynamic_state.dynamicStateCount = options.dynamic_states.size();
+        dynamic_state.pDynamicStates = options.dynamic_states.data();
+
+        std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+        layout_bindings.reserve(vertex_shader->layout_bindings.size() + fragment_shader->layout_bindings.size());
+        for (const auto &layout_binding : vertex_shader->layout_bindings) {
+            layout_bindings.push_back(layout_binding);
+            layout_bindings.back().stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        }
+        for (const auto &layout_binding : fragment_shader->layout_bindings) {
+            layout_bindings.push_back(layout_binding);
+            layout_bindings.back().stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        }
+        VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+        descriptor_set_layout_create_info.bindingCount = layout_bindings.size();
+        descriptor_set_layout_create_info.pBindings = layout_bindings.data();
+        vkCreateDescriptorSetLayout(manager->device->device, &descriptor_set_layout_create_info, manager->allocator, &descriptor_set_layout);
 
         VkPipelineLayoutCreateInfo pipeline_layout_create_info { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        pipeline_layout_create_info.setLayoutCount = 0;
-        pipeline_layout_create_info.pSetLayouts = nullptr;
+        pipeline_layout_create_info.setLayoutCount = 1;
+        pipeline_layout_create_info.pSetLayouts = &descriptor_set_layout;
         pipeline_layout_create_info.pushConstantRangeCount = 0;
         pipeline_layout_create_info.pPushConstantRanges = nullptr;
-        vk_check(vkCreatePipelineLayout(manager->device->device, &pipeline_layout_create_info, manager->alloctor, &layout));
+        vk_check(vkCreatePipelineLayout(manager->device->device, &pipeline_layout_create_info, manager->allocator, &layout));
 
         VkGraphicsPipelineCreateInfo create_info { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
         create_info.stageCount = stages.size();
@@ -123,11 +145,52 @@ namespace Match {
         create_info.basePipelineHandle = nullptr;
         create_info.basePipelineIndex = 0;
 
-        vk_check(vkCreateGraphicsPipelines(manager->device->device, nullptr, 1, &create_info, manager->alloctor, &pipeline));
+        vk_check(vkCreateGraphicsPipelines(manager->device->device, nullptr, 1, &create_info, manager->allocator, &pipeline));
+
+        descriptor_sets = manager->descriptor_pool->allocate_descriptor_set(descriptor_set_layout);
+
+        for (const auto &shader : { vertex_shader, fragment_shader }) {
+            for (const auto &layout_binding : shader->layout_bindings) {
+                switch (layout_binding.descriptorType) {
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
+                    uint32_t size = shader->uniform_sizes.at(layout_binding.binding);
+                    auto uniform_buffer = std::make_shared<UniformBuffer>(size * layout_binding.descriptorCount);
+                    for (size_t i = 0; i < setting.max_in_flight_frame; i++) {
+                        VkDescriptorBufferInfo buffer_info {};
+                        buffer_info.buffer = uniform_buffer->buffers[i].buffer;
+                        buffer_info.offset = 0;
+                        buffer_info.range = size;
+                        VkWriteDescriptorSet descriptor_write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+                        descriptor_write.dstSet = descriptor_sets[i];
+                        descriptor_write.dstBinding = layout_binding.binding;
+                        descriptor_write.dstArrayElement = 0;
+                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                        descriptor_write.descriptorCount = layout_binding.descriptorCount;
+                        descriptor_write.pBufferInfo = &buffer_info;
+                        vkUpdateDescriptorSets(manager->device->device, 1, &descriptor_write, 0, nullptr);
+                    }
+                    descriptors.insert(std::make_pair(layout_binding.binding, std::move(std::reinterpret_pointer_cast<Descriptor>(uniform_buffer))));
+                    break;
+                }
+                default:
+                    MCH_ERROR("Unsupported descriptor")
+                }
+            }
+        }
+    }
+
+    std::shared_ptr<Descriptor> ShaderProgram::get_descriptor(binding binding) {
+        return descriptors.at(binding);
     }
 
     ShaderProgram::~ShaderProgram() {
-        vkDestroyPipeline(manager->device->device, pipeline, manager->alloctor);
-        vkDestroyPipelineLayout(manager->device->device, layout, manager->alloctor);
+        descriptors.clear();
+        descriptor_sets.clear();
+        vkDestroyPipeline(manager->device->device, pipeline, manager->allocator);
+        vkDestroyDescriptorSetLayout(manager->device->device, descriptor_set_layout, manager->allocator);
+        vkDestroyPipelineLayout(manager->device->device, layout, manager->allocator);
+        vertex_attribute_set.reset();
+        vertex_shader.reset();
+        fragment_shader.reset();
     }
 }

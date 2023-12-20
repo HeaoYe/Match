@@ -1,20 +1,20 @@
 #version 450
 
+layout(location = 0) in vec2 in_pos;
+layout(location = 1) in vec3 in_color;
+layout(location = 2) in vec2 offset;  // 每个实例传入一份offset数据
+layout(binding = 0) uniform PosScaler {
+    float x_pos_scale;
+    float y_pos_scale;
+} pos_ubo;
+layout(binding = 1) uniform ColorScaler {
+    float color_scale;
+} color_ubo;
+
 layout(location = 0) out vec3 frag_color;
 
-vec2 positions[3] = vec2[](
-    vec2(0, 0.5),
-    vec2(0.5, -0.5),
-    vec2(-0.5, -0.5)
-);
-
-vec3 colors[3] = vec3[](
-    vec3(1, 0, 0.2),
-    vec3(0.5, 1, 0),
-    vec3(0, 0.6, 1)
-);
-
 void main() {
-    gl_Position = vec4(positions[gl_VertexIndex], 0, 1);
-    frag_color = colors[gl_VertexIndex];
+    vec2 vertex_pos = vec2(pos_ubo.x_pos_scale * in_pos.x, pos_ubo.y_pos_scale * in_pos.y);
+    gl_Position = vec4(offset + vertex_pos, 0, 1);
+    frag_color = color_ubo.color_scale * in_color;
 }
