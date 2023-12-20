@@ -30,31 +30,6 @@ namespace Match {
         fragment_shader_entry = entry;
     }
 
-    void ShaderProgram::bind_shader_descriptor(const std::vector<DescriptorInfo> &descriptor_infos, VkShaderStageFlags stage) {
-        for (const auto &descriptor_info : descriptor_infos) {
-            layout_bindings.push_back({
-                .binding = descriptor_info.binding,
-                .descriptorType = transform<VkDescriptorType>(descriptor_info.type),
-                .descriptorCount = descriptor_info.count,
-                .stageFlags = stage,
-            });
-            switch (descriptor_info.type) {
-            case DescriptorType::eUniform:
-                uniform_sizes.insert(std::make_pair(descriptor_info.binding, descriptor_info.spec_data.size));
-                break;
-            }
-        }
-
-    }
-
-    void ShaderProgram::bind_vertex_shader_descriptor(const std::vector<DescriptorInfo> &descriptor_infos) {
-        bind_shader_descriptor(descriptor_infos, VK_SHADER_STAGE_VERTEX_BIT);
-    }
-
-    void ShaderProgram::bind_fragment_shader_descriptor(const std::vector<DescriptorInfo> &descriptor_infos) {
-        bind_shader_descriptor(descriptor_infos, VK_SHADER_STAGE_FRAGMENT_BIT);
-    }
-
     void ShaderProgram::compile(ShaderProgramCompileOptions options) {
         std::vector<VkPipelineShaderStageCreateInfo> stages = {
             create_pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader->module, vertex_shader_entry),
@@ -126,15 +101,20 @@ namespace Match {
         color_blend_state.attachmentCount = subpass.output_attachment_blend_states.size();
         color_blend_state.pAttachments = subpass.output_attachment_blend_states.data();
 
-        std::vector<VkDynamicState> dynamic_states = {
-            // VK_DYNAMIC_STATE_VIEWPORT,
-            // VK_DYNAMIC_STATE_SCISSOR,
-        };
-
         VkPipelineDynamicStateCreateInfo dynamic_state { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
-        dynamic_state.dynamicStateCount = dynamic_states.size();
-        dynamic_state.pDynamicStates = dynamic_states.data();
+        dynamic_state.dynamicStateCount = options.dynamic_states.size();
+        dynamic_state.pDynamicStates = options.dynamic_states.data();
 
+        std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+        layout_bindings.reserve(vertex_shader->layout_bindings.size() + fragment_shader->layout_bindings.size());
+        for (const auto &layout_binding : vertex_shader->layout_bindings) {
+            layout_bindings.push_back(layout_binding);
+            layout_bindings.back().stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        }
+        for (const auto &layout_binding : fragment_shader->layout_bindings) {
+            layout_bindings.push_back(layout_binding);
+            layout_bindings.back().stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        }
         VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
         descriptor_set_layout_create_info.bindingCount = layout_bindings.size();
         descriptor_set_layout_create_info.pBindings = layout_bindings.data();
@@ -169,30 +149,32 @@ namespace Match {
 
         descriptor_sets = manager->descriptor_pool->allocate_descriptor_set(descriptor_set_layout);
 
-        for (const auto &layout_binding : layout_bindings) {
-            switch (layout_binding.descriptorType) {
-            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
-                uint32_t size = uniform_sizes.at(layout_binding.binding);
-                auto uniform_buffer = std::make_shared<UniformBuffer>(size);
-                for (size_t i = 0; i < setting.max_in_flight_frame; i++) {
-                    VkDescriptorBufferInfo buffer_info {};
-                    buffer_info.buffer = uniform_buffer->buffers[i].buffer;
-                    buffer_info.offset = 0;
-                    buffer_info.range = size;
-                    VkWriteDescriptorSet descriptor_write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-                    descriptor_write.dstSet = descriptor_sets[i];
-                    descriptor_write.dstBinding = layout_binding.binding;
-                    descriptor_write.dstArrayElement = 0;
-                    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    descriptor_write.descriptorCount = layout_binding.descriptorCount;
-                    descriptor_write.pBufferInfo = &buffer_info;
-                    vkUpdateDescriptorSets(manager->device->device, 1, &descriptor_write, 0, nullptr);
+        for (const auto &shader : { vertex_shader, fragment_shader }) {
+            for (const auto &layout_binding : shader->layout_bindings) {
+                switch (layout_binding.descriptorType) {
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
+                    uint32_t size = shader->uniform_sizes.at(layout_binding.binding);
+                    auto uniform_buffer = std::make_shared<UniformBuffer>(size * layout_binding.descriptorCount);
+                    for (size_t i = 0; i < setting.max_in_flight_frame; i++) {
+                        VkDescriptorBufferInfo buffer_info {};
+                        buffer_info.buffer = uniform_buffer->buffers[i].buffer;
+                        buffer_info.offset = 0;
+                        buffer_info.range = size;
+                        VkWriteDescriptorSet descriptor_write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+                        descriptor_write.dstSet = descriptor_sets[i];
+                        descriptor_write.dstBinding = layout_binding.binding;
+                        descriptor_write.dstArrayElement = 0;
+                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                        descriptor_write.descriptorCount = layout_binding.descriptorCount;
+                        descriptor_write.pBufferInfo = &buffer_info;
+                        vkUpdateDescriptorSets(manager->device->device, 1, &descriptor_write, 0, nullptr);
+                    }
+                    descriptors.insert(std::make_pair(layout_binding.binding, std::move(std::reinterpret_pointer_cast<Descriptor>(uniform_buffer))));
+                    break;
                 }
-                descriptors.insert(std::make_pair(layout_binding.binding, std::move(std::reinterpret_pointer_cast<Descriptor>(uniform_buffer))));
-                break;
-            }
-            default:
-                MCH_ERROR("Unsupported descriptor")
+                default:
+                    MCH_ERROR("Unsupported descriptor")
+                }
             }
         }
     }
@@ -207,8 +189,6 @@ namespace Match {
         vkDestroyPipeline(manager->device->device, pipeline, manager->allocator);
         vkDestroyDescriptorSetLayout(manager->device->device, descriptor_set_layout, manager->allocator);
         vkDestroyPipelineLayout(manager->device->device, layout, manager->allocator);
-        uniform_sizes.clear();
-        layout_bindings.clear();
         vertex_attribute_set.reset();
         vertex_shader.reset();
         fragment_shader.reset();

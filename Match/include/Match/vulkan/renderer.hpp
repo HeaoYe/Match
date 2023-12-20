@@ -16,6 +16,7 @@ namespace Match {
         void bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers);
         void bind_index_buffer(std::shared_ptr<IndexBuffer> index_buffer);
         void draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
+        void draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance);
         VkCommandBuffer get_command_buffer();
     INNER_VISIBLE:
         uint32_t index;

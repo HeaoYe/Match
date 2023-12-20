@@ -111,6 +111,10 @@ namespace Match {
         vkCmdBindIndexBuffer(current_buffer, index_buffer->buffer->buffer, 0, index_buffer->type);
     }
 
+    void Renderer::draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance) {
+        vkCmdDrawIndexed(current_buffer, index_count, instance_count, first_index, vertex_offset, first_instance);
+    }
+
     void Renderer::draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {
         vkCmdDraw(current_buffer, vertex_count, instance_count, first_vertex, first_instance);
     }

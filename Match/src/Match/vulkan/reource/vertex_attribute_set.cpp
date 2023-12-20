@@ -9,7 +9,7 @@ namespace Match {
     }
 
     void VertexAttributeSet::add_input_binding(const InputBindingInfo &binding_info) {
-        uint32_t offset = 0, location = 0, size;
+        uint32_t offset = 0, size;
         for (const auto &attribute : binding_info.attributes) {
             attributes.push_back({
                 .location = location,

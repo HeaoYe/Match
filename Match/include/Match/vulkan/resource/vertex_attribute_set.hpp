@@ -41,6 +41,7 @@ namespace Match {
     private:
         void add_input_binding(const InputBindingInfo &binding_info);
     INNER_VISIBLE:
+        uint32_t location = 0;
         std::vector<VkVertexInputAttributeDescription> attributes;
         std::vector<VkVertexInputBindingDescription> bindings;
     };
