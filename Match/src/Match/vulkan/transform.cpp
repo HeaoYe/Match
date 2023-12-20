@@ -1,4 +1,6 @@
 #include <Match/core/utils.hpp>
+#include <Match/vulkan/resource/vertex_attribute_set.hpp>
+#include <Match/vulkan/resource/buffer.hpp>
 #include <Match/vulkan/resource/shader_program.hpp>
 
 namespace Match {

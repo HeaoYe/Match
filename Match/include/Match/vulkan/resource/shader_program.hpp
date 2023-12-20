@@ -2,6 +2,7 @@
 
 #include <Match/vulkan/resource/shader.hpp>
 #include <Match/vulkan/descriptor/descriptor.hpp>
+#include <Match/vulkan/resource/vertex_attribute_set.hpp>
 
 namespace Match {
     enum class Topology {
@@ -30,11 +31,6 @@ namespace Match {
         eCounterClockwise,
     };
 
-    enum class InputRate {
-        ePerVertex,
-        ePerInstance,
-    };
-
     struct ShaderProgramCompileOptions {
         Topology topology = Topology::eTriangleList;
         PolygonMode polygon_mode = PolygonMode::eFill;
@@ -42,24 +38,6 @@ namespace Match {
         FrontFace front_face = FrontFace::eCounterClockwise;
     };
 
-    class  VertexAttributeSet {
-        no_copy_move_construction(VertexAttributeSet)
-        using location = uint32_t;
-        using binding = uint32_t;
-    public:
-        VertexAttributeSet();
-        location add_input_attribute(VertexType type);
-        binding add_input_binding(InputRate rate);
-    private:
-        void reset();
-    INNER_VISIBLE:
-        std::vector<VkVertexInputAttributeDescription> attributes;
-        std::vector<VkVertexInputBindingDescription> bindings;
-    private:
-        uint32_t current_binding;
-        uint32_t current_location;
-        uint32_t current_offset;
-    };
 
     enum class DescriptorType {
         eUniform
@@ -84,7 +62,7 @@ namespace Match {
         using binding = uint32_t;
     public:
         ShaderProgram(const std::string &subpass_name);
-        void bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute);
+        void bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set);
         void attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry);
         void attach_fragment_shader(std::shared_ptr<Shader> shader, const std::string &entry);
         void bind_vertex_shader_descriptor(const std::vector<DescriptorInfo> &descriptor_infos);

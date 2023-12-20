@@ -32,8 +32,8 @@ namespace Match {
         return std::make_shared<Shader>(code);
     }
 
-    std::shared_ptr<VertexAttributeSet> ResourceFactory::create_vertex_attribute_set() {
-        return std::make_shared<VertexAttributeSet>();
+    std::shared_ptr<VertexAttributeSet> ResourceFactory::create_vertex_attribute_set(const std::vector<InputBindingInfo> &binding_infos) {
+        return std::make_shared<VertexAttributeSet>(binding_infos);
     }
     
     std::shared_ptr<ShaderProgram> ResourceFactory::create_shader_program(const std::string &subpass_name) {

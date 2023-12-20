@@ -4,43 +4,6 @@
 #include "../inner.hpp"
 
 namespace Match {
-    VertexAttributeSet::VertexAttributeSet() {
-        current_binding = 0;
-        reset();
-    }
-
-    void VertexAttributeSet::reset() {
-        current_location = 0;
-        current_offset = 0;
-    }
-
-    VertexAttributeSet::location VertexAttributeSet::add_input_attribute(VertexType type) {
-        attributes.push_back({
-            .location = current_location,
-            .binding = current_binding,
-            .format = transform<VkFormat>(type),
-            .offset = current_offset,
-        });
-        auto location = current_location, size = transform<uint32_t>(type);
-        current_location += 1;
-        if (size > 16) {
-            current_location += 1;
-        }
-        current_offset += size;
-        return location;
-    }
-
-    VertexAttributeSet::binding VertexAttributeSet::add_input_binding(InputRate rate) {
-        bindings.push_back({
-            .binding = current_binding,
-            .stride = current_offset,
-            .inputRate = transform<VkVertexInputRate>(rate),
-        });
-        current_binding += 1;
-        reset();
-        return current_binding - 1;
-    }
-
     static VkPipelineShaderStageCreateInfo create_pipeline_shader_stage_create_info(VkShaderStageFlagBits stage, VkShaderModule module, const std::string &entry) {
         VkPipelineShaderStageCreateInfo create_info { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
         create_info.pSpecializationInfo = nullptr;
@@ -52,9 +15,9 @@ namespace Match {
     
     ShaderProgram::ShaderProgram(const std::string &subpass_name) : subpass_name(subpass_name) {}
 
-    void ShaderProgram::bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute) {
+    void ShaderProgram::bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set) {
         vertex_attribute_set.reset();
-        vertex_attribute_set = std::move(attribute);
+        vertex_attribute_set = std::move(attribute_set);
     }
 
     void ShaderProgram::attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry) {

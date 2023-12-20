@@ -38,6 +38,11 @@ namespace Match {
         VertexBuffer(uint32_t vertex_size, uint32_t count);
     };
     
+    enum class IndexType {
+        eUint16,
+        eUint32,
+    };
+    
     class IndexBuffer : public TwoStageBuffer {
         no_copy_move_construction(IndexBuffer)
     public:
