@@ -28,34 +28,34 @@ int main() {
     // 显示全部设备名，可填写在Match::setting.device_name中
     // Match::EnumerateDevices();
 
-    // 配置Vulkan的RenderPass
-
-    auto &builder = context.get_render_pass_builder();
-    builder.add_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, Match::AttchmentType::eColor);
-    // builder.add_custom_attachment("自定义名字", {
-        // 填写VkAttachmentDescription结构体
-    // })
-    // 设置最总要呈现到屏幕的Attachment
-    builder.set_final_present_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
-
-    // 创建Subpass
-    auto &subpass = builder.create_subpass("MainSubpass");
-    // 绑定Subpass为图形流水线
-    subpass.bind(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    // 设置Subpass的输出为SWAPCHAIN_IMAGE_ATTACHMENT
-    subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    // 添加Subpass Dependency
-    subpass.wait_for(
-        Match::EXTERNAL_SUBPASS,
-        { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT },
-        { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_NONE }
-    );
-    // 创建RenderPass
-    context.build_render_pass();
-
     {
         // 初始化资源工厂，会在${root}/shaders文件夹下寻找Shader文件，，会在${root}/textures文件夹下寻找图片文件
         auto factory = context.create_resource_factory("./resource");
+        
+        // 配置Vulkan的RenderPass
+        auto builder = factory->create_render_pass_builder();
+        builder->add_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, Match::AttchmentType::eColor);
+        // builder.add_custom_attachment("自定义名字", {
+            // 填写VkAttachmentDescription结构体
+        // })
+        // 设置最总要呈现到屏幕的Attachment
+        builder->set_final_present_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
+
+        // 创建Subpass
+        auto &subpass = builder->create_subpass("MainSubpass");
+        // 绑定Subpass为图形流水线
+        subpass.bind(VK_PIPELINE_BIND_POINT_GRAPHICS);
+        // 设置Subpass的输出为SWAPCHAIN_IMAGE_ATTACHMENT
+        subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        // 添加Subpass Dependency
+        subpass.wait_for(
+            Match::EXTERNAL_SUBPASS,
+            { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT },
+            { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_NONE }
+        );
+        // 将RenderPass与Renderer绑定
+        auto renderer = context.create_renderer(builder);
+
         // 加载已编译的Shader文件
         // auto vert_shader = factory->load_shader("vert.spv");
         // auto frag_shader = factory->load_shader("frag.spv");
@@ -124,7 +124,8 @@ int main() {
             { 2, Match::DescriptorType::eTexture }
         });
         
-        auto shader_program = factory->create_shader_program("MainSubpass");
+        // 为renderer创建shader_program
+        auto shader_program = factory->create_shader_program(renderer, "MainSubpass");
         // 绑定顶点数据描述符
         shader_program->bind_vertex_attribute_set(vertex_attr);
         shader_program->attach_vertex_shader(vert_shader, "main");
@@ -174,8 +175,6 @@ int main() {
         shader_program->bind_uniforms(1, { color_uniform });
         shader_program->bind_textures(2, { texture }, { sampler });
 
-        Match::Renderer renderer;
-
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
 
@@ -199,23 +198,25 @@ int main() {
             // 将scale范围从[-1, 1]变换到[0.6, 1.3]
             color_scaler->color_scale = (scale + 3) / 3;
 
-            renderer.begin_render();
-            renderer.bind_shader_program(shader_program);
+            renderer->begin_render();
+            renderer->bind_shader_program(shader_program);
             // 绑定每个binding的VertexBuffer
             // 参数中的VertexBuffer将根据他们在参数中的位置自动绑定到对应的binding
-            renderer.bind_vertex_buffers({
+            renderer->bind_vertex_buffers({
                 vert_buffer_0, // 第一个绑定到binding 0
                 vert_buffer_1, // 第二个绑定到binding 1
             });
             // 绑定IndexBuffer
-            renderer.bind_index_buffer(index_buffer);
+            renderer->bind_index_buffer(index_buffer);
             // DrawCall
             // renderer.draw(vertices.size(), 1, 0, 0);
             // IndexDrawCall
             // 实例渲染, 共渲染4个实例
-            renderer.draw_indexed(6, 4, 0, 0, 0);
-            renderer.end_render();
+            renderer->draw_indexed(6, 4, 0, 0, 0);
+            renderer->end_render();
         }
+        // 等待GPU处理完所有数据，再销毁资源，否则会销毁GPU正在使用的资源导致报错
+        renderer->wait_for_destroy();
     } // 离开作用域后所有创建的资源会被销毁
 
     // 销毁Match

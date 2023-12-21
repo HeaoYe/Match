@@ -1,13 +1,14 @@
+#include <Match/vulkan/renderer.hpp>
 #include <Match/vulkan/framebuffer.hpp>
 #include "inner.hpp"
 
 namespace Match {
-    FrameBuffer::FrameBuffer(uint32_t index) {
+    FrameBuffer::FrameBuffer(const Renderer &renderer, uint32_t index) {
         std::vector<VkImageView> attachments = {
             manager->swapchain->image_views[index]
         };
         VkFramebufferCreateInfo framebuffer_create_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
-        framebuffer_create_info.renderPass = manager->render_pass->render_pass;
+        framebuffer_create_info.renderPass = renderer.render_pass->render_pass;
         framebuffer_create_info.width = runtime_setting->get_window_size().width;
         framebuffer_create_info.height = runtime_setting->get_window_size().height;
         framebuffer_create_info.layers = 1;
@@ -21,9 +22,9 @@ namespace Match {
         vkDestroyFramebuffer(manager->device->device, framebuffer, manager->allocator);
     }
 
-    FrameBufferSet::FrameBufferSet() {
+    FrameBufferSet::FrameBufferSet(const Renderer &renderer) {
         for (uint32_t i = 0; i < manager->swapchain->image_count; i ++) {
-            framebuffers.push_back(std::make_unique<FrameBuffer>(i));
+            framebuffers.push_back(std::make_unique<FrameBuffer>(renderer, i));
         }
     }
 

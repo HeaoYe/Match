@@ -41,11 +41,13 @@ namespace Match {
         std::vector<VkDynamicState> dynamic_states;
     };
 
+    class Renderer;
+
     class ShaderProgram {
         no_copy_move_construction(ShaderProgram)
         using binding = uint32_t;
     public:
-        ShaderProgram(const std::string &subpass_name);
+        ShaderProgram(std::weak_ptr<Renderer> renderer, const std::string &subpass_name);
         void bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set);
         void attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry);
         void attach_fragment_shader(std::shared_ptr<Shader> shader, const std::string &entry);
@@ -56,6 +58,7 @@ namespace Match {
     private:
         void bind_shader_descriptor(const std::vector<DescriptorInfo> &descriptor_infos, VkShaderStageFlags stage);
     INNER_VISIBLE:
+        std::weak_ptr<Renderer> renderer;
         std::string subpass_name;
         VkPipelineBindPoint bind_point;
         std::shared_ptr<VertexAttributeSet> vertex_attribute_set;

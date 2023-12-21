@@ -56,4 +56,4 @@ option(SHADERC_ENABLE_WERROR_COMPILE "Enable passing -Werror to compiler, if ava
 add_subdirectory(thirdparty/shaderc)
 set(stb_DIR thirdparty/stb)
 add_subdirectory(Match)
-add_subdirectory(examples/Sandbox)
+add_subdirectory(examples)

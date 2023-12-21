@@ -5,8 +5,6 @@
 #include <Match/vulkan/swapchain.hpp>
 #include <Match/core/setting.hpp>
 #include <Match/vulkan/resource/resource_factory.hpp>
-#include <Match/vulkan/renderpass.hpp>
-#include <Match/vulkan/framebuffer.hpp>
 #include <Match/vulkan/command_pool.hpp>
 #include <Match/vulkan/descriptor/descriptor_pool.hpp>
 
@@ -21,10 +19,9 @@ namespace Match {
         ~APIManager();
         std::vector<std::string> enumerate_devices();
         void initialize();
-        RenderPassBuilder &get_render_pass_builder();
-        void build_render_pass();
         std::shared_ptr<RuntimeSetting> get_runtime_setting();
         std::shared_ptr<ResourceFactory> create_resource_factory(const std::string &root);
+        std::shared_ptr<Renderer> create_renderer(std::shared_ptr<RenderPassBuilder> builder);
         CommandPool &get_command_pool();
         void destroy();
     INNER_VISIBLE:
@@ -50,8 +47,5 @@ namespace Match {
         std::unique_ptr<Swapchain> swapchain;
         std::unique_ptr<CommandPool> command_pool;
         std::unique_ptr<DescriptorPool> descriptor_pool;
-        std::unique_ptr<RenderPassBuilder> render_pass_builder;
-        std::unique_ptr<RenderPass> render_pass;
-        std::unique_ptr<FrameBufferSet> framebuffer_set;
     };
 }

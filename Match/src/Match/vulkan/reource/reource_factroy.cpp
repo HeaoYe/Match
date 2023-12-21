@@ -6,6 +6,10 @@ namespace Match {
     ResourceFactory::ResourceFactory(const std::string &root) : root(root) {
     }
 
+    std::shared_ptr<RenderPassBuilder> ResourceFactory::create_render_pass_builder() {
+        return std::make_shared<RenderPassBuilder>();
+    }
+
     std::shared_ptr<Shader> ResourceFactory::load_shader(const std::string &filename, ShaderType type) {
         auto code = read_binary_file(root + "/shaders/" + filename);
 
@@ -36,8 +40,8 @@ namespace Match {
         return std::make_shared<VertexAttributeSet>(binding_infos);
     }
     
-    std::shared_ptr<ShaderProgram> ResourceFactory::create_shader_program(const std::string &subpass_name) {
-        return std::make_shared<ShaderProgram>(subpass_name);
+    std::shared_ptr<ShaderProgram> ResourceFactory::create_shader_program(std::weak_ptr<Renderer> renderer, const std::string &subpass_name) {
+        return std::make_shared<ShaderProgram>(renderer, subpass_name);
     }
 
     std::shared_ptr<VertexBuffer> ResourceFactory::create_vertex_buffer(uint32_t vertex_size, uint32_t count) {

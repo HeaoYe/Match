@@ -2,7 +2,10 @@
 #include "inner.hpp"
 
 namespace Match {
-    Renderer::Renderer() : current_in_flight(0) {
+    Renderer::Renderer(std::shared_ptr<RenderPassBuilder> builder) : render_pass_builder(builder), resized(false), current_in_flight(0) {
+        render_pass = std::make_unique<RenderPass>(builder);
+        framebuffer_set = std::make_unique<FrameBufferSet>(*this);
+
         command_buffers.resize(setting.max_in_flight_frame);
         image_available_semaphores.resize(setting.max_in_flight_frame);
         render_finished_semaphores.resize(setting.max_in_flight_frame);
@@ -23,20 +26,38 @@ namespace Match {
         }
     }
 
-    Renderer::~Renderer() {
+
+    void Renderer::set_resize_flag() {
+        resized = true;
+    }
+
+    void Renderer::wait_for_destroy() {
         vkDeviceWaitIdle(manager->device->device);
+    }
+
+    void Renderer::recreate() {
+        manager->recreate_swapchin();
+        framebuffer_set.reset();
+        framebuffer_set = std::make_unique<FrameBufferSet>(*this);
+    }
+
+    Renderer::~Renderer() {
+        wait_for_destroy();
         for (uint32_t i = 0; i < setting.max_in_flight_frame; i ++) {
             vkDestroySemaphore(manager->device->device, image_available_semaphores[i], manager->allocator);
             vkDestroySemaphore(manager->device->device, render_finished_semaphores[i], manager->allocator);
             vkDestroyFence(manager->device->device, in_flight_fences[i], manager->allocator);
         }
+        framebuffer_set.reset();
+        render_pass.reset();
+        render_pass_builder.reset();
     }
 
     void Renderer::begin_render() {
         vkWaitForFences(manager->device->device, 1, &in_flight_fences[current_in_flight], VK_TRUE, UINT64_MAX);
         auto result = vkAcquireNextImageKHR(manager->device->device, manager->swapchain->swapchain, UINT64_MAX, image_available_semaphores[current_in_flight], VK_NULL_HANDLE, &index);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            manager->recreate_swapchin();
+            recreate();
             return;
         }
         vkResetFences(manager->device->device, 1, &in_flight_fences[current_in_flight]);
@@ -47,8 +68,8 @@ namespace Match {
         vk_check(vkBeginCommandBuffer(current_buffer, &begin_info));
 
         VkRenderPassBeginInfo render_pass_begin_info { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-        render_pass_begin_info.renderPass = manager->render_pass->render_pass;
-        render_pass_begin_info.framebuffer = manager->framebuffer_set->framebuffers[index]->framebuffer;
+        render_pass_begin_info.renderPass = render_pass->render_pass;
+        render_pass_begin_info.framebuffer = framebuffer_set->framebuffers[index]->framebuffer;
         render_pass_begin_info.renderArea.offset = { 0, 0 };
         render_pass_begin_info.renderArea.extent = { runtime_setting->get_window_size().width, runtime_setting->get_window_size().height };
         VkClearValue clear_color {
@@ -82,8 +103,8 @@ namespace Match {
         present_info.pImageIndices = &index;
         present_info.pResults = nullptr;
         auto result = vkQueuePresentKHR(manager->device->present_queue, &present_info);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-            manager->recreate_swapchin();
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized) {
+            recreate();
         }
         current_in_flight = (current_in_flight + 1) % setting.max_in_flight_frame;
         runtime_setting->current_in_flight = current_in_flight;

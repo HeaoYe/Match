@@ -62,6 +62,10 @@ namespace Match {
         return std::make_shared<ResourceFactory>(root);
     }
 
+    std::shared_ptr<Renderer> APIManager::create_renderer(std::shared_ptr<RenderPassBuilder> builder) {
+        return std::make_shared<Renderer>(builder);
+    }
+
     CommandPool &APIManager::get_command_pool() {
         return *command_pool;
     }
@@ -74,16 +78,6 @@ namespace Match {
         swapchain = std::make_unique<Swapchain>(*info);
         command_pool = std::make_unique<CommandPool>(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
         descriptor_pool = std::make_unique<DescriptorPool>();
-        render_pass_builder = std::make_unique<RenderPassBuilder>();
-    }
-
-    RenderPassBuilder &APIManager::get_render_pass_builder() {
-        return *render_pass_builder;
-    }
-
-    void APIManager::build_render_pass() {
-        render_pass = std::make_unique<RenderPass>(*render_pass_builder);
-        framebuffer_set = std::make_unique<FrameBufferSet>();
     }
 
     void APIManager::create_vk_instance() {
@@ -236,17 +230,12 @@ namespace Match {
 
     void APIManager::recreate_swapchin() {
         vkDeviceWaitIdle(device->device);
-        framebuffer_set.reset();
         swapchain.reset();
         swapchain = std::make_unique<Swapchain>(*info);
-        framebuffer_set = std::make_unique<FrameBufferSet>();
     }
 
     void APIManager::destroy() {
         MCH_INFO("Destroy Vulkan API")
-        framebuffer_set.reset();
-        render_pass.reset();
-        render_pass_builder.reset();
         descriptor_pool.reset();
         command_pool.reset();
         swapchain.reset();

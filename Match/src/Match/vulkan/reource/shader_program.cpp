@@ -1,3 +1,4 @@
+#include <Match/vulkan/renderer.hpp>
 #include <Match/vulkan/resource/shader_program.hpp>
 #include <Match/core/setting.hpp>
 #include <Match/core/utils.hpp>
@@ -13,7 +14,7 @@ namespace Match {
         return create_info;
     }
     
-    ShaderProgram::ShaderProgram(const std::string &subpass_name) : subpass_name(subpass_name) {}
+    ShaderProgram::ShaderProgram(std::weak_ptr<Renderer> renderer, const std::string &subpass_name) : subpass_name(subpass_name), renderer(renderer) {}
 
     void ShaderProgram::bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set) {
         vertex_attribute_set.reset();
@@ -92,9 +93,10 @@ namespace Match {
         depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
         depth_stencil_state.stencilTestEnable = VK_FALSE;
 
-        uint32_t subpass_idx = manager->render_pass_builder->subpasses_map.at(subpass_name);
-        auto &subpass = manager->render_pass_builder->subpass_builders[subpass_idx];
-        bind_point = manager->render_pass_builder->subpass_builders[subpass_idx].bind_point;
+        auto locked_renderer = renderer.lock();
+        uint32_t subpass_idx = locked_renderer->render_pass_builder->subpasses_map.at(subpass_name);
+        auto &subpass = locked_renderer->render_pass_builder->subpass_builders[subpass_idx];
+        bind_point = locked_renderer->render_pass_builder->subpass_builders[subpass_idx].bind_point;
 
         VkPipelineColorBlendStateCreateInfo color_blend_state { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
         color_blend_state.logicOpEnable = VK_FALSE;
@@ -140,10 +142,11 @@ namespace Match {
         create_info.pColorBlendState = &color_blend_state;
         create_info.pDynamicState = &dynamic_state;
         create_info.layout = layout;
-        create_info.renderPass = manager->render_pass->render_pass;
+        create_info.renderPass = locked_renderer->render_pass->render_pass;
         create_info.subpass = subpass_idx;
         create_info.basePipelineHandle = nullptr;
         create_info.basePipelineIndex = 0;
+        locked_renderer.reset();
 
         vk_check(vkCreateGraphicsPipelines(manager->device->device, nullptr, 1, &create_info, manager->allocator, &pipeline));
 

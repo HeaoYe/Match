@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Match/vulkan/command_pool.hpp>
+#include <Match/vulkan/renderpass.hpp>
+#include <Match/vulkan/framebuffer.hpp>
 #include <Match/vulkan/resource/shader_program.hpp>
 #include <Match/vulkan/resource/buffer.hpp>
 
@@ -8,7 +10,7 @@ namespace Match {
     class Renderer {
         no_copy_move_construction(Renderer)
     public:
-        Renderer();
+        Renderer(std::shared_ptr<RenderPassBuilder> builder);
         ~Renderer();
         void begin_render();
         void end_render();
@@ -18,7 +20,15 @@ namespace Match {
         void draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
         void draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance);
         VkCommandBuffer get_command_buffer();
+        void set_resize_flag();
+        void wait_for_destroy();
+    private:
+        void recreate();
     INNER_VISIBLE:
+        std::shared_ptr<RenderPassBuilder> render_pass_builder;
+        std::unique_ptr<RenderPass> render_pass;
+        std::unique_ptr<FrameBufferSet> framebuffer_set;
+        bool resized;
         uint32_t index;
         uint32_t current_in_flight;
         VkCommandBuffer current_buffer;

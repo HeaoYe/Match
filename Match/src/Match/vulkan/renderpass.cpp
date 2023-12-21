@@ -146,8 +146,8 @@ namespace Match {
         return std::move(create_info);
     }
 
-    RenderPass::RenderPass(RenderPassBuilder &builder) {
-        auto create_info = builder.build();
+    RenderPass::RenderPass(std::shared_ptr<RenderPassBuilder> builder) {
+        auto create_info = builder->build();
         vk_assert(vkCreateRenderPass(manager->device->device, &create_info, manager->allocator, &render_pass));
     }
 
