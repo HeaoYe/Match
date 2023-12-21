@@ -38,4 +38,37 @@ namespace Match {
         MCH_ERROR("Failed to find supported vulkan format")
         return VK_FORMAT_UNDEFINED;
     }
+
+    void transition_image_layout(VkImage image, VkFormat format, const TransitionInfo &src, const TransitionInfo &dst) {
+        auto command_buffer = manager->command_pool->allocate_single_use();
+        VkImageMemoryBarrier barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+        barrier.oldLayout = src.layout;
+        barrier.srcAccessMask = src.access;
+        barrier.newLayout = dst.layout;
+        barrier.dstAccessMask = dst.access;
+        barrier.image = image;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        vkCmdPipelineBarrier(
+            command_buffer,
+            src.stage,
+            dst.stage,
+            0, 0, nullptr, 0, nullptr,
+            1, &barrier
+        );
+        manager->command_pool->free_single_use(command_buffer);
+    }
+
+    VkFormat get_supported_depth_format() {
+        return find_supported_format({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT }, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    }
+
+    bool has_stencil_component(VkFormat format) {
+        return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+    }
 }

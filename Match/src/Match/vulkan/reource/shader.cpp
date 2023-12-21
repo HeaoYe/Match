@@ -21,7 +21,6 @@ namespace Match {
     Shader::~Shader() {
         vkDestroyShaderModule(manager->device->device, module, manager->allocator);
         layout_bindings.clear();
-        uniform_sizes.clear();
     }
 
     void Shader::bind_descriptors(const std::vector<DescriptorInfo> &descriptor_infos) {
@@ -32,10 +31,8 @@ namespace Match {
                 .descriptorCount = descriptor_info.count,
                 .stageFlags = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM,  // set by shader program
             });
-            switch (descriptor_info.type) {
-            case DescriptorType::eUniform:
-                uniform_sizes.insert(std::make_pair(descriptor_info.binding, descriptor_info.spec_data.size));
-                break;
+            if (descriptor_info.type == DescriptorType::eTexture) {
+                layout_bindings.back().pImmutableSamplers = descriptor_info.spec_data.immutable_samplers;
             }
         }
     }

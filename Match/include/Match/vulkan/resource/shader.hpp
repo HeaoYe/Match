@@ -4,7 +4,8 @@
 
 namespace Match {
     enum class DescriptorType {
-        eUniform
+        eUniform,
+        eTexture,
     };
 
     struct DescriptorInfo {
@@ -12,6 +13,7 @@ namespace Match {
         DescriptorInfo(uint32_t binding, DescriptorType type, uint32_t count, uint32_t size) : binding(binding), type(type), count(count), spec_data({.size = size}) {}
         DescriptorInfo(uint32_t binding, DescriptorType type, const VkSampler *immutable_samplers) : binding(binding), type(type), count(1), spec_data({.immutable_samplers = immutable_samplers}) {}
         DescriptorInfo(uint32_t binding, DescriptorType type, uint32_t size) : binding(binding), type(type), count(1), spec_data({.size = size}) {}
+        DescriptorInfo(uint32_t binding, DescriptorType type) : binding(binding), type(type), count(1), spec_data({.immutable_samplers = nullptr}) {}
         uint32_t binding;
         DescriptorType type;
         uint32_t count;
@@ -34,6 +36,5 @@ namespace Match {
     INNER_VISIBLE:
         VkShaderModule module;
         std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
-        std::map<binding, uint32_t> uniform_sizes;
     };
 }

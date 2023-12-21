@@ -9,7 +9,6 @@ namespace Match {
     public:
         Device();
         std::vector<std::string> enumerate_devices() const;
-        VkFormat get_supported_depth_format() const;
         ~Device();
     private:
         bool check_device_suitable(VkPhysicalDevice device);

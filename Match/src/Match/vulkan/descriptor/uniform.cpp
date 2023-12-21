@@ -2,7 +2,7 @@
 #include <Match/core/setting.hpp>
 
 namespace Match {
-    UniformBuffer::UniformBuffer(uint32_t size) {
+    UniformBuffer::UniformBuffer(uint32_t size) : size(size) {
         for (uint32_t i = 0; i < setting.max_in_flight_frame; i ++) {
             buffers.emplace_back(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO_PREFER_HOST, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
             buffers.back().map();

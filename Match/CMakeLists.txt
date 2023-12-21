@@ -11,6 +11,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 file(GLOB_RECURSE source CONFIGURE_DEPENDS src/Match/*.cpp)
 add_library(Match SHARED ${source})
 
+# Link stb
+target_include_directories(Match PRIVATE ../${stb_DIR})
+
 # Link spdlog
 target_link_libraries(Match PUBLIC spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 target_include_directories(Match PUBLIC include)
