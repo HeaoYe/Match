@@ -2,6 +2,7 @@
 #include <Match/vulkan/resource/vertex_attribute_set.hpp>
 #include <Match/vulkan/resource/buffer.hpp>
 #include <Match/vulkan/resource/shader_program.hpp>
+#include <Match/vulkan/resource/sampler.hpp>
 
 namespace Match {
     #define _case(D, T, e) case T::e: return D;
@@ -163,6 +164,45 @@ namespace Match {
     VkDescriptorType transform<VkDescriptorType>(DescriptorType type) {
         switch (type) {
         _case(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, DescriptorType, eUniform)
+        _case(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, DescriptorType, eTexture)
+        }
+    }
+
+    template <>
+    VkFilter transform<VkFilter>(SamplerFilter filter) {
+        switch (filter) {
+        _case(VK_FILTER_LINEAR, SamplerFilter, eLinear)
+        _case(VK_FILTER_NEAREST, SamplerFilter, eNearest)
+        }
+    }
+
+    template <>
+    VkSamplerMipmapMode transform<VkSamplerMipmapMode>(SamplerFilter filter) {
+        switch (filter) {
+        _case(VK_SAMPLER_MIPMAP_MODE_LINEAR, SamplerFilter, eLinear)
+        _case(VK_SAMPLER_MIPMAP_MODE_NEAREST, SamplerFilter, eNearest)
+        }
+    }
+
+    template <>
+    VkSamplerAddressMode transform<VkSamplerAddressMode>(SamplerAddressMode mode) {
+        switch (mode) {
+        _case(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, SamplerAddressMode, eClampToBorder)
+        _case(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, SamplerAddressMode, eClampToEdge)
+        _case(VK_SAMPLER_ADDRESS_MODE_REPEAT, SamplerAddressMode, eRepeat)
+        _case(VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT, SamplerAddressMode, eMirroredRepeat)
+        }
+    }
+
+    template <>
+    VkBorderColor transform<VkBorderColor>(SamplerBorderColor color) {
+        switch (color) {
+        _case(VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK, SamplerBorderColor, eFloatOpaqueBlack)
+        _case(VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE, SamplerBorderColor, eFloatOpaqueWhite)
+        _case(VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK, SamplerBorderColor, eFloatTransparentBlack)
+        _case(VK_BORDER_COLOR_INT_OPAQUE_BLACK, SamplerBorderColor, eIntOpaqueBlack)
+        _case(VK_BORDER_COLOR_INT_OPAQUE_WHITE, SamplerBorderColor, eIntOpaqueWhite)
+        _case(VK_BORDER_COLOR_INT_TRANSPARENT_BLACK, SamplerBorderColor, eIntTransparentBlack)
         }
     }
 }

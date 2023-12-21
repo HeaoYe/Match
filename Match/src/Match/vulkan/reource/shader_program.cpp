@@ -30,7 +30,7 @@ namespace Match {
         fragment_shader_entry = entry;
     }
 
-    void ShaderProgram::compile(ShaderProgramCompileOptions options) {
+    void ShaderProgram::compile(const ShaderProgramCompileOptions &options) {
         std::vector<VkPipelineShaderStageCreateInfo> stages = {
             create_pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader->module, vertex_shader_entry),
             create_pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader->module, fragment_shader_entry),
@@ -148,43 +148,69 @@ namespace Match {
         vk_check(vkCreateGraphicsPipelines(manager->device->device, nullptr, 1, &create_info, manager->allocator, &pipeline));
 
         descriptor_sets = manager->descriptor_pool->allocate_descriptor_set(descriptor_set_layout);
+    }
 
+    void ShaderProgram::bind_uniforms(binding binding, const std::vector<std::shared_ptr<UniformBuffer>> &uniform_buffers) {
         for (const auto &shader : { vertex_shader, fragment_shader }) {
             for (const auto &layout_binding : shader->layout_bindings) {
-                switch (layout_binding.descriptorType) {
-                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
-                    uint32_t size = shader->uniform_sizes.at(layout_binding.binding);
-                    auto uniform_buffer = std::make_shared<UniformBuffer>(size * layout_binding.descriptorCount);
+                if (layout_binding.binding == binding) {
+                    if (layout_binding.descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+                        MCH_ERROR("Binding {} is not a uniform descriptor", binding)
+                        return;
+                    }
                     for (size_t i = 0; i < setting.max_in_flight_frame; i++) {
-                        VkDescriptorBufferInfo buffer_info {};
-                        buffer_info.buffer = uniform_buffer->buffers[i].buffer;
-                        buffer_info.offset = 0;
-                        buffer_info.range = size;
+                        std::vector<VkDescriptorBufferInfo> buffer_infos(layout_binding.descriptorCount);
+                        for (uint32_t i = 0; i < layout_binding.descriptorCount; i ++) {
+                            buffer_infos[i].buffer = uniform_buffers[i]->buffers[i].buffer;
+                            buffer_infos[i].offset = 0;
+                            buffer_infos[i].range = uniform_buffers[i]->size;
+                        }
                         VkWriteDescriptorSet descriptor_write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
                         descriptor_write.dstSet = descriptor_sets[i];
                         descriptor_write.dstBinding = layout_binding.binding;
                         descriptor_write.dstArrayElement = 0;
                         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                         descriptor_write.descriptorCount = layout_binding.descriptorCount;
-                        descriptor_write.pBufferInfo = &buffer_info;
+                        descriptor_write.pBufferInfo = buffer_infos.data();
                         vkUpdateDescriptorSets(manager->device->device, 1, &descriptor_write, 0, nullptr);
                     }
-                    descriptors.insert(std::make_pair(layout_binding.binding, std::move(std::reinterpret_pointer_cast<Descriptor>(uniform_buffer))));
-                    break;
-                }
-                default:
-                    MCH_ERROR("Unsupported descriptor")
+                    return;
                 }
             }
         }
     }
 
-    std::shared_ptr<Descriptor> ShaderProgram::get_descriptor(binding binding) {
-        return descriptors.at(binding);
+    void ShaderProgram::bind_textures(binding binding, const std::vector<std::shared_ptr<Texture>> &textures, const std::vector<std::shared_ptr<Sampler>> &samplers) {
+        for (const auto &shader : { vertex_shader, fragment_shader }) {
+            for (const auto &layout_binding : shader->layout_bindings) {
+                if (layout_binding.binding == binding) {
+                    if (layout_binding.descriptorType != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                        MCH_ERROR("Binding {} is not a texture descriptor", binding)
+                        return;
+                    }
+                    for (size_t i = 0; i < setting.max_in_flight_frame; i++) {
+                        std::vector<VkDescriptorImageInfo> image_infos(layout_binding.descriptorCount);
+                        for (uint32_t i = 0; i < layout_binding.descriptorCount; i ++) {
+                            image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                            image_infos[i].imageView = textures[i]->image_view;
+                            image_infos[i].sampler = samplers[i]->sampler;
+                        }
+                        VkWriteDescriptorSet descriptor_write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+                        descriptor_write.dstSet = descriptor_sets[i];
+                        descriptor_write.dstBinding = layout_binding.binding;
+                        descriptor_write.dstArrayElement = 0;
+                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                        descriptor_write.descriptorCount = layout_binding.descriptorCount;
+                        descriptor_write.pImageInfo = image_infos.data();
+                        vkUpdateDescriptorSets(manager->device->device, 1, &descriptor_write, 0, nullptr);
+                    }
+                    return;
+                }
+            }
+        }
     }
 
     ShaderProgram::~ShaderProgram() {
-        descriptors.clear();
         descriptor_sets.clear();
         vkDestroyPipeline(manager->device->device, pipeline, manager->allocator);
         vkDestroyDescriptorSetLayout(manager->device->device, descriptor_set_layout, manager->allocator);

@@ -1,4 +1,5 @@
 #include <Match/vulkan/renderpass.hpp>
+#include <Match/vulkan/utils.hpp>
 #include <Match/constant.hpp>
 #include "inner.hpp"
 
@@ -109,7 +110,7 @@ namespace Match {
             break;
         case AttchmentType::eDepth:
             attachment.samples = runtime_setting->get_multisample_count();
-            attachment.format = manager->device->get_supported_depth_format();
+            attachment.format = get_supported_depth_format();
             attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             break;
         }

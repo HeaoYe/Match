@@ -47,4 +47,16 @@ namespace Match {
     std::shared_ptr<IndexBuffer> ResourceFactory::create_index_buffer(IndexType type, uint32_t count) {
         return std::make_shared<IndexBuffer>(type, count);
     }
+
+    std::shared_ptr<Sampler> ResourceFactory::create_sampler(const SamplerOptions &options) {
+        return std::make_shared<Sampler>(options);
+    }
+
+    std::shared_ptr<UniformBuffer> ResourceFactory::create_uniform_buffer(uint32_t size) {
+        return std::make_shared<UniformBuffer>(size);
+    }
+
+    std::shared_ptr<Texture> ResourceFactory::create_texture(const std::string &filename) {
+        return std::make_shared<Texture>(root + "/textures/" + filename);
+    }
 }

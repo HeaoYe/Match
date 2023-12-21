@@ -54,7 +54,7 @@ int main() {
     context.build_render_pass();
 
     {
-        // 初始化资源工厂，会在${root}/shaders文件夹下寻找Shader文件
+        // 初始化资源工厂，会在${root}/shaders文件夹下寻找Shader文件，，会在${root}/textures文件夹下寻找图片文件
         auto factory = context.create_resource_factory("./resource");
         // 加载已编译的Shader文件
         // auto vert_shader = factory->load_shader("vert.spv");
@@ -67,12 +67,14 @@ int main() {
         struct Vertex {
             glm::vec2 pos;
             glm::vec3 color;
+            glm::vec2 uv;
         };
         // 顶点数据
         const std::vector<Vertex> vertices = {
-            { { 0.0f, 0.5f }, { 0.5f, 0.2f, 0.2f } },
-            { { 0.5f, -0.5f }, { 0.2f, 0.5f, 0.2f } },
-            { { -0.5f, -0.5f }, { 0.2f, 0.2f, 0.5f } }
+            { { 0.5f, 0.5f }, { 0.5f, 0.2f, 0.2f }, { 1.0f, 1.0f } },
+            { { 0.5f, -0.5f }, { 0.2f, 0.5f, 0.2f }, { 1.0f, 0.0f } },
+            { { -0.5f, 0.5f }, { 0.2f, 0.5f, 0.2f }, { 0.0f, 1.0f } },
+            { { -0.5f, -0.5f }, { 0.2f, 0.2f, 0.5f }, { 0.0f, 0.0f } },
         };
         // 每个实例的offset
         // 渲染顺序与offsets的顺序有关
@@ -83,7 +85,7 @@ int main() {
             { -0.5, -0.5 }, // 第三象限  // 覆盖第四象限
         };
         const std::vector<uint16_t> indices = {
-            0, 1, 2
+            0, 1, 2, 1, 2, 3  // 绘制正方形
         };
         struct PosScaler {
             float x_pos_scale;
@@ -100,8 +102,8 @@ int main() {
             {
                 .binding = 0,
                 .rate = Match::InputRate::ePerVertex,  // 数据输入速率（每个顶点输入一份）
-                //                  pos是两个float                      color是三个float
-                .attributes = { Match::VertexType::eFloat2, Match::VertexType::eFloat3 }
+                //                  pos是两个float                      color是三个float              uv是两个float
+                .attributes = { Match::VertexType::eFloat2, Match::VertexType::eFloat3, Match::VertexType::eFloat2 }
             },
             {
                 .binding = 1,
@@ -111,11 +113,15 @@ int main() {
         });
 
         // 资源描述符的绑定由Shader完成，因为资源描述符与Shader文件有关，与ShaderProgram无关
-        // 为shader添加资源描述符
+        // 为vertex shader添加Uniform描述符
         vert_shader->bind_descriptors({
             // { binding, descriptor type, sizeof uniform }
             { 0, Match::DescriptorType::eUniform, sizeof(PosScaler) },
             { 1, Match::DescriptorType::eUniform, sizeof(ColorScaler) },
+        });
+        // 为fragment shader添加Texture描述符
+        frag_shader->bind_descriptors({
+            { 2, Match::DescriptorType::eTexture }
         });
         
         auto shader_program = factory->create_shader_program("MainSubpass");
@@ -141,17 +147,32 @@ int main() {
         memcpy(vertex_ptr_1, offsets.data(), sizeof(glm::vec2) * offsets.size());
         // 将内存数据刷新到显存中
         memcpy(index_ptr, indices.data(), indices.size() * 2);
-        // unmap时会自动flush一次
-        // vert_buffer->flush();
-        // index_buffer->flush();
+        // unmap时改为不自动flush，减少性能损耗
+        vert_buffer_0->flush();
+        vert_buffer_1->flush();
+        index_buffer->flush();
         // 记得unmap顶点缓存（不unmap也行，buffer在析构时会自动unmap）
         vert_buffer_0->unmap();
         vert_buffer_1->unmap();
         index_buffer->unmap();
 
-        // 获取两个uniform对应的buffer
-        auto pos_uniform = std::reinterpret_pointer_cast<Match::UniformBuffer>(shader_program->get_descriptor(0));
-        auto color_uniform = std::reinterpret_pointer_cast<Match::UniformBuffer>(shader_program->get_descriptor(1));
+
+        // 不再可以自动获取资源描述符对应的资源
+        // 需要手动创建资源并绑定到对应的描述符上
+        auto pos_uniform = factory->create_uniform_buffer(sizeof(PosScaler));
+        auto color_uniform = factory->create_uniform_buffer(sizeof(ColorScaler));
+
+        // 创建采样器（可配置采样器选项）
+        auto sampler = factory->create_sampler({
+            .min_filter = Match::SamplerFilter::eNearest
+        });
+        // 创建纹理，
+        auto texture = factory->create_texture("moon.jpg");
+
+        // 将创建的资源绑定到对应的binding
+        shader_program->bind_uniforms(0, { pos_uniform });
+        shader_program->bind_uniforms(1, { color_uniform });
+        shader_program->bind_textures(2, { texture }, { sampler });
 
         Match::Renderer renderer;
 
@@ -173,7 +194,8 @@ int main() {
             // 将scale范围从[-1, 1]变换到[0.5, 1.5]
             pos_scaler->x_pos_scale = (scale + 2) / 2;
             // 将scale范围从[-1, 1]变换到[0.3, 1.0]
-            pos_scaler->y_pos_scale = (scale + 2) / 3;
+            // pos_scaler->y_pos_scale = (scale + 2) / 3;
+            pos_scaler->y_pos_scale = pos_scaler->x_pos_scale;
             // 将scale范围从[-1, 1]变换到[0.6, 1.3]
             color_scaler->color_scale = (scale + 3) / 3;
 
@@ -191,7 +213,7 @@ int main() {
             // renderer.draw(vertices.size(), 1, 0, 0);
             // IndexDrawCall
             // 实例渲染, 共渲染4个实例
-            renderer.draw_indexed(3, 4, 0, 0, 0);
+            renderer.draw_indexed(6, 4, 0, 0, 0);
             renderer.end_render();
         }
     } // 离开作用域后所有创建的资源会被销毁

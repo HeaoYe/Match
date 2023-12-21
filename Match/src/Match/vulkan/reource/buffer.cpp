@@ -68,7 +68,6 @@ namespace Match {
     }
 
     void TwoStageBuffer::unmap() {
-        flush();
         staging->unmap();
     }
 
