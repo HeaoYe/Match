@@ -53,6 +53,11 @@ namespace Match {
         render_pass_builder.reset();
     }
 
+    void Renderer::set_clear_value(const std::string &name, const VkClearValue &value) {
+        uint32_t index = render_pass_builder->attachments_map.at(name);
+        render_pass_builder->clear_values[index] = value;
+    }
+
     void Renderer::begin_render() {
         vkWaitForFences(manager->device->device, 1, &in_flight_fences[current_in_flight], VK_TRUE, UINT64_MAX);
         auto result = vkAcquireNextImageKHR(manager->device->device, manager->swapchain->swapchain, UINT64_MAX, image_available_semaphores[current_in_flight], VK_NULL_HANDLE, &index);
@@ -72,11 +77,8 @@ namespace Match {
         render_pass_begin_info.framebuffer = framebuffer_set->framebuffers[index]->framebuffer;
         render_pass_begin_info.renderArea.offset = { 0, 0 };
         render_pass_begin_info.renderArea.extent = { runtime_setting->get_window_size().width, runtime_setting->get_window_size().height };
-        VkClearValue clear_color {
-            .color = { .float32 = { 0.0f, 0.0f, 0.0f, 1.0f } },
-        };
-        render_pass_begin_info.clearValueCount = 1;
-        render_pass_begin_info.pClearValues = &clear_color;
+        render_pass_begin_info.clearValueCount = render_pass_builder->clear_values.size();
+        render_pass_begin_info.pClearValues = render_pass_builder->clear_values.data();
         vkCmdBeginRenderPass(current_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     }
 

@@ -12,8 +12,8 @@ namespace Match {
     class RenderPassBuilder;
 
     struct AccessInfo {
-        VkPipelineStageFlagBits stage;
-        VkAccessFlagBits access;
+        VkPipelineStageFlags stage;
+        VkAccessFlags access;
     };
 
     class SubpassBuilder {
@@ -32,7 +32,7 @@ namespace Match {
 
         void set_output_attachment_color_blend(const std::string &name, VkPipelineColorBlendAttachmentState state);
         
-        void wait_for(const std::string &name, AccessInfo self, AccessInfo other);
+        void wait_for(const std::string &name, const AccessInfo &self, const AccessInfo &other);
         
         VkSubpassDescription build() const;
     private:
@@ -54,13 +54,15 @@ namespace Match {
         default_no_copy_move_construction(RenderPassBuilder)
     public:
         void add_attachment(const std::string &name, AttchmentType type);
-        void add_custom_attachment(const std::string &name, VkAttachmentDescription desc);
+        void add_custom_attachment(const std::string &name, const VkAttachmentDescription &desc, VkImageUsageFlags usage, VkImageAspectFlags aspect, VkClearValue clear_value = { .color = { .float32 = { 0.0f, 0.0f, 0.0f, 0.0f } } });
         void set_final_present_attachment(const std::string &name);
         SubpassBuilder &create_subpass(const std::string &name);
         VkRenderPassCreateInfo build();
     INNER_VISIBLE:
         std::vector<VkSubpassDescription> subpasses;
         std::vector<VkAttachmentDescription> attachments;
+        std::vector<std::pair<VkImageUsageFlags, VkImageAspectFlags>> attachment_infos;
+        std::vector<VkClearValue> clear_values;
         std::map<std::string, uint32_t> attachments_map;
         std::vector<SubpassBuilder> subpass_builders;
         std::map<std::string, uint32_t> subpasses_map;

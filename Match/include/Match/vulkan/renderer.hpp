@@ -12,6 +12,7 @@ namespace Match {
     public:
         Renderer(std::shared_ptr<RenderPassBuilder> builder);
         ~Renderer();
+        void set_clear_value(const std::string &name, const VkClearValue &value);
         void begin_render();
         void end_render();
         void bind_shader_program(std::shared_ptr<ShaderProgram> shader_program);

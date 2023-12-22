@@ -13,7 +13,7 @@ namespace Match {
         VkPipelineStageFlags stage;
     };
 
-    void transition_image_layout(VkImage image, VkFormat format, const TransitionInfo &src, const TransitionInfo &dst);
+    void transition_image_layout(VkImage image, VkImageAspectFlags aspect, const TransitionInfo &src, const TransitionInfo &dst);
 
     VkFormat get_supported_depth_format();
 

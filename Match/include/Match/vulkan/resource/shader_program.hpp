@@ -38,6 +38,9 @@ namespace Match {
         PolygonMode polygon_mode = PolygonMode::eFill;
         CullMode cull_mode = CullMode::eBack;
         FrontFace front_face = FrontFace::eCounterClockwise;
+        VkBool32 depth_test_enable = VK_FALSE;
+        VkBool32 depth_write_enable = VK_TRUE;
+        VkCompareOp depth_compere_op = VK_COMPARE_OP_LESS;
         std::vector<VkDynamicState> dynamic_states;
     };
 

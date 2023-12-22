@@ -87,9 +87,9 @@ namespace Match {
         multisample_state.sampleShadingEnable = VK_FALSE;
 
         VkPipelineDepthStencilStateCreateInfo depth_stencil_state { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
-        depth_stencil_state.depthTestEnable = VK_FALSE;
-        depth_stencil_state.depthWriteEnable = VK_FALSE;
-        depth_stencil_state.depthCompareOp = VK_COMPARE_OP_NEVER;
+        depth_stencil_state.depthTestEnable = options.depth_test_enable;
+        depth_stencil_state.depthWriteEnable = options.depth_write_enable;
+        depth_stencil_state.depthCompareOp = options.depth_compere_op;
         depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
         depth_stencil_state.stencilTestEnable = VK_FALSE;
 

@@ -19,15 +19,15 @@ namespace Match {
     public:
         void set_vsync(bool n);
         bool is_vsync() { return vsync; }
-        void resize(const WindowSize &size);
         const WindowSize &get_window_size() { return window_size; }
         void set_multisample_count(VkSampleCountFlagBits count);
         VkSampleCountFlagBits get_multisample_count() { return VK_SAMPLE_COUNT_1_BIT; }
-    private:
+    INNER_VISIBLE:
+        void resize(const WindowSize &size);
+    INNER_VISIBLE:
         bool vsync = true;
         WindowSize window_size;
         VkSampleCountFlagBits multisample_count = VK_SAMPLE_COUNT_1_BIT;
-    INNER_VISIBLE:
         uint32_t current_in_flight = 0;
     };
 

@@ -39,7 +39,7 @@ namespace Match {
         return VK_FORMAT_UNDEFINED;
     }
 
-    void transition_image_layout(VkImage image, VkFormat format, const TransitionInfo &src, const TransitionInfo &dst) {
+    void transition_image_layout(VkImage image, VkImageAspectFlags aspect, const TransitionInfo &src, const TransitionInfo &dst) {
         auto command_buffer = manager->command_pool->allocate_single_use();
         VkImageMemoryBarrier barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
         barrier.oldLayout = src.layout;
@@ -47,7 +47,7 @@ namespace Match {
         barrier.newLayout = dst.layout;
         barrier.dstAccessMask = dst.access;
         barrier.image = image;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.aspectMask = aspect;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;

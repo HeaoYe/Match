@@ -7,6 +7,7 @@ namespace Match {
     SubpassBuilder::SubpassBuilder(SubpassBuilder &&rhs) : builder(rhs.builder) {
         name = std::move(rhs.name);
         bind_point = rhs.bind_point;
+        rhs.bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
         input_attachments = std::move(rhs.input_attachments);
         output_attachments = std::move(rhs.output_attachments);
         resolve_attachments = std::move(rhs.resolve_attachments);
@@ -57,7 +58,7 @@ namespace Match {
         }
     }
 
-    void SubpassBuilder::wait_for(const std::string &name, AccessInfo self, AccessInfo other) {
+    void SubpassBuilder::wait_for(const std::string &name, const AccessInfo &self, const AccessInfo &other) {
         uint32_t src_subpass;
         if (name == EXTERNAL_SUBPASS) {
             src_subpass = VK_SUBPASS_EXTERNAL;
@@ -102,24 +103,38 @@ namespace Match {
             .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         };
+        VkImageUsageFlags usage;
+        VkImageAspectFlags aspect;
+        VkClearValue clear_value;
         switch (type) {
         case AttchmentType::eColor:
             attachment.samples = runtime_setting->get_multisample_count();
             attachment.format = manager->swapchain->format.format;
             attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+            clear_value = { .color = { .float32 = { 0.0f, 0.0f, 0.0f, 1.0f } } };
             break;
         case AttchmentType::eDepth:
             attachment.samples = runtime_setting->get_multisample_count();
             attachment.format = get_supported_depth_format();
             attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+            if (has_stencil_component(attachment.format)) {
+                aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+            }
+            clear_value = { .depthStencil = { 1.0f, 0 } };
             break;
         }
-        add_custom_attachment(name, attachment);
+        add_custom_attachment(name, attachment, usage, aspect, clear_value);
     }
 
-    void RenderPassBuilder::add_custom_attachment(const std::string &name, VkAttachmentDescription desc) {
+    void RenderPassBuilder::add_custom_attachment(const std::string &name, const VkAttachmentDescription &desc, VkImageUsageFlags usage, VkImageAspectFlags aspect, VkClearValue clear_value) {
         attachments_map.insert(std::make_pair(name, attachments.size()));
         attachments.push_back(std::move(desc));
+        attachment_infos.push_back(std::make_pair(usage, aspect));
+        clear_values.push_back(clear_value);
     }
 
     void RenderPassBuilder::set_final_present_attachment(const std::string &name) {
