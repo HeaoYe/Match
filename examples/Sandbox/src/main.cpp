@@ -1,30 +1,16 @@
 #include <Match/Match.hpp>
 #include <GLFW/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_X11
-#include <GLFW/glfw3native.h>
 #include <glm/glm.hpp>
 
 int main() {
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    auto window = glfwCreateWindow(800, 800, "window", nullptr, nullptr);
-    glfwSetWindowPos(window, 100, 50);
-
     // 配置Match
     Match::setting.debug_mode = true;
     Match::setting.device_name = Match::AUTO_SELECT_DEVICE;
     Match::setting.render_backend = Match::PlatformWindowSystem::eXlib;
     Match::setting.app_name = "App Name";
 
-    // 配置VulkanAPI初始化信息，用于生成VkSurfaceKHR
-    auto &api_info = Match::CreateAPIInfo();
-    // Match::setting.render_backend = Match::PlatformWindowSystem::eXlib;
-    // 上面选择了Xlib，这里就要给Vulkan Xlib的信息
-    api_info.xlib_display = glfwGetX11Display();
-    api_info.xlib_window = glfwGetX11Window(window);
-
     // 初始化Match
-    auto &context = Match::Initialize();
+    auto &context = Match::Initialize({});
     // 启用MSAA
     Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_8_BIT);
     // 禁用MSAA
@@ -196,7 +182,7 @@ int main() {
         // Vulkan支持的最大深度值在0到1之间，所以行不通
         // renderer->set_clear_value("Depth Buffer", { .depthStencil = { 5.0f, 0 } });
 
-        while (!glfwWindowShouldClose(window)) {
+        while (!glfwWindowShouldClose(Match::window->get_glfw_window())) {
             glfwPollEvents();
 
             // 动态变换的三角形
@@ -259,8 +245,5 @@ int main() {
 
     // 销毁Match
     Match::Destroy();
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
     return 0;
 }

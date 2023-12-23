@@ -1,32 +1,28 @@
 #include <Match/vulkan/manager.hpp>
+#include <Match/core/window.hpp>
 #include <Match/core/setting.hpp>
-#include <Match/vulkan/api_info.hpp>
 #include "inner.hpp"
 #include <sstream>
 
 #if defined (MATCH_WAYLAND)
+#define GLFW_EXPOSE_NATIVE_WAYLAND
 #include <vulkan/vulkan_wayland.h>
 #endif
 #if defined (MATCH_XCB)
 #include <vulkan/vulkan_xcb.h>
 #endif
 #if defined (MATCH_XLIB)
+#define GLFW_EXPOSE_NATIVE_X11
 #include <vulkan/vulkan_xlib.h>
 #endif
 #if defined (MATCH_WIN32)
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <vulkan/vulkan_win32.h>
 #endif
+#include <GLFW/glfw3native.h>
 
 namespace Match {
     std::unique_ptr<APIManager> APIManager::manager;
-    std::unique_ptr<APIInfo> APIManager::info;
-
-    APIInfo &APIManager::CreateAPIInfo() {
-        if (info.get() == nullptr) {
-            info = std::make_unique<APIInfo>();
-        }
-        return *info;
-    }
 
     APIManager &APIManager::GetInstance() {
         if (manager.get() == nullptr) {
@@ -70,12 +66,12 @@ namespace Match {
         return *command_pool;
     }
 
-    void APIManager::initialize() {
+    void APIManager::initialize(const APIInfo &info) {
         MCH_INFO("Initialize Vulkan API")
-        create_vk_surface();
+        create_vk_surface(info);
         device = std::make_unique<Device>();
         initialize_vma();
-        swapchain = std::make_unique<Swapchain>(*info);
+        swapchain = std::make_unique<Swapchain>();
         command_pool = std::make_unique<CommandPool>(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
         descriptor_pool = std::make_unique<DescriptorPool>();
     }
@@ -174,13 +170,13 @@ namespace Match {
         vk_assert(vkCreateInstance(&instance_create_info, allocator, &instance));
     }
 
-    void APIManager::create_vk_surface() {
+    void APIManager::create_vk_surface(const APIInfo &info) {
         switch (setting.render_backend) {
 #if defined (MATCH_WAYLAND)
         case PlatformWindowSystem::eWayland: {
             VkWaylandSurfaceCreateInfoKHR wayland_surface_create_info { VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR };
-            wayland_surface_create_info.surface = info->wayland_surface;
-            wayland_surface_create_info.display = info->wayland_display;
+            wayland_surface_create_info.surface = glfwGetWaylandWindow(window->window);
+            wayland_surface_create_info.display = glfwGetWaylandDisplay();
             vk_check(vkCreateWaylandSurfaceKHR(instance, &wayland_surface_create_info, allocator, &surface));
             break;
         }
@@ -188,8 +184,8 @@ namespace Match {
 #if defined (MATCH_XLIB)
         case PlatformWindowSystem::eXlib: {
             VkXlibSurfaceCreateInfoKHR xlib_surface_create_info { VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
-            xlib_surface_create_info.dpy = info->xlib_display;
-            xlib_surface_create_info.window = info->xlib_window;
+            xlib_surface_create_info.dpy = glfwGetX11Display();
+            xlib_surface_create_info.window = glfwGetX11Window(window->window);
             vk_check(vkCreateXlibSurfaceKHR(instance, &xlib_surface_create_info, allocator, &surface));
             break;
         }
@@ -197,8 +193,8 @@ namespace Match {
 #if defined (MATCH_XCB)
         case PlatformWindowSystem::eXcb: {
             VkXcbSurfaceCreateInfoKHR xcb_surface_create_info { VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR };
-            xcb_surface_create_info.connection = info->xcb_connection;
-            xcb_surface_create_info.window = info->xcb_window;
+            xcb_surface_create_info.connection = info.xcb_connection;
+            xcb_surface_create_info.window = info.xcb_window;
             vk_check(vkCreateXcbSurfaceKHR(instance, &xcb_surface_create_info, allocator, &surface));
             break;
         }
@@ -206,8 +202,8 @@ namespace Match {
 #if defined (MATCH_WIN32)
         case PlatformWindowSystem::eWin32: {
             VkWin32SurfaceCreateInfoKHR win32_surface_create_info { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
-            win32_surface_create_info.hinstance = info->win32_hinstance;
-            win32_surface_create_info.hwnd = info->win32_hwnd;
+            win32_surface_create_info.hinstance = info.win32_hinstance;
+            win32_surface_create_info.hwnd = glfwGetWin32Window(window->window);
             vk_check(vkCreateWin32SurfaceKHR(instance, &win32_surface_create_info, allocator, &surface));
             break;
         }
@@ -231,7 +227,7 @@ namespace Match {
     void APIManager::recreate_swapchin() {
         vkDeviceWaitIdle(device->device);
         swapchain.reset();
-        swapchain = std::make_unique<Swapchain>(*info);
+        swapchain = std::make_unique<Swapchain>();
     }
 
     void APIManager::destroy() {

@@ -10,6 +10,8 @@ namespace Match {
         uint32_t app_version = 1;
         std::string engine_name = "No Engine";
         uint32_t engine_version = 1;
+        uint32_t window_pos[2] = { 100, 50 };
+        uint32_t window_size[2] = { 800, 800 };
         PlatformWindowSystem render_backend = PlatformWindowSystem::eNone;
         uint32_t max_in_flight_frame = 2;
     };

@@ -14,7 +14,7 @@ namespace Match {
     class Swapchain {
         no_copy_move_construction(Swapchain)
     public:
-        Swapchain(APIInfo &info);
+        Swapchain();
         ~Swapchain();
     private:
         void query_swapchain_details(SwapchainDetails &details);
