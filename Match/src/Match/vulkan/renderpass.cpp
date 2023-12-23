@@ -4,17 +4,6 @@
 #include "inner.hpp"
 
 namespace Match {
-    SubpassBuilder::SubpassBuilder(SubpassBuilder &&rhs) : builder(rhs.builder) {
-        name = std::move(rhs.name);
-        bind_point = rhs.bind_point;
-        rhs.bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
-        input_attachments = std::move(rhs.input_attachments);
-        output_attachments = std::move(rhs.output_attachments);
-        resolve_attachments = std::move(rhs.resolve_attachments);
-        preserve_attachments = std::move(rhs.preserve_attachments);
-        depth_attachment = std::move(rhs.depth_attachment);
-    }
-
     VkAttachmentReference SubpassBuilder::create_reference(const std::string &name, VkImageLayout layout) {
         return { builder.attachments_map.at(name), layout };
     }
@@ -142,7 +131,8 @@ namespace Match {
 
     SubpassBuilder &RenderPassBuilder::add_subpass(const std::string &name) {
         subpasses_map.insert(std::make_pair(name, subpass_builders.size()));
-        return subpass_builders.emplace_back(name, *this);
+        subpass_builders.push_back(std::make_unique<SubpassBuilder>(name, *this));
+        return *subpass_builders.back();
     }
 
     VkRenderPassCreateInfo RenderPassBuilder::build() {
@@ -161,7 +151,7 @@ namespace Match {
         create_info.pAttachments = final_attachments.data();
         final_subpasses.clear();
         for (const auto &subpass_builder : subpass_builders) {
-            final_subpasses.push_back(std::move(subpass_builder.build()));
+            final_subpasses.push_back(std::move(subpass_builder->build()));
         }
         create_info.subpassCount = final_subpasses.size();
         create_info.pSubpasses = final_subpasses.data();

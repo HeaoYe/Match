@@ -4,6 +4,7 @@
 namespace Match {
     void RuntimeSetting::set_vsync(bool n) {
         MCH_INFO("Set V-SYNC {}", n)
+        vsync = n;
     }
 
     void RuntimeSetting::resize(const WindowSize &size) {

@@ -96,8 +96,8 @@ namespace Match {
 
         auto locked_renderer = renderer.lock();
         uint32_t subpass_idx = locked_renderer->render_pass_builder->subpasses_map.at(subpass_name);
-        auto &subpass = locked_renderer->render_pass_builder->subpass_builders[subpass_idx];
-        bind_point = locked_renderer->render_pass_builder->subpass_builders[subpass_idx].bind_point;
+        auto &subpass = *locked_renderer->render_pass_builder->subpass_builders[subpass_idx];
+        bind_point = subpass.bind_point;
 
         VkPipelineColorBlendStateCreateInfo color_blend_state { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
         color_blend_state.logicOpEnable = VK_FALSE;

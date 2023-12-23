@@ -41,6 +41,12 @@ namespace Match {
         framebuffer_set = std::make_unique<FrameBufferSet>(*this);
     }
 
+    void Renderer::update_renderpass() {
+        render_pass.reset();
+        render_pass = std::make_unique<RenderPass>(render_pass_builder);
+        update_resources();
+    }
+
     Renderer::~Renderer() {
         wait_for_destroy();
         for (uint32_t i = 0; i < setting.max_in_flight_frame; i ++) {
@@ -59,6 +65,7 @@ namespace Match {
     }
 
     void Renderer::begin_render() {
+        current_subpass = 0;
         vkWaitForFences(manager->device->device, 1, &in_flight_fences[current_in_flight], VK_TRUE, UINT64_MAX);
         auto result = vkAcquireNextImageKHR(manager->device->device, manager->swapchain->swapchain, UINT64_MAX, image_available_semaphores[current_in_flight], VK_NULL_HANDLE, &index);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -118,6 +125,14 @@ namespace Match {
         current_buffer = command_buffers[current_in_flight];
     }
 
+    void Renderer::begin_layer_render(const std::string &name) {
+        layers[layers_map.at(name)]->begin_render();
+    }
+
+    void Renderer::end_layer_render(const std::string &name) {
+        layers[layers_map.at(name)]->end_render();
+    }
+
     void Renderer::bind_shader_program(std::shared_ptr<ShaderProgram> shader_program) {
         vkCmdBindPipeline(current_buffer, shader_program->bind_point, shader_program->pipeline);
         if (!shader_program->descriptor_sets.empty()) {
@@ -165,6 +180,18 @@ namespace Match {
 
     void Renderer::draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance) {
         vkCmdDrawIndexed(current_buffer, index_count, instance_count, first_index, vertex_offset, first_instance);
+    }
+
+    void Renderer::next_subpass() {
+        vkCmdNextSubpass(current_buffer, VK_SUBPASS_CONTENTS_INLINE);
+        current_subpass += 1;
+    }
+
+    void Renderer::continue_subpass_to(const std::string &subpass_name) {
+        auto subpass_idx = render_pass_builder->subpasses_map.at(subpass_name);
+        while (current_subpass != subpass_idx) {
+            next_subpass();
+        }
     }
 
     void Renderer::draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {

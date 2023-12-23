@@ -69,10 +69,7 @@ namespace Match {
         std::vector<AttachmentDescription> attachments;
         std::map<std::string, uint32_t> attachments_map;
         uint32_t color_attachment_count = 0;
-        // std::map<uint32_t, std::pair<VkAttachmentDescription, uint32_t>> resolve_attachments;
-        // std::vector<std::pair<VkImageUsageFlags, VkImageAspectFlags>> attachment_infos;
-        // std::vector<VkClearValue> clear_values;
-        std::vector<SubpassBuilder> subpass_builders;
+        std::vector<std::unique_ptr<SubpassBuilder>> subpass_builders;
         std::map<std::string, uint32_t> subpasses_map;
 
         std::vector<VkSubpassDescription> final_subpasses;

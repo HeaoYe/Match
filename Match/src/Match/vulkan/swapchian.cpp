@@ -40,7 +40,7 @@ namespace Match {
         //     }
         // }
         VkPresentModeKHR expect_present_mode;
-        if (runtime_setting->is_vsync()) {
+        if (runtime_setting->vsync) {
             expect_present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
         } else {
             expect_present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;

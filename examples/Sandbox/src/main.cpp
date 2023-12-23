@@ -1,6 +1,7 @@
 #include <Match/Match.hpp>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <imgui.h>
 
 int main() {
     // 配置Match
@@ -12,7 +13,7 @@ int main() {
     // 初始化Match
     auto &context = Match::Initialize({});
     // 启用MSAA
-    Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_8_BIT);
+    Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_1_BIT);
     // 禁用MSAA
     // Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_1_BIT);
     // 显示全部设备名，可填写在Match::setting.device_name中
@@ -42,6 +43,10 @@ int main() {
         );
         // 将RenderPass与Renderer绑定
         auto renderer = context.create_renderer(builder);
+        // 为renderer添加ImGui渲染层
+        // 会在所有Subpass后添加一个渲染ImGui的Subpass
+        // 所以渲染ImGui的操作要放到其他渲染的后面
+        renderer->attach_render_layer<Match::ImGuiLayer>("ImGui");
 
         // 加载已编译的Shader文件
         // auto vert_shader = factory->load_shader("vert.spv");
@@ -237,6 +242,15 @@ int main() {
             // IndexDrawCall
             // 实例渲染, 共渲染4个实例
             renderer->draw_indexed(indices.size(), offsets.size(), 0, 0, 0);
+
+            // 进行ImGui的渲染，最后进行
+            renderer->begin_layer_render("ImGui");
+            static bool show = true;
+            if (show) {
+                ImGui::ShowDemoWindow(&show);
+            }
+            renderer->end_layer_render("ImGui");
+
             renderer->end_render();
         }
         // 等待GPU处理完所有数据，再销毁资源，否则会销毁GPU正在使用的资源导致报错

@@ -11,12 +11,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 file(GLOB_RECURSE source CONFIGURE_DEPENDS src/Match/*.cpp)
 add_library(Match SHARED ${source})
 
-# link glfw
-target_link_libraries(Match PUBLIC glfw)
-target_include_directories(Match PUBLIC "${GLFW_SOURCE_DIR}/deps")
-
 # Link imgui
-target_link_libraries(Match PUBLIC ImGUI)
+target_link_libraries(Match PUBLIC ImGui)
 
 # Link stb
 target_include_directories(Match PRIVATE ../${stb_DIR})
