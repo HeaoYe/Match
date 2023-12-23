@@ -23,12 +23,9 @@ namespace Match {
         SubpassBuilder(SubpassBuilder &&rhs);
         void bind(VkPipelineBindPoint bind_point);
         void attach_input_attachment(const std::string &name, VkImageLayout layout);
-
-        void attach_output_attachment(const std::string &name, VkImageLayout layout);
-        // void attach_resolve_attachment(const std::string &name, VkImageLayout layout);
-        
+        void attach_output_attachment(const std::string &name, VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         void attach_preserve_attachment(const std::string &name);
-        void attach_depth_attachment(const std::string &name, VkImageLayout layout);
+        void attach_depth_attachment(const std::string &name, VkImageLayout layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
         void set_output_attachment_color_blend(const std::string &name, VkPipelineColorBlendAttachmentState state);
         

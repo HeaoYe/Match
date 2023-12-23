@@ -8,6 +8,6 @@
 namespace Match {
     APIInfo CreateAPIInfo();
     std::vector<std::string> EnumerateDevices();
-    APIManager &Initialize(const APIInfo &info);
+    APIManager &Initialize(const APIInfo &info = {});
     void Destroy();
 }

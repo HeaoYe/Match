@@ -10,6 +10,14 @@ namespace Match {
         glfwSetWindowPos(window, setting.window_pos[0], setting.window_pos[1]);
     }
 
+    void Window::poll_events() const {
+        glfwPollEvents();
+    }
+
+    void Window::close() const {
+        glfwSetWindowShouldClose(window, true);
+    }
+
     Window::~Window() {
         glfwDestroyWindow(window);
     }

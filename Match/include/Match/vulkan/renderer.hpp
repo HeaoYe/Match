@@ -38,6 +38,7 @@ namespace Match {
         void begin_layer_render(const std::string &name);
         void end_layer_render(const std::string &name);
         void bind_shader_program(std::shared_ptr<ShaderProgram> shader_program);
+        void bind_vertex_buffer(const std::shared_ptr<VertexBuffer> &vertex_buffer);
         void bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers);
         void bind_index_buffer(std::shared_ptr<IndexBuffer> index_buffer);
         void set_viewport(float x, float y, float width, float height);

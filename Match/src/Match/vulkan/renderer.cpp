@@ -140,6 +140,11 @@ namespace Match {
         }
     }
 
+    void Renderer::bind_vertex_buffer(const std::shared_ptr<VertexBuffer> &vertex_buffer) {
+        VkDeviceSize size = 0;
+        vkCmdBindVertexBuffers(current_buffer, 0, 1, &vertex_buffer->buffer->buffer, &size);
+    }
+
     void Renderer::bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers) {
         std::vector<VkBuffer> buffers(vertex_buffers.size());
         std::vector<VkDeviceSize> sizes(vertex_buffers.size());

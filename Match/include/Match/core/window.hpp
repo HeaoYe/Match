@@ -9,6 +9,9 @@ namespace Match {
     public:
         Window();
         GLFWwindow *get_glfw_window() const { return window; }
+        bool is_alive() const { return !glfwWindowShouldClose(window); }
+        void poll_events() const;
+        void close() const;
         ~Window();
     INNER_VISIBLE:
         GLFWwindow *window;
