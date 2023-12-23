@@ -28,6 +28,11 @@ namespace Match {
             layers_map.insert(std::make_pair(name, layers.size()));
             layers.push_back(std::make_unique<LayerType>(*this));
         }
+        template<class LayerType, typename... Args>
+        void attach_render_layer(const std::string &name, Args &&... args) {
+            layers_map.insert(std::make_pair(name, layers.size()));
+            layers.push_back(std::make_unique<LayerType>(*this, std::forward<Args>(args)...));
+        }
         void begin_render();
         void end_render();
         void begin_layer_render(const std::string &name);

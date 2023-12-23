@@ -14,6 +14,9 @@ namespace Match {
         uint32_t window_size[2] = { 800, 800 };
         PlatformWindowSystem render_backend = PlatformWindowSystem::eNone;
         uint32_t max_in_flight_frame = 2;
+        std::string default_font_filename = "";
+        std::string chinese_font_filename = "";
+        float font_size = 13.0f;
     };
 
     class RuntimeSetting {

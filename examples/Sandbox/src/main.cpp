@@ -9,6 +9,9 @@ int main() {
     Match::setting.device_name = Match::AUTO_SELECT_DEVICE;
     Match::setting.render_backend = Match::PlatformWindowSystem::eXlib;
     Match::setting.app_name = "App Name";
+    Match::setting.default_font_filename = "/usr/share/fonts/TTF/JetBrainsMonoNerdFontMono-Light.ttf";
+    Match::setting.chinese_font_filename = "/usr/share/fonts/adobe-source-han-sans/SourceHanSansCN-Medium.otf";
+    Match::setting.font_size = 26.0f;
 
     // 初始化Match
     auto &context = Match::Initialize({});
@@ -47,6 +50,11 @@ int main() {
         // 会在所有Subpass后添加一个渲染ImGui的Subpass
         // 所以渲染ImGui的操作要放到其他渲染的后面
         renderer->attach_render_layer<Match::ImGuiLayer>("ImGui");
+
+        // 配置ImGui
+        ImGui::StyleColorsDark();
+        // auto &style = ImGui::GetStyle();
+        // style.FramePadding = { 10, 50 };
 
         // 加载已编译的Shader文件
         // auto vert_shader = factory->load_shader("vert.spv");
@@ -198,7 +206,7 @@ int main() {
             // 时间差
             auto time = std::chrono::duration<float, std::chrono::seconds::period>(current_time-start_time).count();
 
-            // 程序启动5秒后关闭垂直同步
+            // 程序启动5秒后关闭垂直同步，关闭后帧率涨到3000FPS
             static bool flag = true;
             if (time > 5 && flag) {
                 flag = false;
@@ -249,6 +257,7 @@ int main() {
             if (show) {
                 ImGui::ShowDemoWindow(&show);
             }
+            ImGui::Text("测试中文字体");
             renderer->end_layer_render("ImGui");
 
             renderer->end_render();
