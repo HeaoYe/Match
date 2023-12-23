@@ -4,7 +4,7 @@
 #include "inner.hpp"
 
 namespace Match {
-    Swapchain::Swapchain(APIInfo &info) {
+    Swapchain::Swapchain() {
         SwapchainDetails details;
         query_swapchain_details(details);
 
@@ -15,13 +15,14 @@ namespace Match {
         format = details.formats[0];
         present_mode = details.present_modes[0];
 
-        VkSurfaceFormatKHR expect_format = info.expect_format;
-        if (expect_format.format == VK_FORMAT_MAX_ENUM) {
-            expect_format.format = VK_FORMAT_B8G8R8A8_UNORM;
-        }
-        if (expect_format.colorSpace == VK_COLOR_SPACE_MAX_ENUM_KHR) {
-            expect_format.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-        }
+        // VkSurfaceFormatKHR expect_format = info.expect_format;
+        // if (expect_format.format == VK_FORMAT_MAX_ENUM) {
+        //     expect_format.format = VK_FORMAT_B8G8R8A8_UNORM;
+        // }
+        // if (expect_format.colorSpace == VK_COLOR_SPACE_MAX_ENUM_KHR) {
+        //     expect_format.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+        // }
+        VkSurfaceFormatKHR expect_format { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
         for (const auto &format : details.formats) {
             if (format.format == expect_format.format && format.colorSpace == expect_format.colorSpace) {
                 MCH_DEBUG("Found expected surface format")
@@ -30,13 +31,19 @@ namespace Match {
             }
         }
 
-        VkPresentModeKHR expect_present_mode = info.expect_present_mode;
-        if (expect_present_mode == VK_PRESENT_MODE_MAX_ENUM_KHR) {
-            if (runtime_setting->is_vsync()) {
-                expect_present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
-            } else {
-                expect_present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-            }
+        // // VkPresentModeKHR expect_present_mode = info.expect_present_mode;
+        // if (expect_present_mode == VK_PRESENT_MODE_MAX_ENUM_KHR) {
+        //     if (runtime_setting->is_vsync()) {
+        //         expect_present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+        //     } else {
+        //         expect_present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+        //     }
+        // }
+        VkPresentModeKHR expect_present_mode;
+        if (runtime_setting->vsync) {
+            expect_present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+        } else {
+            expect_present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
         }
 
         for (auto present_mode : details.present_modes) {

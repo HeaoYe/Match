@@ -11,6 +11,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 file(GLOB_RECURSE source CONFIGURE_DEPENDS src/Match/*.cpp)
 add_library(Match SHARED ${source})
 
+# Link imgui
+target_link_libraries(Match PUBLIC ImGui)
+
 # Link stb
 target_include_directories(Match PRIVATE ../${stb_DIR})
 

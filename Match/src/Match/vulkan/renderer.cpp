@@ -2,7 +2,10 @@
 #include "inner.hpp"
 
 namespace Match {
-    Renderer::Renderer() : current_in_flight(0) {
+    Renderer::Renderer(std::shared_ptr<RenderPassBuilder> builder) : render_pass_builder(builder), resized(false), current_in_flight(0) {
+        render_pass = std::make_unique<RenderPass>(builder);
+        framebuffer_set = std::make_unique<FrameBufferSet>(*this);
+
         command_buffers.resize(setting.max_in_flight_frame);
         image_available_semaphores.resize(setting.max_in_flight_frame);
         render_finished_semaphores.resize(setting.max_in_flight_frame);
@@ -23,20 +26,50 @@ namespace Match {
         }
     }
 
-    Renderer::~Renderer() {
+
+    void Renderer::set_resize_flag() {
+        resized = true;
+    }
+
+    void Renderer::wait_for_destroy() {
         vkDeviceWaitIdle(manager->device->device);
+    }
+
+    void Renderer::update_resources() {
+        manager->recreate_swapchin();
+        framebuffer_set.reset();
+        framebuffer_set = std::make_unique<FrameBufferSet>(*this);
+    }
+
+    void Renderer::update_renderpass() {
+        render_pass.reset();
+        render_pass = std::make_unique<RenderPass>(render_pass_builder);
+        update_resources();
+    }
+
+    Renderer::~Renderer() {
+        wait_for_destroy();
         for (uint32_t i = 0; i < setting.max_in_flight_frame; i ++) {
             vkDestroySemaphore(manager->device->device, image_available_semaphores[i], manager->allocator);
             vkDestroySemaphore(manager->device->device, render_finished_semaphores[i], manager->allocator);
             vkDestroyFence(manager->device->device, in_flight_fences[i], manager->allocator);
         }
+        framebuffer_set.reset();
+        render_pass.reset();
+        render_pass_builder.reset();
+    }
+
+    void Renderer::set_clear_value(const std::string &name, const VkClearValue &value) {
+        uint32_t index = render_pass_builder->attachments_map.at(name);
+        render_pass_builder->attachments[index].clear_value = value;
     }
 
     void Renderer::begin_render() {
+        current_subpass = 0;
         vkWaitForFences(manager->device->device, 1, &in_flight_fences[current_in_flight], VK_TRUE, UINT64_MAX);
         auto result = vkAcquireNextImageKHR(manager->device->device, manager->swapchain->swapchain, UINT64_MAX, image_available_semaphores[current_in_flight], VK_NULL_HANDLE, &index);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            manager->recreate_swapchin();
+            update_resources();
             return;
         }
         vkResetFences(manager->device->device, 1, &in_flight_fences[current_in_flight]);
@@ -47,15 +80,17 @@ namespace Match {
         vk_check(vkBeginCommandBuffer(current_buffer, &begin_info));
 
         VkRenderPassBeginInfo render_pass_begin_info { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-        render_pass_begin_info.renderPass = manager->render_pass->render_pass;
-        render_pass_begin_info.framebuffer = manager->framebuffer_set->framebuffers[index]->framebuffer;
+        render_pass_begin_info.renderPass = render_pass->render_pass;
+        render_pass_begin_info.framebuffer = framebuffer_set->framebuffers[index]->framebuffer;
         render_pass_begin_info.renderArea.offset = { 0, 0 };
         render_pass_begin_info.renderArea.extent = { runtime_setting->get_window_size().width, runtime_setting->get_window_size().height };
-        VkClearValue clear_color {
-            .color = { .float32 = { 0.0f, 0.0f, 0.0f, 1.0f } },
-        };
-        render_pass_begin_info.clearValueCount = 1;
-        render_pass_begin_info.pClearValues = &clear_color;
+        std::vector<VkClearValue> clear_values;
+        clear_values.reserve(render_pass_builder->attachments.size());
+        for (const auto &attachment_description : render_pass_builder->attachments) {
+            clear_values.push_back(attachment_description.clear_value);
+        }
+        render_pass_begin_info.clearValueCount = clear_values.size();
+        render_pass_begin_info.pClearValues = clear_values.data();
         vkCmdBeginRenderPass(current_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     }
 
@@ -82,12 +117,20 @@ namespace Match {
         present_info.pImageIndices = &index;
         present_info.pResults = nullptr;
         auto result = vkQueuePresentKHR(manager->device->present_queue, &present_info);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-            manager->recreate_swapchin();
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized) {
+            update_resources();
         }
         current_in_flight = (current_in_flight + 1) % setting.max_in_flight_frame;
         runtime_setting->current_in_flight = current_in_flight;
         current_buffer = command_buffers[current_in_flight];
+    }
+
+    void Renderer::begin_layer_render(const std::string &name) {
+        layers[layers_map.at(name)]->begin_render();
+    }
+
+    void Renderer::end_layer_render(const std::string &name) {
+        layers[layers_map.at(name)]->end_render();
     }
 
     void Renderer::bind_shader_program(std::shared_ptr<ShaderProgram> shader_program) {
@@ -95,6 +138,11 @@ namespace Match {
         if (!shader_program->descriptor_sets.empty()) {
             vkCmdBindDescriptorSets(current_buffer, shader_program->bind_point, shader_program->layout, 0, 1, &shader_program->descriptor_sets[current_in_flight], 0, nullptr);
         }
+    }
+
+    void Renderer::bind_vertex_buffer(const std::shared_ptr<VertexBuffer> &vertex_buffer) {
+        VkDeviceSize size = 0;
+        vkCmdBindVertexBuffers(current_buffer, 0, 1, &vertex_buffer->buffer->buffer, &size);
     }
 
     void Renderer::bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers) {
@@ -111,8 +159,44 @@ namespace Match {
         vkCmdBindIndexBuffer(current_buffer, index_buffer->buffer->buffer, 0, index_buffer->type);
     }
 
+    void Renderer::set_viewport(float x, float y, float width, float height) {
+        set_viewport(x, y, width, height, 0.0f, 1.0f);
+    }
+
+    void Renderer::set_viewport(float x, float y, float width, float height, float min_depth, float max_depth) {
+        VkViewport viewport {
+            .x = x,
+            .y = y,
+            .width = width,
+            .height = height,
+            .minDepth = min_depth,
+            .maxDepth = max_depth,
+        };
+        vkCmdSetViewport(current_buffer, 0, 1, &viewport);
+    }
+
+    void Renderer::set_scissor(int x, int y, uint32_t width, uint32_t height) {
+        VkRect2D scissor {
+            .offset = { x, y },
+            .extent = { width, height }
+        };
+        vkCmdSetScissor(current_buffer, 0, 1, &scissor);
+    }
+
     void Renderer::draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance) {
         vkCmdDrawIndexed(current_buffer, index_count, instance_count, first_index, vertex_offset, first_instance);
+    }
+
+    void Renderer::next_subpass() {
+        vkCmdNextSubpass(current_buffer, VK_SUBPASS_CONTENTS_INLINE);
+        current_subpass += 1;
+    }
+
+    void Renderer::continue_subpass_to(const std::string &subpass_name) {
+        auto subpass_idx = render_pass_builder->subpasses_map.at(subpass_name);
+        while (current_subpass != subpass_idx) {
+            next_subpass();
+        }
     }
 
     void Renderer::draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {

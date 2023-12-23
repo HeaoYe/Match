@@ -6,8 +6,8 @@
 #include <Match/vulkan/renderpass.hpp>
 
 namespace Match {
-    APIInfo &CreateAPIInfo();
+    APIInfo CreateAPIInfo();
     std::vector<std::string> EnumerateDevices();
-    APIManager &Initialize();
+    APIManager &Initialize(const APIInfo &info = {});
     void Destroy();
 }

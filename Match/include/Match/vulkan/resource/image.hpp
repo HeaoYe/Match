@@ -6,7 +6,7 @@ namespace Match {
     class Image {
         no_copy_move_construction(Image)
     public:
-        Image(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits samples, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags);
+        Image(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits samples, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags, uint32_t mip_levels = 1);
         ~Image();
     INNER_VISIBLE:
         VkImage image;

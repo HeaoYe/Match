@@ -1,29 +1,92 @@
 #include <Match/vulkan/framebuffer.hpp>
+#include <Match/vulkan/renderer.hpp>
+#include <Match/vulkan/utils.hpp>
+#include <Match/constant.hpp>
 #include "inner.hpp"
 
 namespace Match {
-    FrameBuffer::FrameBuffer(uint32_t index) {
-        std::vector<VkImageView> attachments = {
-            manager->swapchain->image_views[index]
-        };
+    Attachment::Attachment() : has_image(false) {}
+
+    Attachment::Attachment(const VkAttachmentDescription& description, VkImageUsageFlags usage, VkImageAspectFlags aspect) : has_image(true) {
+        image = std::make_unique<Image>(runtime_setting->window_size.width, runtime_setting->window_size.height, description.format, usage, description.samples, VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+        image_view = create_image_view(image->image, description.format, aspect, 1);
+    }
+
+    Attachment::Attachment(VkImageView image_view) : has_image(false), image_view(image_view) {}
+
+    Attachment::Attachment(Attachment &&rhs) {
+        has_image = rhs.has_image;
+        if (rhs.has_image) {
+            image = std::move(rhs.image);
+        }
+        image_view = rhs.image_view;
+        rhs.image_view = VK_NULL_HANDLE;
+    }
+
+    void Attachment::operator=(Attachment &&rhs) {
+        has_image = rhs.has_image;
+        if (rhs.has_image) {
+            image = std::move(rhs.image);
+        }
+        image_view = rhs.image_view;
+        rhs.image_view = VK_NULL_HANDLE;
+    }
+
+    Attachment::~Attachment() {
+        if (has_image) {
+            vkDestroyImageView(manager->device->device, image_view, manager->allocator);
+            image.reset();
+        }
+    }
+
+    FrameBuffer::FrameBuffer(const Renderer &renderer, uint32_t index) {
+        uint32_t attachments_count = renderer.render_pass_builder->attachments.size();
+        uint32_t final_count = attachments_count;
+        if (runtime_setting->is_msaa_enabled()) {
+            final_count += renderer.render_pass_builder->color_attachment_count;
+        }
+        std::vector<VkImageView> image_views(final_count);
+        attachments.resize(final_count);
+
+        for (auto &[name, idx] : renderer.render_pass_builder->attachments_map) {
+            auto attachment = renderer.render_pass_builder->attachments[idx];
+            if (name != SWAPCHAIN_IMAGE_ATTACHMENT) {
+                attachments[idx] = std::move(Attachment(attachment.description, attachment.usage | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, attachment.aspect));
+                if (runtime_setting->is_msaa_enabled() && attachment.resolve_description.has_value()) {
+                    attachments[attachments_count + attachment.offset] = std::move(Attachment(attachment.resolve_description.value(), attachment.usage, attachment.aspect));
+                }
+            } else {
+                if (runtime_setting->is_msaa_enabled() && attachment.resolve_description.has_value()) {
+                    attachments[idx] = std::move(Attachment(attachment.description, attachment.usage | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, attachment.aspect));
+                    attachments[attachments_count + attachment.offset] = std::move(Attachment(manager->swapchain->image_views[index]));
+                } else {
+                    attachments[idx] = std::move(Attachment(manager->swapchain->image_views[index]));
+                }
+            }
+        }
+        for (uint32_t idx = 0; idx < final_count; idx ++) {
+            image_views[idx] = attachments[idx].image_view;
+        }
+
         VkFramebufferCreateInfo framebuffer_create_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
-        framebuffer_create_info.renderPass = manager->render_pass->render_pass;
+        framebuffer_create_info.renderPass = renderer.render_pass->render_pass;
         framebuffer_create_info.width = runtime_setting->get_window_size().width;
         framebuffer_create_info.height = runtime_setting->get_window_size().height;
         framebuffer_create_info.layers = 1;
-        framebuffer_create_info.attachmentCount = attachments.size();
-        framebuffer_create_info.pAttachments = attachments.data();
+        framebuffer_create_info.attachmentCount = image_views.size();
+        framebuffer_create_info.pAttachments = image_views.data();
 
         vk_assert(vkCreateFramebuffer(manager->device->device, &framebuffer_create_info, manager->allocator, &framebuffer));
     }
 
     FrameBuffer::~FrameBuffer() {
         vkDestroyFramebuffer(manager->device->device, framebuffer, manager->allocator);
+        attachments.clear();
     }
 
-    FrameBufferSet::FrameBufferSet() {
+    FrameBufferSet::FrameBufferSet(const Renderer &renderer) {
         for (uint32_t i = 0; i < manager->swapchain->image_count; i ++) {
-            framebuffers.push_back(std::make_unique<FrameBuffer>(i));
+            framebuffers.push_back(std::make_unique<FrameBuffer>(renderer, i));
         }
     }
 

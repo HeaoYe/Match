@@ -1,3 +1,4 @@
+#include <Match/vulkan/renderer.hpp>
 #include <Match/vulkan/resource/shader_program.hpp>
 #include <Match/core/setting.hpp>
 #include <Match/core/utils.hpp>
@@ -13,7 +14,7 @@ namespace Match {
         return create_info;
     }
     
-    ShaderProgram::ShaderProgram(const std::string &subpass_name) : subpass_name(subpass_name) {}
+    ShaderProgram::ShaderProgram(std::weak_ptr<Renderer> renderer, const std::string &subpass_name) : subpass_name(subpass_name), renderer(renderer) {}
 
     void ShaderProgram::bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set) {
         vertex_attribute_set.reset();
@@ -82,19 +83,21 @@ namespace Match {
         rasterization_state.lineWidth = 1.0f;
 
         VkPipelineMultisampleStateCreateInfo multisample_state { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
-        multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-        multisample_state.sampleShadingEnable = VK_FALSE;
+        multisample_state.rasterizationSamples = runtime_setting->multisample_count;
+        multisample_state.sampleShadingEnable = VK_TRUE;
+        multisample_state.minSampleShading = 0.2f;
 
         VkPipelineDepthStencilStateCreateInfo depth_stencil_state { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
-        depth_stencil_state.depthTestEnable = VK_FALSE;
-        depth_stencil_state.depthWriteEnable = VK_FALSE;
-        depth_stencil_state.depthCompareOp = VK_COMPARE_OP_NEVER;
+        depth_stencil_state.depthTestEnable = options.depth_test_enable;
+        depth_stencil_state.depthWriteEnable = options.depth_write_enable;
+        depth_stencil_state.depthCompareOp = options.depth_compere_op;
         depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
         depth_stencil_state.stencilTestEnable = VK_FALSE;
 
-        uint32_t subpass_idx = manager->render_pass_builder->subpasses_map.at(subpass_name);
-        auto &subpass = manager->render_pass_builder->subpass_builders[subpass_idx];
-        bind_point = manager->render_pass_builder->subpass_builders[subpass_idx].bind_point;
+        auto locked_renderer = renderer.lock();
+        uint32_t subpass_idx = locked_renderer->render_pass_builder->subpasses_map.at(subpass_name);
+        auto &subpass = *locked_renderer->render_pass_builder->subpass_builders[subpass_idx];
+        bind_point = subpass.bind_point;
 
         VkPipelineColorBlendStateCreateInfo color_blend_state { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
         color_blend_state.logicOpEnable = VK_FALSE;
@@ -140,10 +143,11 @@ namespace Match {
         create_info.pColorBlendState = &color_blend_state;
         create_info.pDynamicState = &dynamic_state;
         create_info.layout = layout;
-        create_info.renderPass = manager->render_pass->render_pass;
+        create_info.renderPass = locked_renderer->render_pass->render_pass;
         create_info.subpass = subpass_idx;
         create_info.basePipelineHandle = nullptr;
         create_info.basePipelineIndex = 0;
+        locked_renderer.reset();
 
         vk_check(vkCreateGraphicsPipelines(manager->device->device, nullptr, 1, &create_info, manager->allocator, &pipeline));
 

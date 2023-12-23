@@ -3,8 +3,8 @@
 #include <Match/vulkan/resource/shader.hpp>
 #include <Match/vulkan/resource/vertex_attribute_set.hpp>
 #include <Match/vulkan/resource/sampler.hpp>
-#include <Match/vulkan/descriptor/uniform.hpp>
-#include <Match/vulkan/descriptor/texture.hpp>
+#include <Match/vulkan/descriptor_resource/uniform.hpp>
+#include <Match/vulkan/descriptor_resource/texture.hpp>
 
 namespace Match {
     enum class Topology {
@@ -38,14 +38,19 @@ namespace Match {
         PolygonMode polygon_mode = PolygonMode::eFill;
         CullMode cull_mode = CullMode::eBack;
         FrontFace front_face = FrontFace::eCounterClockwise;
+        VkBool32 depth_test_enable = VK_FALSE;
+        VkBool32 depth_write_enable = VK_TRUE;
+        VkCompareOp depth_compere_op = VK_COMPARE_OP_LESS;
         std::vector<VkDynamicState> dynamic_states;
     };
+
+    class Renderer;
 
     class ShaderProgram {
         no_copy_move_construction(ShaderProgram)
         using binding = uint32_t;
     public:
-        ShaderProgram(const std::string &subpass_name);
+        ShaderProgram(std::weak_ptr<Renderer> renderer, const std::string &subpass_name);
         void bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set);
         void attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry);
         void attach_fragment_shader(std::shared_ptr<Shader> shader, const std::string &entry);
@@ -56,6 +61,7 @@ namespace Match {
     private:
         void bind_shader_descriptor(const std::vector<DescriptorInfo> &descriptor_infos, VkShaderStageFlags stage);
     INNER_VISIBLE:
+        std::weak_ptr<Renderer> renderer;
         std::string subpass_name;
         VkPipelineBindPoint bind_point;
         std::shared_ptr<VertexAttributeSet> vertex_attribute_set;

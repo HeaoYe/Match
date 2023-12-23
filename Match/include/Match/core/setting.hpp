@@ -10,8 +10,13 @@ namespace Match {
         uint32_t app_version = 1;
         std::string engine_name = "No Engine";
         uint32_t engine_version = 1;
+        std::array<uint32_t, 2> window_pos = { 100, 50 };
+        std::array<uint32_t, 2> window_size = { 800, 800 };
         PlatformWindowSystem render_backend = PlatformWindowSystem::eNone;
         uint32_t max_in_flight_frame = 2;
+        std::string default_font_filename = "";
+        std::string chinese_font_filename = "";
+        float font_size = 13.0f;
     };
 
     class RuntimeSetting {
@@ -19,15 +24,16 @@ namespace Match {
     public:
         void set_vsync(bool n);
         bool is_vsync() { return vsync; }
-        void resize(const WindowSize &size);
         const WindowSize &get_window_size() { return window_size; }
+        bool is_msaa_enabled();
         void set_multisample_count(VkSampleCountFlagBits count);
-        VkSampleCountFlagBits get_multisample_count() { return VK_SAMPLE_COUNT_1_BIT; }
-    private:
+        VkSampleCountFlagBits get_multisample_count() { return multisample_count; }
+    INNER_VISIBLE:
+        void resize(const WindowSize &size);
+    INNER_VISIBLE:
         bool vsync = true;
         WindowSize window_size;
         VkSampleCountFlagBits multisample_count = VK_SAMPLE_COUNT_1_BIT;
-    INNER_VISIBLE:
         uint32_t current_in_flight = 0;
     };
 

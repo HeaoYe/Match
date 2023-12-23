@@ -10,3 +10,9 @@
 [submodule "thirdparty/stb/stb"]
 	path = thirdparty/stb/stb
 	url = https://github.com/nothings/stb
+[submodule "thirdparty/imgui/imgui"]
+	path = thirdparty/imgui/imgui
+	url = https://github.com/ocornut/imgui
+[submodule "thirdparty/tinyobjloader"]
+	path = thirdparty/tinyobjloader
+	url = https://github.com/tinyobjloader/tinyobjloader

@@ -13,9 +13,11 @@ namespace Match {
         VkPipelineStageFlags stage;
     };
 
-    void transition_image_layout(VkImage image, VkFormat format, const TransitionInfo &src, const TransitionInfo &dst);
+    void transition_image_layout(VkImage image, VkImageAspectFlags aspect, uint32_t mip_levels, const TransitionInfo &src, const TransitionInfo &dst);
 
     VkFormat get_supported_depth_format();
 
     bool has_stencil_component(VkFormat format);
+
+    VkSampleCountFlagBits get_max_usable_sample_count();
 }

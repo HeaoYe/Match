@@ -2,11 +2,11 @@
 #include "../inner.hpp"
 
 namespace Match {
-    Image::Image(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits samples, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags) {
+    Image::Image(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits samples, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags, uint32_t mip_levels) {
         VkImageCreateInfo image_create_info { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
         image_create_info.extent = { width, height, 1 };
-        image_create_info.mipLevels = 1;
+        image_create_info.mipLevels = mip_levels;
         image_create_info.arrayLayers = 1;
         image_create_info.format = format;
         image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
