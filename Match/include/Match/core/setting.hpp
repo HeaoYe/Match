@@ -27,7 +27,7 @@ namespace Match {
         const WindowSize &get_window_size() { return window_size; }
         bool is_msaa_enabled();
         void set_multisample_count(VkSampleCountFlagBits count);
-        VkSampleCountFlagBits get_multisample_count() { return VK_SAMPLE_COUNT_1_BIT; }
+        VkSampleCountFlagBits get_multisample_count() { return multisample_count; }
     INNER_VISIBLE:
         void resize(const WindowSize &size);
     INNER_VISIBLE:

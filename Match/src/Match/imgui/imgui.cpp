@@ -82,7 +82,7 @@ namespace Match {
         init_info.Subpass = renderer.render_pass_builder->subpass_builders.size() - 1;
         init_info.MinImageCount = manager->swapchain->image_count;
         init_info.ImageCount = manager->swapchain->image_count;
-        init_info.MSAASamples = runtime_setting->get_multisample_count();
+        init_info.MSAASamples = runtime_setting->multisample_count;
         init_info.Allocator = manager->allocator;
         init_info.CheckVkResultFn = [](VkResult res) {
             if (res != VK_SUCCESS) {
