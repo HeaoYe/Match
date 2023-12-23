@@ -8,8 +8,8 @@
 #include <Match/vulkan/resource/shader_program.hpp>
 #include <Match/vulkan/resource/buffer.hpp>
 #include <Match/vulkan/resource/sampler.hpp>
-#include <Match/vulkan/descriptor/uniform.hpp>
-#include <Match/vulkan/descriptor/texture.hpp>
+#include <Match/vulkan/descriptor_resource/uniform.hpp>
+#include <Match/vulkan/descriptor_resource/texture.hpp>
 
 namespace Match {
     enum class ShaderType {
@@ -30,7 +30,7 @@ namespace Match {
         std::shared_ptr<IndexBuffer> create_index_buffer(IndexType type, uint32_t count);
         std::shared_ptr<Sampler> create_sampler(const SamplerOptions &options);
         std::shared_ptr<UniformBuffer> create_uniform_buffer(uint32_t size);
-        std::shared_ptr<Texture> create_texture(const std::string &filename);
+        std::shared_ptr<Texture> load_texture(const std::string &filename, uint32_t mip_levels);
     INNER_VISIBLE:
         std::string root;
     };

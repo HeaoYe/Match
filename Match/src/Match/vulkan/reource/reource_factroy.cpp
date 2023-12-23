@@ -60,7 +60,7 @@ namespace Match {
         return std::make_shared<UniformBuffer>(size);
     }
 
-    std::shared_ptr<Texture> ResourceFactory::create_texture(const std::string &filename) {
-        return std::make_shared<Texture>(root + "/textures/" + filename);
+    std::shared_ptr<Texture> ResourceFactory::load_texture(const std::string &filename, uint32_t mip_levels) {
+        return std::make_shared<Texture>(root + "/textures/" + filename, mip_levels);
     }
 }

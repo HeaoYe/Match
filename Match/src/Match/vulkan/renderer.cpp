@@ -35,7 +35,7 @@ namespace Match {
         vkDeviceWaitIdle(manager->device->device);
     }
 
-    void Renderer::recreate() {
+    void Renderer::update_resources() {
         manager->recreate_swapchin();
         framebuffer_set.reset();
         framebuffer_set = std::make_unique<FrameBufferSet>(*this);
@@ -55,14 +55,14 @@ namespace Match {
 
     void Renderer::set_clear_value(const std::string &name, const VkClearValue &value) {
         uint32_t index = render_pass_builder->attachments_map.at(name);
-        render_pass_builder->clear_values[index] = value;
+        render_pass_builder->attachments[index].clear_value = value;
     }
 
     void Renderer::begin_render() {
         vkWaitForFences(manager->device->device, 1, &in_flight_fences[current_in_flight], VK_TRUE, UINT64_MAX);
         auto result = vkAcquireNextImageKHR(manager->device->device, manager->swapchain->swapchain, UINT64_MAX, image_available_semaphores[current_in_flight], VK_NULL_HANDLE, &index);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            recreate();
+            update_resources();
             return;
         }
         vkResetFences(manager->device->device, 1, &in_flight_fences[current_in_flight]);
@@ -77,8 +77,13 @@ namespace Match {
         render_pass_begin_info.framebuffer = framebuffer_set->framebuffers[index]->framebuffer;
         render_pass_begin_info.renderArea.offset = { 0, 0 };
         render_pass_begin_info.renderArea.extent = { runtime_setting->get_window_size().width, runtime_setting->get_window_size().height };
-        render_pass_begin_info.clearValueCount = render_pass_builder->clear_values.size();
-        render_pass_begin_info.pClearValues = render_pass_builder->clear_values.data();
+        std::vector<VkClearValue> clear_values;
+        clear_values.reserve(render_pass_builder->attachments.size());
+        for (const auto &attachment_description : render_pass_builder->attachments) {
+            clear_values.push_back(attachment_description.clear_value);
+        }
+        render_pass_begin_info.clearValueCount = clear_values.size();
+        render_pass_begin_info.pClearValues = clear_values.data();
         vkCmdBeginRenderPass(current_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     }
 
@@ -106,7 +111,7 @@ namespace Match {
         present_info.pResults = nullptr;
         auto result = vkQueuePresentKHR(manager->device->present_queue, &present_info);
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized) {
-            recreate();
+            update_resources();
         }
         current_in_flight = (current_in_flight + 1) % setting.max_in_flight_frame;
         runtime_setting->current_in_flight = current_in_flight;
@@ -132,6 +137,30 @@ namespace Match {
 
     void Renderer::bind_index_buffer(std::shared_ptr<IndexBuffer> index_buffer) {
         vkCmdBindIndexBuffer(current_buffer, index_buffer->buffer->buffer, 0, index_buffer->type);
+    }
+
+    void Renderer::set_viewport(float x, float y, float width, float height) {
+        set_viewport(x, y, width, height, 0.0f, 1.0f);
+    }
+
+    void Renderer::set_viewport(float x, float y, float width, float height, float min_depth, float max_depth) {
+        VkViewport viewport {
+            .x = x,
+            .y = y,
+            .width = width,
+            .height = height,
+            .minDepth = min_depth,
+            .maxDepth = max_depth,
+        };
+        vkCmdSetViewport(current_buffer, 0, 1, &viewport);
+    }
+
+    void Renderer::set_scissor(int x, int y, uint32_t width, uint32_t height) {
+        VkRect2D scissor {
+            .offset = { x, y },
+            .extent = { width, height }
+        };
+        vkCmdSetScissor(current_buffer, 0, 1, &scissor);
     }
 
     void Renderer::draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance) {

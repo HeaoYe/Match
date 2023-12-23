@@ -83,8 +83,9 @@ namespace Match {
         rasterization_state.lineWidth = 1.0f;
 
         VkPipelineMultisampleStateCreateInfo multisample_state { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
-        multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-        multisample_state.sampleShadingEnable = VK_FALSE;
+        multisample_state.rasterizationSamples = runtime_setting->multisample_count;
+        multisample_state.sampleShadingEnable = VK_TRUE;
+        multisample_state.minSampleShading = 0.2f;
 
         VkPipelineDepthStencilStateCreateInfo depth_stencil_state { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
         depth_stencil_state.depthTestEnable = options.depth_test_enable;

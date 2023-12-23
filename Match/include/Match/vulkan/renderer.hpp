@@ -12,19 +12,22 @@ namespace Match {
     public:
         Renderer(std::shared_ptr<RenderPassBuilder> builder);
         ~Renderer();
-        void set_clear_value(const std::string &name, const VkClearValue &value);
         void begin_render();
         void end_render();
         void bind_shader_program(std::shared_ptr<ShaderProgram> shader_program);
         void bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers);
         void bind_index_buffer(std::shared_ptr<IndexBuffer> index_buffer);
+        void set_viewport(float x, float y, float width, float height);
+        void set_viewport(float x, float y, float width, float height, float min_depth, float max_depth);
+        void set_scissor(int x, int y, uint32_t width, uint32_t height);
         void draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
         void draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance);
+    public:
+        void set_clear_value(const std::string &name, const VkClearValue &value);
         VkCommandBuffer get_command_buffer();
         void set_resize_flag();
         void wait_for_destroy();
-    private:
-        void recreate();
+        void update_resources();
     INNER_VISIBLE:
         std::shared_ptr<RenderPassBuilder> render_pass_builder;
         std::unique_ptr<RenderPass> render_pass;

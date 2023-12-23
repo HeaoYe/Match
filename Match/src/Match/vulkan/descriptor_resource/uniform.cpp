@@ -1,4 +1,4 @@
-#include <Match/vulkan/descriptor/uniform.hpp>
+#include <Match/vulkan/descriptor_resource/uniform.hpp>
 #include <Match/core/setting.hpp>
 
 namespace Match {

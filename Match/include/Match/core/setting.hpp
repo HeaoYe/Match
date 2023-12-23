@@ -20,6 +20,7 @@ namespace Match {
         void set_vsync(bool n);
         bool is_vsync() { return vsync; }
         const WindowSize &get_window_size() { return window_size; }
+        bool is_msaa_enabled();
         void set_multisample_count(VkSampleCountFlagBits count);
         VkSampleCountFlagBits get_multisample_count() { return VK_SAMPLE_COUNT_1_BIT; }
     INNER_VISIBLE:

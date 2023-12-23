@@ -1,5 +1,5 @@
-#include <Match/vulkan/renderer.hpp>
 #include <Match/vulkan/framebuffer.hpp>
+#include <Match/vulkan/renderer.hpp>
 #include <Match/vulkan/utils.hpp>
 #include <Match/constant.hpp>
 #include "inner.hpp"
@@ -9,7 +9,6 @@ namespace Match {
 
     Attachment::Attachment(const VkAttachmentDescription& description, VkImageUsageFlags usage, VkImageAspectFlags aspect) : has_image(true) {
         image = std::make_unique<Image>(runtime_setting->window_size.width, runtime_setting->window_size.height, description.format, usage, description.samples, VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
-        transition_image_layout(image->image, aspect, { VK_IMAGE_LAYOUT_UNDEFINED, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT }, { VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT });
         image_view = create_image_view(image->image, description.format, aspect, 1);
     }
 
@@ -41,16 +40,31 @@ namespace Match {
     }
 
     FrameBuffer::FrameBuffer(const Renderer &renderer, uint32_t index) {
-        std::vector<VkImageView> image_views(renderer.render_pass_builder->attachments.size());
-        attachments.resize(renderer.render_pass_builder->attachments.size());
+        uint32_t attachments_count = renderer.render_pass_builder->attachments.size();
+        uint32_t final_count = attachments_count;
+        if (runtime_setting->is_msaa_enabled()) {
+            final_count += renderer.render_pass_builder->color_attachment_count;
+        }
+        std::vector<VkImageView> image_views(final_count);
+        attachments.resize(final_count);
 
-        for (auto [name, idx] : renderer.render_pass_builder->attachments_map) {
-            auto info = renderer.render_pass_builder->attachment_infos[idx];
+        for (auto &[name, idx] : renderer.render_pass_builder->attachments_map) {
+            auto attachment = renderer.render_pass_builder->attachments[idx];
             if (name != SWAPCHAIN_IMAGE_ATTACHMENT) {
-                attachments[idx] = std::move(Attachment(renderer.render_pass_builder->attachments[idx], info.first, info.second));
+                attachments[idx] = std::move(Attachment(attachment.description, attachment.usage | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, attachment.aspect));
+                if (runtime_setting->is_msaa_enabled() && attachment.resolve_description.has_value()) {
+                    attachments[attachments_count + attachment.offset] = std::move(Attachment(attachment.resolve_description.value(), attachment.usage, attachment.aspect));
+                }
             } else {
-                attachments[idx] = std::move(Attachment(manager->swapchain->image_views[index]));
+                if (runtime_setting->is_msaa_enabled() && attachment.resolve_description.has_value()) {
+                    attachments[idx] = std::move(Attachment(attachment.description, attachment.usage | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, attachment.aspect));
+                    attachments[attachments_count + attachment.offset] = std::move(Attachment(manager->swapchain->image_views[index]));
+                } else {
+                    attachments[idx] = std::move(Attachment(manager->swapchain->image_views[index]));
+                }
             }
+        }
+        for (uint32_t idx = 0; idx < final_count; idx ++) {
             image_views[idx] = attachments[idx].image_view;
         }
 

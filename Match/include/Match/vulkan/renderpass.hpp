@@ -25,7 +25,7 @@ namespace Match {
         void attach_input_attachment(const std::string &name, VkImageLayout layout);
 
         void attach_output_attachment(const std::string &name, VkImageLayout layout);
-        void attach_resolve_attachment(const std::string &name, VkImageLayout layout);
+        // void attach_resolve_attachment(const std::string &name, VkImageLayout layout);
         
         void attach_preserve_attachment(const std::string &name);
         void attach_depth_attachment(const std::string &name, VkImageLayout layout);
@@ -49,24 +49,35 @@ namespace Match {
         std::optional<VkAttachmentReference> depth_attachment;
     };
 
+    struct AttachmentDescription {
+        VkAttachmentDescription description;
+        std::optional<VkAttachmentDescription> resolve_description;
+        uint32_t offset;
+        VkImageUsageFlags usage;
+        VkImageAspectFlags aspect;
+        VkClearValue clear_value;
+    };
+
     class APIManager;
     class RenderPassBuilder {
         default_no_copy_move_construction(RenderPassBuilder)
     public:
         void add_attachment(const std::string &name, AttchmentType type);
-        void add_custom_attachment(const std::string &name, const VkAttachmentDescription &desc, VkImageUsageFlags usage, VkImageAspectFlags aspect, VkClearValue clear_value = { .color = { .float32 = { 0.0f, 0.0f, 0.0f, 0.0f } } });
-        void set_final_present_attachment(const std::string &name);
-        SubpassBuilder &create_subpass(const std::string &name);
+        SubpassBuilder &add_subpass(const std::string &name);
         VkRenderPassCreateInfo build();
     INNER_VISIBLE:
-        std::vector<VkSubpassDescription> subpasses;
-        std::vector<VkAttachmentDescription> attachments;
-        std::vector<std::pair<VkImageUsageFlags, VkImageAspectFlags>> attachment_infos;
-        std::vector<VkClearValue> clear_values;
+        std::vector<AttachmentDescription> attachments;
         std::map<std::string, uint32_t> attachments_map;
+        uint32_t color_attachment_count = 0;
+        // std::map<uint32_t, std::pair<VkAttachmentDescription, uint32_t>> resolve_attachments;
+        // std::vector<std::pair<VkImageUsageFlags, VkImageAspectFlags>> attachment_infos;
+        // std::vector<VkClearValue> clear_values;
         std::vector<SubpassBuilder> subpass_builders;
         std::map<std::string, uint32_t> subpasses_map;
-        std::vector<VkSubpassDependency> dependencies;
+
+        std::vector<VkSubpassDescription> final_subpasses;
+        std::vector<VkAttachmentDescription> final_attachments;
+        std::vector<VkSubpassDependency> final_dependencies;
     };
 
     class RenderPass {

@@ -6,7 +6,7 @@
 #include <Match/core/setting.hpp>
 #include <Match/vulkan/resource/resource_factory.hpp>
 #include <Match/vulkan/command_pool.hpp>
-#include <Match/vulkan/descriptor/descriptor_pool.hpp>
+#include <Match/vulkan/descriptor_resource/descriptor_pool.hpp>
 
 namespace Match {
     struct APIInfo;

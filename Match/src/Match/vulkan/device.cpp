@@ -80,6 +80,7 @@ namespace Match {
         VkPhysicalDeviceFeatures features {};
         features.samplerAnisotropy = VK_TRUE;
         features.depthClamp = VK_TRUE;
+        features.sampleRateShading = VK_TRUE;
 
         VkDeviceCreateInfo device_create_info { .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         device_create_info.queueCreateInfoCount = queue_create_infos.size();
@@ -121,6 +122,11 @@ namespace Match {
 
         if (!features.samplerAnisotropy) {
             MCH_DEBUG("{} does not support sampler anisotropy -- skipping", properties.deviceName)
+            return false;
+        }
+
+        if (!features.sampleRateShading) {
+            MCH_DEBUG("{} does not support sampler rate shading -- skipping", properties.deviceName)
             return false;
         }
 

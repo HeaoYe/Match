@@ -25,6 +25,10 @@ int main() {
 
     // 初始化Match
     auto &context = Match::Initialize();
+    // 启用MSAA
+    Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_8_BIT);
+    // 禁用MSAA
+    // Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_1_BIT);
     // 显示全部设备名，可填写在Match::setting.device_name中
     // Match::EnumerateDevices();
 
@@ -36,14 +40,9 @@ int main() {
         auto builder = factory->create_render_pass_builder();
         builder->add_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, Match::AttchmentType::eColor);
         builder->add_attachment("Depth Buffer", Match::AttchmentType::eDepth);
-        // builder.add_custom_attachment("自定义名字", {
-            // 填写VkAttachmentDescription结构体
-        // })
-        // 设置最总要呈现到屏幕的Attachment
-        builder->set_final_present_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
 
         // 创建Subpass
-        auto &subpass = builder->create_subpass("MainSubpass");
+        auto &subpass = builder->add_subpass("MainSubpass");
         // 绑定Subpass为图形流水线
         subpass.bind(VK_PIPELINE_BIND_POINT_GRAPHICS);
         // 设置Subpass的输出为SWAPCHAIN_IMAGE_ATTACHMENT
@@ -141,6 +140,10 @@ int main() {
         shader_program->compile({
             .cull_mode = Match::CullMode::eNone,  // 取消面剔除
             .depth_test_enable = VK_TRUE,         // 启用深度测试
+            .dynamic_states = {
+                VK_DYNAMIC_STATE_VIEWPORT,    // 动态Viewport
+                VK_DYNAMIC_STATE_SCISSOR,     // 动态Scissor
+            }
         });
 
         // 为每个binding创建VertexBuffer
@@ -179,9 +182,10 @@ int main() {
             // 设置各向异性过滤
             .max_anisotropy = 16,
             .border_color = Match::SamplerBorderColor::eFloatOpaqueWhite,
+            .mip_levels = 4,
         });
         // 创建纹理，
-        auto texture = factory->create_texture("moon.jpg");
+        auto texture = factory->load_texture("moon.jpg", 4);  // 为Texture生成4层mipmap
 
         // 将创建的资源绑定到对应的binding
         shader_program->bind_uniforms(0, { pos_uniform });
@@ -200,8 +204,18 @@ int main() {
             static auto start_time = std::chrono::high_resolution_clock::now();
             // 当前时间
             auto current_time = std::chrono::high_resolution_clock::now();
+            // 时间差
+            auto time = std::chrono::duration<float, std::chrono::seconds::period>(current_time-start_time).count();
+
+            // 程序启动5秒后关闭垂直同步
+            static bool flag = true;
+            if (time > 5 && flag) {
+                flag = false;
+                Match::runtime_setting->set_vsync(false);
+                renderer->update_resources();
+            }
             // cos(时间差)
-            float scale = std::cos(std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count() * 3);  // 加速3倍
+            float scale = std::cos(time * 3);  // 加速3倍
 
             // 动态变换的背景颜色
             float color = (scale + 3) / 4;
@@ -220,6 +234,10 @@ int main() {
 
             renderer->begin_render();
             renderer->bind_shader_program(shader_program);
+            // 动态设置Viewport和Scissor
+            auto &size = Match::runtime_setting->get_window_size();
+            renderer->set_viewport(0, static_cast<float>(size.height), static_cast<float>(size.width), -static_cast<float>(size.height));
+            renderer->set_scissor(0, 0, size.width, size.height);
             // 绑定每个binding的VertexBuffer
             // 参数中的VertexBuffer将根据他们在参数中的位置自动绑定到对应的binding
             renderer->bind_vertex_buffers({

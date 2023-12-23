@@ -3,8 +3,8 @@
 #include <Match/vulkan/resource/shader.hpp>
 #include <Match/vulkan/resource/vertex_attribute_set.hpp>
 #include <Match/vulkan/resource/sampler.hpp>
-#include <Match/vulkan/descriptor/uniform.hpp>
-#include <Match/vulkan/descriptor/texture.hpp>
+#include <Match/vulkan/descriptor_resource/uniform.hpp>
+#include <Match/vulkan/descriptor_resource/texture.hpp>
 
 namespace Match {
     enum class Topology {

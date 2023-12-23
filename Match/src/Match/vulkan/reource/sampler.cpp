@@ -18,7 +18,7 @@ namespace Match {
         sampler_create_info.compareOp = VK_COMPARE_OP_ALWAYS;
         sampler_create_info.mipmapMode = transform<VkSamplerMipmapMode>(options.mipmap_mode);
         sampler_create_info.minLod = 0.0f;
-        sampler_create_info.maxLod = static_cast<float>(options.mipmap_levels);
+        sampler_create_info.maxLod = static_cast<float>(options.mip_levels);
         sampler_create_info.mipLodBias = 0.0f;
         vkCreateSampler(manager->device->device, &sampler_create_info, manager->allocator, &sampler);
     }

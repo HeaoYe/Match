@@ -33,7 +33,7 @@ namespace Match {
         uint32_t max_anisotropy = 1;
         SamplerBorderColor border_color = SamplerBorderColor::eIntOpaqueBlack;
         SamplerFilter mipmap_mode = SamplerFilter::eLinear;
-        uint32_t mipmap_levels = 1;
+        uint32_t mip_levels = 1;
     };
     
     class Sampler {

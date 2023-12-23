@@ -1,4 +1,4 @@
-#include <Match/vulkan/descriptor/descriptor_pool.hpp>
+#include <Match/vulkan/descriptor_resource/descriptor_pool.hpp>
 #include "../inner.hpp"
 
 namespace Match {

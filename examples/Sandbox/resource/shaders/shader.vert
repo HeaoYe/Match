@@ -23,5 +23,6 @@ void main() {
     gl_Position = vec4(pos, 1);
     frag_color = color_ubo.color_scale * in_color;
     // 将in_uv从[0, 1]变换到[-2, 2]
-    frag_uv = (in_uv - 0.5) * 4;
+    // frag_uv = (in_uv - 0.5) * 4;
+    frag_uv = in_uv * 0.98 + 0.01;
 }
