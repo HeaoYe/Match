@@ -138,6 +138,9 @@ namespace Match {
         if (!shader_program->descriptor_sets.empty()) {
             vkCmdBindDescriptorSets(current_buffer, shader_program->bind_point, shader_program->layout, 0, 1, &shader_program->descriptor_sets[current_in_flight], 0, nullptr);
         }
+        for (const auto &[stage, offset_size] : shader_program->constant_offset_size_map) {
+            vkCmdPushConstants(current_buffer, shader_program->layout, stage, offset_size.first, offset_size.second, shader_program->constants.data());
+        }
     }
 
     void Renderer::bind_vertex_buffer(const std::shared_ptr<VertexBuffer> &vertex_buffer) {

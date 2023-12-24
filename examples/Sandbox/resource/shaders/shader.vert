@@ -12,6 +12,11 @@ layout(binding = 1) uniform ColorScaler {
     float color_scale;
 } color_ubo;
 
+layout(push_constant) uniform Time {
+    float pad;
+    float t;
+} time;
+
 layout(location = 0) out vec3 frag_color;
 layout(location = 1) out vec2 frag_uv;
 
@@ -24,5 +29,5 @@ void main() {
     frag_color = color_ubo.color_scale * in_color;
     // 将in_uv从[0, 1]变换到[-2, 2]
     // frag_uv = (in_uv - 0.5) * 4;
-    frag_uv = in_uv * 0.98 + 0.01;
+    frag_uv = (in_uv * 0.98 + 0.01) * (cos(time.t) + 2) / 2;
 }

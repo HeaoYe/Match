@@ -44,6 +44,19 @@ namespace Match {
         std::vector<VkDynamicState> dynamic_states;
     };
 
+    union BasicConstantValue {
+        bool b;
+        BasicConstantValue(bool b) : b(b) {}
+        int32_t i;
+        BasicConstantValue(int32_t i) : i(i) {}
+        uint32_t ui;
+        BasicConstantValue(uint32_t ui) : ui(ui) {}
+        float f;
+        BasicConstantValue(float f) : f(f) {}
+        double d;
+        BasicConstantValue(double d) : d(d) {}
+    };
+
     class Renderer;
 
     class ShaderProgram {
@@ -57,15 +70,20 @@ namespace Match {
         void compile(const ShaderProgramCompileOptions &options);
         void bind_uniforms(binding binding, const std::vector<std::shared_ptr<UniformBuffer>> &uniform_buffers);
         void bind_textures(binding binding, const std::vector<std::shared_ptr<Texture>> &textures, const std::vector<std::shared_ptr<Sampler>> &samplers);
+        void push_constants(const std::string &name, BasicConstantValue basic_value);
+        void push_constants(const std::string &name, void *data);
         ~ShaderProgram();
     private:
         void bind_shader_descriptor(const std::vector<DescriptorInfo> &descriptor_infos, VkShaderStageFlags stage);
+        std::pair<uint32_t, uint32_t> find_offset_size_by_name(Shader &shader, VkShaderStageFlags stage, const std::string &name);
     INNER_VISIBLE:
         std::weak_ptr<Renderer> renderer;
         std::string subpass_name;
         VkPipelineBindPoint bind_point;
         std::shared_ptr<VertexAttributeSet> vertex_attribute_set;
         std::vector<VkDescriptorSet> descriptor_sets;
+        std::map<VkShaderStageFlags, std::pair<uint32_t, uint32_t>> constant_offset_size_map;
+        std::vector<uint8_t> constants;
         std::shared_ptr<Shader> vertex_shader;
         std::string vertex_shader_entry;
         std::shared_ptr<Shader> fragment_shader;

@@ -12,6 +12,7 @@ namespace Match {
     }
 
     void Shader::create(const uint32_t *data, uint32_t size) {
+        constants_size = 0;
         VkShaderModuleCreateInfo shader_module_create_info { .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
         shader_module_create_info.pCode = data;
         shader_module_create_info.codeSize = size;
@@ -19,8 +20,9 @@ namespace Match {
     }
 
     Shader::~Shader() {
-        vkDestroyShaderModule(manager->device->device, module, manager->allocator);
+        constant_offset_map.clear();
         layout_bindings.clear();
+        vkDestroyShaderModule(manager->device->device, module, manager->allocator);
     }
 
     void Shader::bind_descriptors(const std::vector<DescriptorInfo> &descriptor_infos) {
@@ -34,6 +36,18 @@ namespace Match {
             if (descriptor_info.type == DescriptorType::eTexture) {
                 layout_bindings.back().pImmutableSamplers = descriptor_info.spec_data.immutable_samplers;
             }
+        }
+    }
+
+    void Shader::bind_push_constants(const std::vector<ConstantInfo> &constant_infos) {
+        for (auto info : constant_infos) {
+            auto size = transform<uint32_t>(info.type);
+            if (size % 4 != 0) {
+                size += 4 - size % 4;
+            }
+            constant_offset_map.insert(std::make_pair(info.name, constants_size));
+            constant_size_map.insert(std::make_pair(info.name, size));
+            constants_size += size;
         }
     }
 }

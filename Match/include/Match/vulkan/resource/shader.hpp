@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Match/vulkan/commons.hpp>
+#include <Match/vulkan/resource/vertex_attribute_set.hpp>
 
 namespace Match {
     enum class DescriptorType {
@@ -23,6 +24,13 @@ namespace Match {
         } spec_data;
     };
 
+    typedef VertexType ConstantType;
+
+    struct ConstantInfo {
+        std::string name;
+        ConstantType type;
+    };
+
     class Shader {
         no_copy_move_construction(Shader)
         using binding = uint32_t;
@@ -30,11 +38,15 @@ namespace Match {
         Shader(const std::vector<char> &code);
         Shader(const std::vector<uint32_t> &code);
         void bind_descriptors(const std::vector<DescriptorInfo> &descriptor_infos);
+        void bind_push_constants(const std::vector<ConstantInfo> &constant_infos);
         ~Shader();
     private:
         void create(const uint32_t *data, uint32_t size);
     INNER_VISIBLE:
         VkShaderModule module;
         std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+        uint32_t constants_size;
+        std::map<std::string, uint32_t> constant_size_map;
+        std::map<std::string, uint32_t> constant_offset_map;
     };
 }

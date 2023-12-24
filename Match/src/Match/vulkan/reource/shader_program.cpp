@@ -109,15 +109,37 @@ namespace Match {
         dynamic_state.pDynamicStates = options.dynamic_states.data();
 
         std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+        std::vector<VkPushConstantRange> constant_ranges;
+        uint32_t current_offset = 0;
         layout_bindings.reserve(vertex_shader->layout_bindings.size() + fragment_shader->layout_bindings.size());
+        constant_ranges.reserve(2);
         for (const auto &layout_binding : vertex_shader->layout_bindings) {
             layout_bindings.push_back(layout_binding);
             layout_bindings.back().stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        }
+        if (vertex_shader->constants_size != 0) {
+            constant_offset_size_map.insert(std::make_pair(VK_SHADER_STAGE_VERTEX_BIT, std::make_pair(current_offset, vertex_shader->constants_size)));
+            constant_ranges.push_back({
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                .offset = current_offset,
+                .size = vertex_shader->constants_size,
+            });
+            current_offset += vertex_shader->constants_size;
         }
         for (const auto &layout_binding : fragment_shader->layout_bindings) {
             layout_bindings.push_back(layout_binding);
             layout_bindings.back().stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
         }
+        if (fragment_shader->constants_size != 0) {
+            constant_offset_size_map.insert(std::make_pair(VK_SHADER_STAGE_FRAGMENT_BIT, std::make_pair(current_offset, fragment_shader->constants_size)));
+            constant_ranges.push_back({
+                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .offset = current_offset,
+                .size = fragment_shader->constants_size,
+            });
+            current_offset += fragment_shader->constants_size;
+        }
+        constants.resize(current_offset);
         VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
         descriptor_set_layout_create_info.bindingCount = layout_bindings.size();
         descriptor_set_layout_create_info.pBindings = layout_bindings.data();
@@ -126,8 +148,8 @@ namespace Match {
         VkPipelineLayoutCreateInfo pipeline_layout_create_info { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         pipeline_layout_create_info.setLayoutCount = 1;
         pipeline_layout_create_info.pSetLayouts = &descriptor_set_layout;
-        pipeline_layout_create_info.pushConstantRangeCount = 0;
-        pipeline_layout_create_info.pPushConstantRanges = nullptr;
+        pipeline_layout_create_info.pushConstantRangeCount = constant_ranges.size();
+        pipeline_layout_create_info.pPushConstantRanges = constant_ranges.data();
         vk_check(vkCreatePipelineLayout(manager->device->device, &pipeline_layout_create_info, manager->allocator, &layout));
 
         VkGraphicsPipelineCreateInfo create_info { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
@@ -212,6 +234,30 @@ namespace Match {
                 }
             }
         }
+    }
+
+    void ShaderProgram::push_constants(const std::string &name, BasicConstantValue basic_value) {
+        push_constants(name, &basic_value);
+    }
+
+    void ShaderProgram::push_constants(const std::string &name, void *data) {
+        auto [offset, size] = find_offset_size_by_name(*fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT, name);
+        if (offset == -1u) {
+            auto [offset_, size_] = find_offset_size_by_name(*vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, name);
+            if (offset_ == -1u) {
+                return;
+            }
+            offset = offset_;
+            size = size_;
+        }
+        memcpy(&constants[offset], data, size);
+    }
+
+    std::pair<uint32_t, uint32_t> ShaderProgram::find_offset_size_by_name(Shader &shader, VkShaderStageFlags stage, const std::string &name) {
+        if (shader.constant_offset_map.find(name) != shader.constant_offset_map.end()) {
+            return std::make_pair(constant_offset_size_map.at(stage).first + shader.constant_offset_map.at(name), shader.constant_size_map.at(name));
+        }
+        return std::make_pair(-1u, -1u);
     }
 
     ShaderProgram::~ShaderProgram() {
