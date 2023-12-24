@@ -15,7 +15,7 @@ Application::Application() {
     Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_1_BIT);
     Match::runtime_setting->set_vsync(true);
     
-    factory = context.create_resource_factory("resource");
+    auto factory = context.create_resource_factory("resource");
     auto builder = factory->create_render_pass_builder();
     builder->add_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, Match::AttchmentType::eColor);
     builder->add_attachment("depth", Match::AttchmentType::eDepth);
@@ -25,14 +25,13 @@ Application::Application() {
     renderer = context.create_renderer(builder);
     renderer->attach_render_layer<Match::ImGuiLayer>("imgui layer");
 
-    scene = std::make_unique<Scene>(factory, renderer);
+    scene_manager = std::make_unique<SceneManager>(factory, renderer);
 }
 
 Application::~Application() {
     renderer->wait_for_destroy();
-    scene.reset();
     renderer.reset();
-    factory.reset();
+    scene_manager.reset();
     Match::Destroy();
 }
 
@@ -40,13 +39,13 @@ void Application::gameloop() {
     while (Match::window->is_alive()) {
         Match::window->poll_events();
 
-        scene->update(ImGui::GetIO().DeltaTime);
+        scene_manager->update(ImGui::GetIO().DeltaTime);
 
         renderer->begin_render();
-        scene->render();
+        scene_manager->render();
 
         renderer->begin_layer_render("imgui layer");
-        scene->render_imgui();
+        scene_manager->render_imgui();
         renderer->end_layer_render("imgui layer");
 
         renderer->end_render();

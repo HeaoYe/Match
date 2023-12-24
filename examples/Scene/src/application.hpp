@@ -1,13 +1,16 @@
 #include <Match/Match.hpp>
-#include "scene.hpp"
+#include "scenes/scene.hpp"
 
 class Application {
 public:
     Application();
+    template <class SceneClass>
+    void load_scene() {
+        scene_manager->load_scene<SceneClass>();
+    }
     void gameloop();
     ~Application();
 private:
-    std::shared_ptr<Match::ResourceFactory> factory;
     std::shared_ptr<Match::Renderer> renderer;
-    std::unique_ptr<Scene> scene;
+    std::unique_ptr<SceneManager> scene_manager;
 };
