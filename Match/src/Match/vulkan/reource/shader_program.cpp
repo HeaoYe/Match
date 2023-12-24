@@ -250,7 +250,7 @@ namespace Match {
             offset = offset_;
             size = size_;
         }
-        memcpy(&constants[offset], data, size);
+        memcpy(constants.data() + offset, data, size);
     }
 
     std::pair<uint32_t, uint32_t> ShaderProgram::find_offset_size_by_name(Shader &shader, VkShaderStageFlags stage, const std::string &name) {

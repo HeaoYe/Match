@@ -2,6 +2,7 @@
 
 #include <Match/Match.hpp>
 #include <glm/glm.hpp>
+#include <imgui.h>
 
 struct Vertex {
     glm::vec3 in_pos;
@@ -12,6 +13,16 @@ struct Vertex {
         return in_pos == other.in_pos && in_normal == other.in_normal && in_color == other.in_color;
     }
 };
+
+// 添加了定义Scene的宏
+#define define_scene(scene_cls) \
+public: \
+    scene_cls(std::shared_ptr<Match::ResourceFactory> factory, std::shared_ptr<Match::Renderer> renderer) : Scene(factory, renderer) {} \
+    void initialize() override; \
+    void update(float delta) override; \
+    void render() override; \
+    void render_imgui() override; \
+    void destroy() override;
 
 class Scene {
 public:
@@ -34,6 +45,7 @@ class SceneManager {
 public:
     SceneManager(std::shared_ptr<Match::ResourceFactory> factory, std::shared_ptr<Match::Renderer> renderer) : factory(factory), renderer(renderer) {}
     ~SceneManager();
+
     template <class SceneClass>
     void load_scene() {
         if (current_scene.get() != nullptr) {

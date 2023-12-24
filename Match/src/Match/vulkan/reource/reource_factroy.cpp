@@ -15,26 +15,13 @@ namespace Match {
         auto code = read_binary_file(root + "/shaders/" + filename);
 
         if (type != ShaderType::eCompiled) {
-            shaderc_shader_kind kind;
-            switch (type) {
-            case Match::ShaderType::eVertexShaderNeedCompile:
-                kind = shaderc_glsl_vertex_shader;
-                break;
-            case Match::ShaderType::eFragmentShaderNeedCompile:
-                kind = shaderc_glsl_fragment_shader;
-                break;
-            default:
-                throw std::runtime_error("");
-            }
-            shaderc::Compiler compiler;
-            auto module = compiler.CompileGlslToSpv(code.data(), code.size(), kind, filename.c_str(), {});
-            if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-                MCH_ERROR("Compile {} faild: {}", filename, module.GetErrorMessage());
-            }
-            std::vector<uint32_t> spirv(module.cbegin(), module.cend());
-            return std::make_shared<Shader>(spirv);
+            return std::make_shared<Shader>(filename, std::string(code.data(), code.size()), type);
         }
         return std::make_shared<Shader>(code);
+    }
+
+    std::shared_ptr<Shader> ResourceFactory::load_shader_from_string(const std::string &code, ShaderType type) {
+        return std::make_shared<Shader>("string code", code, type);
     }
 
     std::shared_ptr<VertexAttributeSet> ResourceFactory::create_vertex_attribute_set(const std::vector<InputBindingInfo> &binding_infos) {

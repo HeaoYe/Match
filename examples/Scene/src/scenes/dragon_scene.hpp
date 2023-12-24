@@ -18,14 +18,9 @@ struct LightController {
     std::shared_ptr<Match::UniformBuffer> uniform;
 };
 
+// 使用宏定义Scene
 class DragonScene final : public Scene {
-public:
-    DragonScene(std::shared_ptr<Match::ResourceFactory> factory, std::shared_ptr<Match::Renderer> renderer) : Scene(factory, renderer) {}
-    void initialize() override;
-    void update(float delta) override;
-    void render() override;
-    void render_imgui() override;
-    void destroy() override;
+    define_scene(DragonScene)
 private:
     // 场景资源
     std::unique_ptr<Camera> camera;

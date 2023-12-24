@@ -10,8 +10,12 @@ public:
     void upload_data();
 public:
     struct CameraUniform {
-        alignas(4) glm::vec3 pos { 0, 0, 0 };
-        alignas(4) glm::vec3 direction { 0, 0, 1 };
+        // float, int 等4字节对齐
+        // vec2 8字节对齐
+        // vec3和vec4要16字节对齐
+        // mat 16字节对齐
+        alignas(16) glm::vec3 pos { 0, 0, 0 };
+        alignas(16) glm::vec3 direction { 0, 0, 1 };
         alignas(16) glm::mat4 view;
         alignas(16) glm::mat4 project;
     } data;

@@ -8,10 +8,10 @@ Application::Application() {
     Match::setting.default_font_filename = "/usr/share/fonts/TTF/JetBrainsMonoNerdFontMono-Light.ttf";
     Match::setting.chinese_font_filename = "/usr/share/fonts/adobe-source-han-sans/SourceHanSansCN-Medium.otf";
     Match::setting.font_size = 24.0f;
-    Match::setting.window_size = { 1920, 1080 };
     auto &context = Match::Initialize();
 
-    Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_1_BIT);
+    // 启用了8xMSAA
+    Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_8_BIT);
     Match::runtime_setting->set_vsync(true);
     
     auto factory = context.create_resource_factory("resource");

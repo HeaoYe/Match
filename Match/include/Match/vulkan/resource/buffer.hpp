@@ -9,6 +9,7 @@ namespace Match {
         Buffer(uint32_t size, VkBufferUsageFlags buffer_usage, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags);
         Buffer(Buffer &&rhs);
         void *map();
+        bool is_mapped();
         void unmap();
         ~Buffer();
     INNER_VISIBLE:
@@ -26,6 +27,16 @@ namespace Match {
         void *map();
         void flush();
         void unmap();
+        template <class Type>
+        void upload_data_from_vector(const std::vector<Type> &data) {
+            auto mapped = staging->is_mapped();
+            auto *ptr = staging->map();
+            memcpy(ptr, data.data(), data.size() * sizeof(Type));
+            flush();
+            if (!mapped) {
+                staging->unmap();
+            }
+        }
         ~TwoStageBuffer();
     INNER_VISIBLE:
         std::unique_ptr<Buffer> staging;

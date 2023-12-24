@@ -31,14 +31,21 @@ namespace Match {
         ConstantType type;
     };
 
+    enum class ShaderType {
+        eCompiled,
+        eVertexShaderNeedCompile,
+        eFragmentShaderNeedCompile,
+    };
+
     class Shader {
         no_copy_move_construction(Shader)
         using binding = uint32_t;
     public:
+        Shader(const std::string &name, const std::string &code, ShaderType type);
         Shader(const std::vector<char> &code);
-        Shader(const std::vector<uint32_t> &code);
         void bind_descriptors(const std::vector<DescriptorInfo> &descriptor_infos);
         void bind_push_constants(const std::vector<ConstantInfo> &constant_infos);
+        bool is_ready();
         ~Shader();
     private:
         void create(const uint32_t *data, uint32_t size);

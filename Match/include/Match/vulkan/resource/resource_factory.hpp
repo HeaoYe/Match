@@ -12,18 +12,13 @@
 #include <Match/vulkan/descriptor_resource/texture.hpp>
 
 namespace Match {
-    enum class ShaderType {
-        eCompiled,
-        eVertexShaderNeedCompile,
-        eFragmentShaderNeedCompile,
-    };
-
     class ResourceFactory {
         no_copy_move_construction(ResourceFactory)
     public:
         ResourceFactory(const std::string &root);
         std::shared_ptr<RenderPassBuilder> create_render_pass_builder();
         std::shared_ptr<Shader> load_shader(const std::string &filename, ShaderType type = ShaderType::eCompiled);
+        std::shared_ptr<Shader> load_shader_from_string(const std::string &code, ShaderType type);
         std::shared_ptr<VertexAttributeSet> create_vertex_attribute_set(const std::vector<InputBindingInfo> &binding_infos);
         std::shared_ptr<ShaderProgram> create_shader_program(std::weak_ptr<Renderer> renderer, const std::string &subpass_name);
         std::shared_ptr<VertexBuffer> create_vertex_buffer(uint32_t vertex_size, uint32_t count);

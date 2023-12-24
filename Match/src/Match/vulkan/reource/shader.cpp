@@ -1,10 +1,32 @@
 #include <Match/vulkan/resource/shader.hpp>
 #include <Match/core/utils.hpp>
 #include "../inner.hpp"
+#include <shaderc/shaderc.hpp>
 
 namespace Match {
-    Shader::Shader(const std::vector<uint32_t> &code) {
-        create(code.data(), code.size() * 4);
+    Shader::Shader(const std::string &name, const std::string &code, ShaderType type) {
+        if (type != ShaderType::eCompiled) {
+            shaderc_shader_kind kind;
+            switch (type) {
+            case Match::ShaderType::eVertexShaderNeedCompile:
+                kind = shaderc_glsl_vertex_shader;
+                break;
+            case Match::ShaderType::eFragmentShaderNeedCompile:
+                kind = shaderc_glsl_fragment_shader;
+                break;
+            default:
+                throw std::runtime_error("");
+            }
+            shaderc::Compiler compiler;
+            auto module = compiler.CompileGlslToSpv(code.data(), code.size(), kind, name.c_str(), {});
+            if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
+                MCH_ERROR("Compile {} faild: {}", name, module.GetErrorMessage());
+            }
+            std::vector<uint32_t> spirv(module.cbegin(), module.cend());
+            create(spirv.data(), spirv.size() * 4);
+        } else {
+            MCH_FATAL("Compile Shader Error: Unknown Shader Type {}", static_cast<uint32_t>(type));
+        }
     }
 
     Shader::Shader(const std::vector<char> &code) {
@@ -16,7 +38,12 @@ namespace Match {
         VkShaderModuleCreateInfo shader_module_create_info { .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
         shader_module_create_info.pCode = data;
         shader_module_create_info.codeSize = size;
+        module = VK_NULL_HANDLE;
         vk_check(vkCreateShaderModule(manager->device->device, &shader_module_create_info, manager->allocator, &module))
+    }
+    
+    bool Shader::is_ready() {
+        return module != VK_NULL_HANDLE;
     }
 
     Shader::~Shader() {
@@ -42,8 +69,16 @@ namespace Match {
     void Shader::bind_push_constants(const std::vector<ConstantInfo> &constant_infos) {
         for (auto info : constant_infos) {
             auto size = transform<uint32_t>(info.type);
-            if (size % 4 != 0) {
-                size += 4 - size % 4;
+            uint32_t align = 4;
+            if (size > 4) {
+                align = 8;
+            } else if (size > 8) {
+                align = 12;
+            } else if (size > 12) {
+                align = 16;
+            }
+            if (constants_size % align != 0) {
+                constants_size += align - (constants_size % align);
             }
             constant_offset_map.insert(std::make_pair(info.name, constants_size));
             constant_size_map.insert(std::make_pair(info.name, size));
