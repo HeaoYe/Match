@@ -89,36 +89,42 @@ namespace Match {
         std::stringstream ss;
         ss << "VK_KHR_";
 
-        switch (setting.render_backend) {
-#if defined (MATCH_WAYLAND)
-        case PlatformWindowSystem::eWayland:
-            ss << "wayland";
-            break;
-#endif
-#if defined (MATCH_XLIB)
-        case PlatformWindowSystem::eXlib:
-            ss << "xlib";
-            break;
-#endif
-#if defined (MATCH_XCB)
-        case PlatformWindowSystem::eXcb:
-            ss << "xcb";
-            break;
-#endif
-#if defined (MATCH_WIN32)
-        case PlatformWindowSystem::eWin32:
-            ss << "win32";
-            break;
-#endif
-        default:
-            MCH_FATAL("Unknown platform render backend, please set setting.render_backend")
-            return;
+// //         switch (setting.render_backend) {
+// // #if defined (MATCH_WAYLAND)
+// //         case PlatformWindowSystem::eWayland:
+// //             ss << "wayland";
+// //             break;
+// // #endif
+// // #if defined (MATCH_XLIB)
+// //         case PlatformWindowSystem::eXlib:
+// //             ss << "xlib";
+// //             break;
+// // #endif
+// // #if defined (MATCH_XCB)
+// //         case PlatformWindowSystem::eXcb:
+// //             ss << "xcb";
+// //             break;
+// // #endif
+// // #if defined (MATCH_WIN32)
+// //         case PlatformWindowSystem::eWin32:
+// //             ss << "win32";
+// //             break;
+// // #endif
+// //         default:
+// //             MCH_FATAL("Unknown platform render backend, please set setting.render_backend")
+// //             return;
+// //         }
+// //         ss << "_surface";
+//         std::map<std::string, bool> required_extensions = {
+//             { "VK_KHR_surface", false },
+//             { ss.str(), false },
+//         };
+        std::map<std::string, bool> required_extensions;
+        uint32_t count;
+        const char **glfw_required_extensions = glfwGetRequiredInstanceExtensions(&count);
+        for (uint32_t i = 0; i < count; i ++) {
+            required_extensions.insert(std::make_pair(std::string(glfw_required_extensions[i]), false));
         }
-        ss << "_surface";
-        std::map<std::string, bool> required_extensions = {
-            { "VK_KHR_surface", false },
-            { ss.str(), false },
-        };
 
         std::vector<const char *> enabled_extensions;
         uint32_t extension_count = 0;
@@ -171,47 +177,47 @@ namespace Match {
     }
 
     void APIManager::create_vk_surface(const APIInfo &info) {
-        switch (setting.render_backend) {
-#if defined (MATCH_WAYLAND)
-        case PlatformWindowSystem::eWayland: {
-            VkWaylandSurfaceCreateInfoKHR wayland_surface_create_info { VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR };
-            wayland_surface_create_info.surface = glfwGetWaylandWindow(window->window);
-            wayland_surface_create_info.display = glfwGetWaylandDisplay();
-            vk_check(vkCreateWaylandSurfaceKHR(instance, &wayland_surface_create_info, allocator, &surface));
-            break;
-        }
-#endif
-#if defined (MATCH_XLIB)
-        case PlatformWindowSystem::eXlib: {
-            VkXlibSurfaceCreateInfoKHR xlib_surface_create_info { VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
-            xlib_surface_create_info.dpy = glfwGetX11Display();
-            xlib_surface_create_info.window = glfwGetX11Window(window->window);
-            vk_check(vkCreateXlibSurfaceKHR(instance, &xlib_surface_create_info, allocator, &surface));
-            break;
-        }
-#endif
-#if defined (MATCH_XCB)
-        case PlatformWindowSystem::eXcb: {
-            VkXcbSurfaceCreateInfoKHR xcb_surface_create_info { VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR };
-            xcb_surface_create_info.connection = info.xcb_connection;
-            xcb_surface_create_info.window = info.xcb_window;
-            vk_check(vkCreateXcbSurfaceKHR(instance, &xcb_surface_create_info, allocator, &surface));
-            break;
-        }
-#endif
-#if defined (MATCH_WIN32)
-        case PlatformWindowSystem::eWin32: {
-            VkWin32SurfaceCreateInfoKHR win32_surface_create_info { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
-            win32_surface_create_info.hinstance = info.win32_hinstance;
-            win32_surface_create_info.hwnd = glfwGetWin32Window(window->window);
-            vk_check(vkCreateWin32SurfaceKHR(instance, &win32_surface_create_info, allocator, &surface));
-            break;
-        }
-#endif
-        default:
-            MCH_FATAL("Unknown platform render backend, please set setting.render_backend")
-            return;
-        }
+        glfwCreateWindowSurface(instance, window->get_glfw_window(), allocator, &surface);
+// #if defined (MATCH_WAYLAND)
+//         case PlatformWindowSystem::eWayland: {
+//             VkWaylandSurfaceCreateInfoKHR wayland_surface_create_info { VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR };
+//             wayland_surface_create_info.surface = glfwGetWaylandWindow(window->window);
+//             wayland_surface_create_info.display = glfwGetWaylandDisplay();
+//             vk_check(vkCreateWaylandSurfaceKHR(instance, &wayland_surface_create_info, allocator, &surface));
+//             break;
+//         }
+// #endif
+// #if defined (MATCH_XLIB)
+//         case PlatformWindowSystem::eXlib: {
+//             VkXlibSurfaceCreateInfoKHR xlib_surface_create_info { VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
+//             xlib_surface_create_info.dpy = glfwGetX11Display();
+//             xlib_surface_create_info.window = glfwGetX11Window(window->window);
+//             vk_check(vkCreateXlibSurfaceKHR(instance, &xlib_surface_create_info, allocator, &surface));
+//             break;
+//         }
+// #endif
+// #if defined (MATCH_XCB)
+//         case PlatformWindowSystem::eXcb: {
+//             VkXcbSurfaceCreateInfoKHR xcb_surface_create_info { VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR };
+//             xcb_surface_create_info.connection = info.xcb_connection;
+//             xcb_surface_create_info.window = info.xcb_window;
+//             vk_check(vkCreateXcbSurfaceKHR(instance, &xcb_surface_create_info, allocator, &surface));
+//             break;
+//         }
+// #endif
+// #if defined (MATCH_WIN32)
+//         case PlatformWindowSystem::eWin32: {
+//             VkWin32SurfaceCreateInfoKHR win32_surface_create_info { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+//             win32_surface_create_info.hinstance = info.win32_hinstance;
+//             win32_surface_create_info.hwnd = glfwGetWin32Window(window->window);
+//             vk_check(vkCreateWin32SurfaceKHR(instance, &win32_surface_create_info, allocator, &surface));
+//             break;
+//         }
+// #endif
+//         default:
+//             MCH_FATAL("Unknown platform render backend, please set setting.render_backend")
+//             return;
+//         }
     }
 
     void APIManager::initialize_vma() {

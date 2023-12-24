@@ -12,7 +12,6 @@ namespace Match {
         uint32_t engine_version = 1;
         std::array<uint32_t, 2> window_pos = { 100, 50 };
         std::array<uint32_t, 2> window_size = { 800, 800 };
-        PlatformWindowSystem render_backend = PlatformWindowSystem::eNone;
         uint32_t max_in_flight_frame = 2;
         std::string default_font_filename = "";
         std::string chinese_font_filename = "";

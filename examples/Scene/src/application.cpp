@@ -5,7 +5,6 @@ Application::Application() {
     // 关闭debug_moed和MSAA可以提高一点性能
     Match::setting.debug_mode = false;
     Match::setting.device_name = Match::AUTO_SELECT_DEVICE;
-    Match::setting.render_backend = Match::PlatformWindowSystem::eXlib;
     Match::setting.default_font_filename = "/usr/share/fonts/TTF/JetBrainsMonoNerdFontMono-Light.ttf";
     Match::setting.chinese_font_filename = "/usr/share/fonts/adobe-source-han-sans/SourceHanSansCN-Medium.otf";
     Match::setting.font_size = 24.0f;
