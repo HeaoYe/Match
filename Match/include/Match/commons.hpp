@@ -13,22 +13,6 @@
 #endif
 
 namespace Match {
-    enum class PlatformWindowSystem {
-        eNone,
-#if defined (MATCH_WAYLAND)
-        eWayland,
-#endif
-#if defined (MATCH_XLIB)
-        eXlib,
-#endif
-#if defined (MATCH_XCB)
-        eXcb,
-#endif
-#if defined (MATCH_WIN32)
-        eWin32,
-#endif
-    };
-
     enum class LogLevel {
         eTrace,
         eDebug,

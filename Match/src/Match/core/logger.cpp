@@ -9,7 +9,7 @@ namespace Match {
             return;
         }
         is_initialized = true;
-        spd_logger = spdlog::stdout_color_mt("MangoRHI");
+        spd_logger = spdlog::stdout_color_mt("Match Core");
         spd_logger->set_level(transform<spdlog::level::level_enum>(level));
         spd_logger->info("Create Logger");
     }

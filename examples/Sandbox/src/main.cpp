@@ -7,7 +7,6 @@ int main() {
     // 配置Match
     Match::setting.debug_mode = true;
     Match::setting.device_name = Match::AUTO_SELECT_DEVICE;
-    Match::setting.render_backend = Match::PlatformWindowSystem::eXlib;
     Match::setting.app_name = "App Name";
     Match::setting.default_font_filename = "/usr/share/fonts/TTF/JetBrainsMonoNerdFontMono-Light.ttf";
     Match::setting.chinese_font_filename = "/usr/share/fonts/adobe-source-han-sans/SourceHanSansCN-Medium.otf";
@@ -125,6 +124,11 @@ int main() {
             { 0, Match::DescriptorType::eUniform, sizeof(PosScaler) },
             { 1, Match::DescriptorType::eUniform, sizeof(ColorScaler) },
         });
+        // 为vertex shader添加push constants描述
+        vert_shader->bind_push_constants({
+            { "pad", Match::ConstantType::eFloat },
+            { "t", Match::ConstantType::eFloat },
+        });
         // 为fragment shader添加Texture描述符
         frag_shader->bind_descriptors({
             { 2, Match::DescriptorType::eTexture }
@@ -173,6 +177,12 @@ int main() {
         auto pos_uniform = factory->create_uniform_buffer(sizeof(PosScaler));
         auto color_uniform = factory->create_uniform_buffer(sizeof(ColorScaler));
 
+        // 创建纹理，
+        // auto texture = factory->load_texture("moon.jpg", 4);  // 为Texture生成4层mipmap
+        // 支持KTX Texture
+        auto texture = factory->load_texture("moon.ktx");
+        MCH_INFO("KTX Texture Mip Levels: {}", texture->get_mip_levels());
+
         // 创建采样器（可配置采样器选项）
         auto sampler = factory->create_sampler({
             .min_filter = Match::SamplerFilter::eNearest,
@@ -181,10 +191,8 @@ int main() {
             // 设置各向异性过滤
             .max_anisotropy = 16,
             .border_color = Match::SamplerBorderColor::eFloatOpaqueWhite,
-            .mip_levels = 4,
+            .mip_levels = texture->get_mip_levels(),
         });
-        // 创建纹理，
-        auto texture = factory->load_texture("moon.jpg", 4);  // 为Texture生成4层mipmap
 
         // 将创建的资源绑定到对应的binding
         shader_program->bind_uniforms(0, { pos_uniform });
@@ -205,6 +213,9 @@ int main() {
             auto current_time = std::chrono::high_resolution_clock::now();
             // 时间差
             auto time = std::chrono::duration<float, std::chrono::seconds::period>(current_time-start_time).count();
+
+            // 设置constants的值
+            shader_program->push_constants("t", time);
 
             // 程序启动5秒后关闭垂直同步，关闭后帧率涨到3000FPS
             static bool flag = true;

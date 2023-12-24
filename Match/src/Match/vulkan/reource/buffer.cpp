@@ -35,6 +35,10 @@ namespace Match {
         return data_ptr;
     }
 
+    bool Buffer::is_mapped() {
+        return mapped;
+    }
+
     void Buffer::unmap() {
         if (!mapped) {
             return;

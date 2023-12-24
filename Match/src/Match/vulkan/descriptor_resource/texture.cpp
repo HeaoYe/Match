@@ -1,4 +1,4 @@
-#include <Match/vulkan/descriptor_resource/texture.hpp>
+#include <Match/vulkan/descriptor_resource/spec_texture.hpp>
 #include <Match/vulkan/resource/buffer.hpp>
 #include <Match/vulkan/utils.hpp>
 #include <Match/core/setting.hpp>
@@ -6,12 +6,15 @@
 #include <stb/stb_image.h>
 
 namespace Match {
-    Texture::Texture(const std::string &filename, uint32_t mip_levels) {
+    void Texture::load_error(const std::string &filename) {
+        MCH_FATAL("Failed to load texture: {}", filename);
+    }
+    
+    ImgTexture::ImgTexture(const std::string &filename, uint32_t mip_levels) {
         int width, height, channels;
         stbi_uc* pixels = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha);
         if (!pixels) {
-            MCH_FATAL("Failed to load texture: {}", filename);
-            return ;
+            load_error(filename);
         }
         uint32_t size = width * height * 4;
         Buffer buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
@@ -110,8 +113,32 @@ namespace Match {
         image_view = create_image_view(image->image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mip_levels);
     }
 
-    Texture::~Texture() {
+    ImgTexture::~ImgTexture() {
         vkDestroyImageView(manager->device->device, image_view, manager->allocator);
         image.reset();
+    }
+
+    KtxTexture::KtxTexture(const std::string &filename) {
+        auto result = ktxTexture_CreateFromNamedFile(filename.c_str(), KTX_TEXTURE_CREATE_NO_FLAGS, &texture);
+        if (result != KTX_SUCCESS) {
+            load_error(filename);
+            return;
+        }
+        ktxVulkanDeviceInfo kvdi;
+        ktxVulkanDeviceInfo_Construct(&kvdi, manager->device->physical_device, manager->device->device, manager->device->transfer_queue, manager->command_pool->command_pool, manager->allocator);
+        result = ktxTexture_VkUploadEx(texture, &kvdi, &vk_texture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        if (result != KTX_SUCCESS) {
+            load_error(filename);
+            return;
+        }
+        image_view = create_image_view(vk_texture.image, vk_texture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, vk_texture.levelCount, vk_texture.layerCount, vk_texture.viewType);
+        ktxVulkanDeviceInfo_Destruct(&kvdi);
+    }
+
+    KtxTexture::~KtxTexture() {
+        vk_texture.vkFreeMemory(manager->device->device, vk_texture.deviceMemory, manager->allocator);
+        vk_texture.vkDestroyImage(manager->device->device, vk_texture.image, manager->allocator);
+        ktxTexture_Destroy(texture);
+        vkDestroyImageView(manager->device->device, image_view, manager->allocator);
     }
 }

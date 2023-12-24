@@ -2,11 +2,11 @@
 #include "inner.hpp"
 
 namespace Match {
-    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect, uint32_t mipmap_levels) {
+    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect, uint32_t mipmap_levels, uint32_t layer_count, VkImageViewType view_type) {
         VkImageViewCreateInfo create_info { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
         create_info.image = image;
         create_info.format = format;
-        create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        create_info.viewType = view_type;
         create_info.components = VkComponentMapping {
             .r = VK_COMPONENT_SWIZZLE_R,
             .g = VK_COMPONENT_SWIZZLE_G,
@@ -18,7 +18,7 @@ namespace Match {
             .baseMipLevel = 0,
             .levelCount = mipmap_levels,
             .baseArrayLayer = 0,
-            .layerCount = 1,
+            .layerCount = layer_count,
         };
         VkImageView view;
         vk_check(vkCreateImageView(manager->device->device, &create_info, manager->allocator, &view))

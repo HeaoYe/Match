@@ -1,4 +1,5 @@
 #include <Match/vulkan/resource/resource_factory.hpp>
+#include <Match/vulkan/descriptor_resource/spec_texture.hpp>
 #include <Match/core/utils.hpp>
 #include <shaderc/shaderc.hpp>
 
@@ -14,26 +15,13 @@ namespace Match {
         auto code = read_binary_file(root + "/shaders/" + filename);
 
         if (type != ShaderType::eCompiled) {
-            shaderc_shader_kind kind;
-            switch (type) {
-            case Match::ShaderType::eVertexShaderNeedCompile:
-                kind = shaderc_glsl_vertex_shader;
-                break;
-            case Match::ShaderType::eFragmentShaderNeedCompile:
-                kind = shaderc_glsl_fragment_shader;
-                break;
-            default:
-                throw std::runtime_error("");
-            }
-            shaderc::Compiler compiler;
-            auto module = compiler.CompileGlslToSpv(code.data(), code.size(), kind, filename.c_str(), {});
-            if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-                MCH_ERROR("Compile {} faild: {}", filename, module.GetErrorMessage());
-            }
-            std::vector<uint32_t> spirv(module.cbegin(), module.cend());
-            return std::make_shared<Shader>(spirv);
+            return std::make_shared<Shader>(filename, std::string(code.data(), code.size()), type);
         }
         return std::make_shared<Shader>(code);
+    }
+
+    std::shared_ptr<Shader> ResourceFactory::load_shader_from_string(const std::string &code, ShaderType type) {
+        return std::make_shared<Shader>("string code", code, type);
     }
 
     std::shared_ptr<VertexAttributeSet> ResourceFactory::create_vertex_attribute_set(const std::vector<InputBindingInfo> &binding_infos) {
@@ -61,6 +49,19 @@ namespace Match {
     }
 
     std::shared_ptr<Texture> ResourceFactory::load_texture(const std::string &filename, uint32_t mip_levels) {
-        return std::make_shared<Texture>(root + "/textures/" + filename, mip_levels);
+        auto pos = filename.find_last_of('.') + 1;
+        auto filetype = filename.substr(pos, filename.size() - pos);
+        std::string path = root + "/textures/" + filename;
+        if (filetype == "jpg") {
+            return std::make_shared<ImgTexture>(path, mip_levels);
+        }
+        if (filetype == "ktx") {
+            if (mip_levels != 0) {
+                MCH_WARN("Ktx Texture doesn't support custom mip_levels")
+            }
+            return std::make_shared<KtxTexture>(path);
+        }
+        MCH_ERROR("Unsupported texture format .{}", filetype);
+        return nullptr;
     }
 }
