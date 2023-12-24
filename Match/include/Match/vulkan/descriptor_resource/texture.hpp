@@ -1,15 +1,16 @@
 #pragma once
 
-#include <Match/vulkan/resource/image.hpp>
+#include <Match/vulkan/commons.hpp>
 
 namespace Match {
     class Texture {
-        no_copy_move_construction(Texture)
+        default_no_copy_move_construction(Texture)
     public:
-        Texture(const std::string &filename, uint32_t mip_levels);
-        ~Texture();
-    INNER_VISIBLE:
-        std::unique_ptr<Image> image;
-        VkImageView image_view;
+        virtual ~Texture() = default;
+        virtual VkImage get_image() = 0;
+        virtual VkImageView get_image_view() = 0;
+        virtual uint32_t get_mip_levels() = 0;
+    protected:
+        void load_error(const std::string &filename);
     };
 }

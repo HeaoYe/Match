@@ -3,7 +3,7 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect, uint32_t mipmap_levels);
+    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect, uint32_t mipmap_levels, uint32_t layer_count = 1, VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D);
 
     VkFormat find_supported_format(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 

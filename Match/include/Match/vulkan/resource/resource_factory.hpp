@@ -30,7 +30,7 @@ namespace Match {
         std::shared_ptr<IndexBuffer> create_index_buffer(IndexType type, uint32_t count);
         std::shared_ptr<Sampler> create_sampler(const SamplerOptions &options);
         std::shared_ptr<UniformBuffer> create_uniform_buffer(uint32_t size);
-        std::shared_ptr<Texture> load_texture(const std::string &filename, uint32_t mip_levels);
+        std::shared_ptr<Texture> load_texture(const std::string &filename, uint32_t mip_levels = 0);
     INNER_VISIBLE:
         std::string root;
     };

@@ -1,4 +1,5 @@
 #include <Match/vulkan/resource/resource_factory.hpp>
+#include <Match/vulkan/descriptor_resource/spec_texture.hpp>
 #include <Match/core/utils.hpp>
 #include <shaderc/shaderc.hpp>
 
@@ -61,6 +62,19 @@ namespace Match {
     }
 
     std::shared_ptr<Texture> ResourceFactory::load_texture(const std::string &filename, uint32_t mip_levels) {
-        return std::make_shared<Texture>(root + "/textures/" + filename, mip_levels);
+        auto pos = filename.find_last_of('.') + 1;
+        auto filetype = filename.substr(pos, filename.size() - pos);
+        std::string path = root + "/textures/" + filename;
+        if (filetype == "jpg") {
+            return std::make_shared<ImgTexture>(path, mip_levels);
+        }
+        if (filetype == "ktx") {
+            if (mip_levels != 0) {
+                MCH_WARN("Ktx Texture doesn't support custom mip_levels")
+            }
+            return std::make_shared<KtxTexture>(path);
+        }
+        MCH_ERROR("Unsupported texture format .{}", filetype);
+        return nullptr;
     }
 }

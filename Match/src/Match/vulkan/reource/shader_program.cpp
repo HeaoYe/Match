@@ -196,7 +196,7 @@ namespace Match {
                         std::vector<VkDescriptorImageInfo> image_infos(layout_binding.descriptorCount);
                         for (uint32_t i = 0; i < layout_binding.descriptorCount; i ++) {
                             image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                            image_infos[i].imageView = textures[i]->image_view;
+                            image_infos[i].imageView = textures[i]->get_image_view();
                             image_infos[i].sampler = samplers[i]->sampler;
                         }
                         VkWriteDescriptorSet descriptor_write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
