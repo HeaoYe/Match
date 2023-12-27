@@ -39,7 +39,7 @@ void DragonScene::initialize() {
         .depth_test_enable = VK_TRUE,
     });
 
-    camera = std::make_unique<Camera>(factory);
+    camera = std::make_unique<Camera>(*factory);
     shader_program->bind_uniforms(0, { camera->uniform });
 
     light = std::make_unique<LightController>(factory);

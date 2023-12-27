@@ -5,7 +5,7 @@
 
 class Camera {
 public:
-    Camera(std::weak_ptr<Match::ResourceFactory> factory);
+    Camera(Match::ResourceFactory &factory);
     void update(float dt);
     void upload_data();
 public:
@@ -15,7 +15,6 @@ public:
         // vec3和vec4要16字节对齐
         // mat 16字节对齐
         alignas(16) glm::vec3 pos { 0, 0, 0 };
-        alignas(16) glm::vec3 direction { 0, 0, 1 };
         alignas(16) glm::mat4 view;
         alignas(16) glm::mat4 project;
     } data;

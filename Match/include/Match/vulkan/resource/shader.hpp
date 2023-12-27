@@ -2,6 +2,7 @@
 
 #include <Match/vulkan/commons.hpp>
 #include <Match/vulkan/resource/vertex_attribute_set.hpp>
+#include <optional>
 
 namespace Match {
     enum class DescriptorType {
@@ -52,6 +53,7 @@ namespace Match {
     INNER_VISIBLE:
         VkShaderModule module;
         std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+        std::optional<uint32_t> first_align;
         uint32_t constants_size;
         std::map<std::string, uint32_t> constant_size_map;
         std::map<std::string, uint32_t> constant_offset_map;

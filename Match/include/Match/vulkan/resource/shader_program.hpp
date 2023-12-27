@@ -53,8 +53,6 @@ namespace Match {
         BasicConstantValue(uint32_t ui) : ui(ui) {}
         float f;
         BasicConstantValue(float f) : f(f) {}
-        double d;
-        BasicConstantValue(double d) : d(d) {}
     };
 
     class Renderer;

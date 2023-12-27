@@ -8,7 +8,6 @@ layout(location = 3) in vec3 offset;
 
 layout(binding = 0) uniform CameraUniform {
     vec3 pos;
-    vec3 direction;
     mat4 view;
     mat4 project;
 } camera;

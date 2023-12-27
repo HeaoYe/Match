@@ -70,12 +70,13 @@ namespace Match {
         for (auto info : constant_infos) {
             auto size = transform<uint32_t>(info.type);
             uint32_t align = 4;
-            if (size > 4) {
-                align = 8;
-            } else if (size > 8) {
-                align = 12;
-            } else if (size > 12) {
+            if (size > 8) {
                 align = 16;
+            } else if (size > 4) {
+                align = 8;
+            }
+            if (!first_align.has_value()) {
+                first_align = align;
             }
             if (constants_size % align != 0) {
                 constants_size += align - (constants_size % align);

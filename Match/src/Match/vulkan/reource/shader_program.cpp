@@ -127,10 +127,24 @@ namespace Match {
             current_offset += vertex_shader->constants_size;
         }
         for (const auto &layout_binding : fragment_shader->layout_bindings) {
+            bool exist = false;
+            for (auto &exist_binding : layout_bindings) {
+                if (exist_binding.binding == layout_binding.binding) {
+                    assert(exist_binding.descriptorType == layout_binding.descriptorType);
+                    exist_binding.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+                    exist = true;
+                }
+            }
+            if (exist) {
+                continue;
+            }
             layout_bindings.push_back(layout_binding);
             layout_bindings.back().stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
         }
         if (fragment_shader->constants_size != 0) {
+            if (current_offset % fragment_shader->first_align.value() != 0) {
+                current_offset += fragment_shader->first_align.value() - (current_offset % fragment_shader->first_align.value());
+            }
             constant_offset_size_map.insert(std::make_pair(VK_SHADER_STAGE_FRAGMENT_BIT, std::make_pair(current_offset, fragment_shader->constants_size)));
             constant_ranges.push_back({
                 .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
