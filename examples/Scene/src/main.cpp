@@ -1,6 +1,7 @@
 #include "application.hpp"
 #include "scenes/dragon_scene.hpp"
 #include "scenes/shadertoy_scene.hpp"
+#include "scenes/pbr_scene.hpp"
 
 int main() {
     // 窗口大小的配置移动到main.cpp中
@@ -12,7 +13,9 @@ int main() {
     // app.load_scene<DragonScene>();
     // ShaderToy 简单的支持
     // 支持所有只有一个Channel的Shader
-    app.load_scene<ShaderToyScene>();
+    // app.load_scene<ShaderToyScene>();
+    // Physically Based Rendering
+    app.load_scene<PBRScene>();
     app.gameloop();
     return 0;
 }
