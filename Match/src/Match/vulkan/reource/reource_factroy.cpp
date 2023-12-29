@@ -11,6 +11,10 @@ namespace Match {
         return std::make_shared<RenderPassBuilder>();
     }
 
+    std::shared_ptr<Renderer> ResourceFactory::create_renderer(std::shared_ptr<RenderPassBuilder> builder) {
+        return std::make_shared<Renderer>(builder);
+    }
+
     std::shared_ptr<Shader> ResourceFactory::load_shader(const std::string &filename, ShaderType type) {
         auto code = read_binary_file(root + "/shaders/" + filename);
 

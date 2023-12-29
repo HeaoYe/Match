@@ -14,12 +14,12 @@ Application::Application() {
     
     auto factory = context.create_resource_factory("resource");
     auto builder = factory->create_render_pass_builder();
-    builder->add_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, Match::AttchmentType::eColor);
-    builder->add_attachment("depth", Match::AttchmentType::eDepth);
+    // builder->add_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, Match::AttachmentType::eColor);
+    builder->add_attachment("depth", Match::AttachmentType::eDepth);
     auto &main_subpass = builder->add_subpass("main");
     main_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
     main_subpass.attach_depth_attachment("depth");
-    renderer = context.create_renderer(builder);
+    renderer = factory->create_renderer(builder);
     renderer->attach_render_layer<Match::ImGuiLayer>("imgui layer");
 
     scene_manager = std::make_unique<SceneManager>(factory, renderer);

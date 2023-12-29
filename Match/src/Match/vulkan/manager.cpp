@@ -58,10 +58,6 @@ namespace Match {
         return std::make_shared<ResourceFactory>(root);
     }
 
-    std::shared_ptr<Renderer> APIManager::create_renderer(std::shared_ptr<RenderPassBuilder> builder) {
-        return std::make_shared<Renderer>(builder);
-    }
-
     CommandPool &APIManager::get_command_pool() {
         return *command_pool;
     }

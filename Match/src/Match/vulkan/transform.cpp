@@ -165,6 +165,8 @@ namespace Match {
         switch (type) {
         _case(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, DescriptorType, eUniform)
         _case(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, DescriptorType, eTexture)
+        _case(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, DescriptorType, eTextureAttachment)
+        _case(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, DescriptorType, eInputAttachment)
         }
     }
 

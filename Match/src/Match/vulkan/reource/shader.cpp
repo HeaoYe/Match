@@ -41,6 +41,15 @@ namespace Match {
         module = VK_NULL_HANDLE;
         vk_check(vkCreateShaderModule(manager->device->device, &shader_module_create_info, manager->allocator, &module))
     }
+
+    VkDescriptorSetLayoutBinding *Shader::get_layout_binding(uint32_t binding) {
+        for (auto &layout_binding : layout_bindings) {
+            if (layout_binding.binding == binding) {
+                return &layout_binding;
+            }
+        }
+        return nullptr;
+    }
     
     bool Shader::is_ready() {
         return module != VK_NULL_HANDLE;
@@ -61,7 +70,7 @@ namespace Match {
                 .stageFlags = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM,  // set by shader program
             });
             if (descriptor_info.type == DescriptorType::eTexture) {
-                layout_bindings.back().pImmutableSamplers = descriptor_info.spec_data.immutable_samplers;
+                layout_bindings.back().pImmutableSamplers = descriptor_info.immutable_samplers;
             }
         }
     }

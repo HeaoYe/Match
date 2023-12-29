@@ -95,7 +95,7 @@ namespace Match {
         depth_stencil_state.stencilTestEnable = VK_FALSE;
 
         auto locked_renderer = renderer.lock();
-        uint32_t subpass_idx = locked_renderer->render_pass_builder->subpasses_map.at(subpass_name);
+        uint32_t subpass_idx = locked_renderer->render_pass_builder->get_subpass_index(subpass_name);
         auto &subpass = *locked_renderer->render_pass_builder->subpass_builders[subpass_idx];
         bind_point = subpass.bind_point;
 
@@ -192,63 +192,108 @@ namespace Match {
 
     void ShaderProgram::bind_uniforms(binding binding, const std::vector<std::shared_ptr<UniformBuffer>> &uniform_buffers) {
         for (const auto &shader : { vertex_shader, fragment_shader }) {
-            for (const auto &layout_binding : shader->layout_bindings) {
-                if (layout_binding.binding == binding) {
-                    if (layout_binding.descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-                        MCH_ERROR("Binding {} is not a uniform descriptor", binding)
-                        return;
-                    }
-                    for (size_t i = 0; i < setting.max_in_flight_frame; i++) {
-                        std::vector<VkDescriptorBufferInfo> buffer_infos(layout_binding.descriptorCount);
-                        for (uint32_t i = 0; i < layout_binding.descriptorCount; i ++) {
-                            buffer_infos[i].buffer = uniform_buffers[i]->buffers[i].buffer;
-                            buffer_infos[i].offset = 0;
-                            buffer_infos[i].range = uniform_buffers[i]->size;
-                        }
-                        VkWriteDescriptorSet descriptor_write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-                        descriptor_write.dstSet = descriptor_sets[i];
-                        descriptor_write.dstBinding = layout_binding.binding;
-                        descriptor_write.dstArrayElement = 0;
-                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                        descriptor_write.descriptorCount = layout_binding.descriptorCount;
-                        descriptor_write.pBufferInfo = buffer_infos.data();
-                        vkUpdateDescriptorSets(manager->device->device, 1, &descriptor_write, 0, nullptr);
-                    }
-                    return;
+            auto *layout_binding = shader->get_layout_binding(binding);
+            if (layout_binding == nullptr) {
+                continue;
+            }
+            if (layout_binding->descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+                MCH_ERROR("Binding {} is not a uniform descriptor", binding)
+                return;
+            }
+            for (size_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
+                std::vector<VkDescriptorBufferInfo> buffer_infos(layout_binding->descriptorCount);
+                for (uint32_t i = 0; i < layout_binding->descriptorCount; i ++) {
+                    buffer_infos[i].buffer = uniform_buffers[i]->buffers[i].buffer;
+                    buffer_infos[i].offset = 0;
+                    buffer_infos[i].range = uniform_buffers[i]->size;
                 }
+                VkWriteDescriptorSet descriptor_write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+                descriptor_write.dstSet = descriptor_sets[in_flight];
+                descriptor_write.dstBinding = layout_binding->binding;
+                descriptor_write.dstArrayElement = 0;
+                descriptor_write.descriptorType = layout_binding->descriptorType;
+                descriptor_write.descriptorCount = layout_binding->descriptorCount;
+                descriptor_write.pBufferInfo = buffer_infos.data();
+                vkUpdateDescriptorSets(manager->device->device, 1, &descriptor_write, 0, nullptr);
             }
         }
     }
 
     void ShaderProgram::bind_textures(binding binding, const std::vector<std::shared_ptr<Texture>> &textures, const std::vector<std::shared_ptr<Sampler>> &samplers) {
         for (const auto &shader : { vertex_shader, fragment_shader }) {
-            for (const auto &layout_binding : shader->layout_bindings) {
-                if (layout_binding.binding == binding) {
-                    if (layout_binding.descriptorType != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
-                        MCH_ERROR("Binding {} is not a texture descriptor", binding)
-                        return;
-                    }
-                    for (size_t i = 0; i < setting.max_in_flight_frame; i++) {
-                        std::vector<VkDescriptorImageInfo> image_infos(layout_binding.descriptorCount);
-                        for (uint32_t i = 0; i < layout_binding.descriptorCount; i ++) {
-                            image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                            image_infos[i].imageView = textures[i]->get_image_view();
-                            image_infos[i].sampler = samplers[i]->sampler;
-                        }
-                        VkWriteDescriptorSet descriptor_write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-                        descriptor_write.dstSet = descriptor_sets[i];
-                        descriptor_write.dstBinding = layout_binding.binding;
-                        descriptor_write.dstArrayElement = 0;
-                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                        descriptor_write.descriptorCount = layout_binding.descriptorCount;
-                        descriptor_write.pImageInfo = image_infos.data();
-                        vkUpdateDescriptorSets(manager->device->device, 1, &descriptor_write, 0, nullptr);
-                    }
-                    return;
+            auto *layout_binding = shader->get_layout_binding(binding);
+            if (layout_binding == nullptr) {
+                continue;
+            }
+            if (layout_binding->descriptorType != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                MCH_ERROR("Binding {} is not a texture descriptor", binding)
+                return;
+            }
+            for (size_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
+                std::vector<VkDescriptorImageInfo> image_infos(layout_binding->descriptorCount);
+                for (uint32_t i = 0; i < layout_binding->descriptorCount; i ++) {
+                    image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    image_infos[i].imageView = textures[i]->get_image_view();
+                    image_infos[i].sampler = samplers[i]->sampler;
                 }
+                VkWriteDescriptorSet descriptor_write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+                descriptor_write.dstSet = descriptor_sets[in_flight];
+                descriptor_write.dstBinding = layout_binding->binding;
+                descriptor_write.dstArrayElement = 0;
+                descriptor_write.descriptorType = layout_binding->descriptorType;
+                descriptor_write.descriptorCount = layout_binding->descriptorCount;
+                descriptor_write.pImageInfo = image_infos.data();
+                vkUpdateDescriptorSets(manager->device->device, 1, &descriptor_write, 0, nullptr);
             }
         }
     }
+    
+    void ShaderProgram::bind_input_attachments(binding binding, const std::vector<std::string> &attachment_names, const std::vector<std::shared_ptr<Sampler>> &samplers) {
+        auto locked_renderer = renderer.lock();
+        if (!callback_id.has_value()) {
+            callback_id = locked_renderer->register_resource_recreate_callback([this]() {
+                update_input_attachments();
+            });
+        }
+        for (const auto &shader : { vertex_shader, fragment_shader }) {
+            auto *layout_binding = shader->get_layout_binding(binding);
+            if (layout_binding == nullptr) {
+                continue;
+            }
+            if ((layout_binding->descriptorType & (VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT | VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) == 0) {
+                MCH_ERROR("Binding {} is not a InputAttachment descriptor", binding)
+                return;
+            }
+            auto pos = input_attachments_temp.find(binding);
+            if (pos == input_attachments_temp.end()) {
+                input_attachments_temp.insert(std::make_pair(binding, std::make_pair(attachment_names, samplers)));
+            }
+            for (size_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
+                std::vector<VkDescriptorImageInfo> image_infos(layout_binding->descriptorCount);
+                for (uint32_t i = 0; i < layout_binding->descriptorCount; i ++) {
+                    image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    auto attachment_idx = locked_renderer->render_pass_builder->get_attachment_index(attachment_names[i], true);
+                    auto &attachment = locked_renderer->framebuffer_set->attachments[attachment_idx];
+                    image_infos[i].imageView = attachment.image_view;
+                    image_infos[i].sampler = samplers[i]->sampler;
+                }
+                VkWriteDescriptorSet descriptor_write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+                descriptor_write.dstSet = descriptor_sets[in_flight];
+                descriptor_write.dstBinding = layout_binding->binding;
+                descriptor_write.dstArrayElement = 0;
+                descriptor_write.descriptorType = layout_binding->descriptorType;
+                descriptor_write.descriptorCount = layout_binding->descriptorCount;
+                descriptor_write.pImageInfo = image_infos.data();
+                vkUpdateDescriptorSets(manager->device->device, 1, &descriptor_write, 0, nullptr);
+            }
+        }
+    }
+
+    void ShaderProgram::update_input_attachments() {
+        for (auto [binding, info] : input_attachments_temp) {
+            bind_input_attachments(binding, info.first, info.second);
+        }
+    };
 
     void ShaderProgram::push_constants(const std::string &name, BasicConstantValue basic_value) {
         push_constants(name, &basic_value);
@@ -275,6 +320,10 @@ namespace Match {
     }
 
     ShaderProgram::~ShaderProgram() {
+        if (callback_id.has_value()) {
+            renderer.lock()->remove_resource_recreate_callback(callback_id.value());
+            callback_id.reset();
+        }
         descriptor_sets.clear();
         vkDestroyPipeline(manager->device->device, pipeline, manager->allocator);
         vkDestroyDescriptorSetLayout(manager->device->device, descriptor_set_layout, manager->allocator);

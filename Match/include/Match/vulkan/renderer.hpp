@@ -20,6 +20,7 @@ namespace Match {
 
     class Renderer {
         no_copy_move_construction(Renderer)
+        using ResourceRecreateCallback = std::function<void()>;
     public:
         Renderer(std::shared_ptr<RenderPassBuilder> builder);
         ~Renderer();
@@ -56,12 +57,15 @@ namespace Match {
         void update_resources();
     INNER_VISIBLE:
         void update_renderpass();
+        uint32_t register_resource_recreate_callback(const ResourceRecreateCallback &callback);
+        void remove_resource_recreate_callback(uint32_t id);
     INNER_VISIBLE:
         std::shared_ptr<RenderPassBuilder> render_pass_builder;
         std::unique_ptr<RenderPass> render_pass;
         std::unique_ptr<FrameBufferSet> framebuffer_set;
         std::vector<std::unique_ptr<RenderLayer>> layers;
         std::map<std::string, uint32_t> layers_map;
+        std::map<uint32_t, ResourceRecreateCallback> callbacks;
         bool resized;
         uint32_t index;
         uint32_t current_in_flight;

@@ -8,21 +8,19 @@ namespace Match {
     enum class DescriptorType {
         eUniform,
         eTexture,
+        eTextureAttachment,
+        eInputAttachment,
     };
 
     struct DescriptorInfo {
-        DescriptorInfo(uint32_t binding, DescriptorType type, uint32_t count, const VkSampler *immutable_samplers) : binding(binding), type(type), count(count), spec_data({.immutable_samplers = immutable_samplers}) {}
-        DescriptorInfo(uint32_t binding, DescriptorType type, uint32_t count, uint32_t size) : binding(binding), type(type), count(count), spec_data({.size = size}) {}
-        DescriptorInfo(uint32_t binding, DescriptorType type, const VkSampler *immutable_samplers) : binding(binding), type(type), count(1), spec_data({.immutable_samplers = immutable_samplers}) {}
-        DescriptorInfo(uint32_t binding, DescriptorType type, uint32_t size) : binding(binding), type(type), count(1), spec_data({.size = size}) {}
-        DescriptorInfo(uint32_t binding, DescriptorType type) : binding(binding), type(type), count(1), spec_data({.immutable_samplers = nullptr}) {}
+        DescriptorInfo(uint32_t binding, DescriptorType type, uint32_t count, const VkSampler *immutable_samplers) : binding(binding), type(type), count(count), immutable_samplers(immutable_samplers) {}
+        DescriptorInfo(uint32_t binding, DescriptorType type, uint32_t count) : binding(binding), type(type), count(count) {}
+        DescriptorInfo(uint32_t binding, DescriptorType type, const VkSampler *immutable_samplers) : binding(binding), type(type), count(1), immutable_samplers(immutable_samplers) {}
+        DescriptorInfo(uint32_t binding, DescriptorType type) : binding(binding), type(type), count(1), immutable_samplers(nullptr) {}
         uint32_t binding;
         DescriptorType type;
         uint32_t count;
-        union {
-            uint32_t size;
-            const VkSampler *immutable_samplers;
-        } spec_data;
+        const VkSampler *immutable_samplers;
     };
 
     typedef VertexType ConstantType;
@@ -50,6 +48,8 @@ namespace Match {
         ~Shader();
     private:
         void create(const uint32_t *data, uint32_t size);
+    INNER_VISIBLE:
+        VkDescriptorSetLayoutBinding *get_layout_binding(uint32_t binding);
     INNER_VISIBLE:
         VkShaderModule module;
         std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
