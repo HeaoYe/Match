@@ -8,7 +8,7 @@ namespace Match {
         eColor,
         eDepth,
         eDepthBuffer,
-        eColorBuffer,
+        eFloat4Buffer,
     };
 
     struct AttachmentInfo {

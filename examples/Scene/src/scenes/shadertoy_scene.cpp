@@ -1,6 +1,12 @@
 #include "shadertoy_scene.hpp"
 
 void ShaderToyScene::initialize() {
+    auto builder = factory->create_render_pass_builder();
+    auto &main_subpass = builder->add_subpass("main");
+    main_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
+    renderer = factory->create_renderer(builder);
+    renderer->attach_render_layer<Match::ImGuiLayer>("imgui layer");
+
     vertex_buffer = factory->create_vertex_buffer(sizeof(glm::vec2), 4);
     vertex_buffer->upload_data_from_vector<glm::vec2>({
         { 1, 1 },
@@ -136,4 +142,5 @@ void ShaderToyScene::destroy() {
 ShaderToyInput::ShaderToyInput(Match::ResourceFactory &factory) {
     uniform_buffer = factory.create_uniform_buffer(sizeof(ShaderToyInputUniform));
     uniform = (ShaderToyInputUniform *) uniform_buffer->get_uniform_ptr();
+    memset(uniform, 0, sizeof(ShaderToyInputUniform));
 }

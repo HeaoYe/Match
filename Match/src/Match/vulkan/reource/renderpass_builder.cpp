@@ -137,7 +137,7 @@ namespace Match {
             }
             attachment.clear_value = { .depthStencil = { 1.0f, 0 } };
             break;
-        case AttachmentType::eColorBuffer:
+        case AttachmentType::eFloat4Buffer:
             attachment.description_write.format = VK_FORMAT_R32G32B32A32_SFLOAT;
             attachment.description_write.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             attachment.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;

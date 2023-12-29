@@ -5,12 +5,11 @@ class Application {
 public:
     Application();
     template <class SceneClass>
-    void load_scene() {
-        scene_manager->load_scene<SceneClass>();
+    void register_scene(const std::string &name) {
+        scene_manager->register_scene<SceneClass>(name);
     }
     void gameloop();
     ~Application();
 private:
-    std::shared_ptr<Match::Renderer> renderer;
     std::unique_ptr<SceneManager> scene_manager;
 };

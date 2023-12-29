@@ -13,21 +13,10 @@ Application::Application() {
     Match::runtime_setting->set_vsync(true);
     
     auto factory = context.create_resource_factory("resource");
-    auto builder = factory->create_render_pass_builder();
-    // builder->add_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, Match::AttachmentType::eColor);
-    builder->add_attachment("depth", Match::AttachmentType::eDepth);
-    auto &main_subpass = builder->add_subpass("main");
-    main_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
-    main_subpass.attach_depth_attachment("depth");
-    renderer = factory->create_renderer(builder);
-    renderer->attach_render_layer<Match::ImGuiLayer>("imgui layer");
-
-    scene_manager = std::make_unique<SceneManager>(factory, renderer);
+    scene_manager = std::make_unique<SceneManager>(factory);
 }
 
 Application::~Application() {
-    renderer->wait_for_destroy();
-    renderer.reset();
     scene_manager.reset();
     Match::Destroy();
 }
@@ -36,15 +25,8 @@ void Application::gameloop() {
     while (Match::window->is_alive()) {
         Match::window->poll_events();
 
-        scene_manager->update(ImGui::GetIO().DeltaTime);
+        scene_manager->update();
 
-        renderer->begin_render();
         scene_manager->render();
-
-        renderer->begin_layer_render("imgui layer");
-        scene_manager->render_imgui();
-        renderer->end_layer_render("imgui layer");
-
-        renderer->end_render();
     }
 }

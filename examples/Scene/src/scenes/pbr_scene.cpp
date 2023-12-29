@@ -2,6 +2,14 @@
 #include <glm/gtx/rotate_vector.hpp>
 
 void PBRScene::initialize() {
+    auto builder = factory->create_render_pass_builder();
+    builder->add_attachment("depth", Match::AttachmentType::eDepth);
+    auto &main_subpass = builder->add_subpass("main");
+    main_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
+    main_subpass.attach_depth_attachment("depth");
+    renderer = factory->create_renderer(builder);
+    renderer->attach_render_layer<Match::ImGuiLayer>("imgui layer");
+
     auto vert_shader = factory->load_shader("pbr_shader/shader.vert", Match::ShaderType::eVertexShaderNeedCompile);
     auto frag_shader = factory->load_shader("pbr_shader/shader.frag", Match::ShaderType::eFragmentShaderNeedCompile);
 
@@ -94,9 +102,11 @@ void PBRScene::destroy() {
 PBRMaterial::PBRMaterial(Match::ResourceFactory &factory) {
     uniform_buffer = factory.create_uniform_buffer(sizeof(PBRMaterialUniform));
     data = static_cast<PBRMaterialUniform *>(uniform_buffer->get_uniform_ptr());
+    memset(data, 0, sizeof(PBRMaterialUniform));
 }
 
 Lights::Lights(Match::ResourceFactory &factory) {
     uniform_buffer = factory.create_uniform_buffer(sizeof(LightsUniform));
     data = static_cast<LightsUniform *>(uniform_buffer->get_uniform_ptr());
+    memset(data, 0, sizeof(LightsUniform));
 }

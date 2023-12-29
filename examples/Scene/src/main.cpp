@@ -10,12 +10,12 @@ int main() {
     Match::setting.debug_mode = true;
     Application app;
     // 中国龙场景
-    // app.load_scene<DragonScene>();
+    app.register_scene<DragonScene>("中国龙");
+    // Physically Based Rendering
+    app.register_scene<PBRScene>("Physically Based Rendering");
     // ShaderToy 简单的支持
     // 支持所有只有一个Channel的Shader
-    // app.load_scene<ShaderToyScene>();
-    // Physically Based Rendering
-    app.load_scene<PBRScene>();
+    app.register_scene<ShaderToyScene>("Shader Toy");
     app.gameloop();
     return 0;
 }
