@@ -63,8 +63,8 @@ namespace Match {
     public:
         ShaderProgram(std::weak_ptr<Renderer> renderer, const std::string &subpass_name);
         void bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set);
-        void attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry);
-        void attach_fragment_shader(std::shared_ptr<Shader> shader, const std::string &entry);
+        void attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
+        void attach_fragment_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
         void compile(const ShaderProgramCompileOptions &options = {});
         void bind_uniforms(binding binding, const std::vector<std::shared_ptr<UniformBuffer>> &uniform_buffers);
         void bind_textures(binding binding, const std::vector<std::shared_ptr<Texture>> &textures, const std::vector<std::shared_ptr<Sampler>> &samplers);

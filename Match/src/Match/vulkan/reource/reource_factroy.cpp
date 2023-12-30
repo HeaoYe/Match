@@ -68,4 +68,8 @@ namespace Match {
         MCH_ERROR("Unsupported texture format .{}", filetype);
         return nullptr;
     }
+
+    std::shared_ptr<Texture> ResourceFactory::create_texture(const uint8_t *data, uint32_t width, uint32_t height, uint32_t mip_levels) {
+        return std::make_shared<DataTexture>(data, width, height, mip_levels);
+    }
 }
