@@ -9,21 +9,16 @@ namespace Match {
     void Texture::load_error(const std::string &filename) {
         MCH_FATAL("Failed to load texture: {}", filename);
     }
-    
-    ImgTexture::ImgTexture(const std::string &filename, uint32_t mip_levels) {
-        int width, height, channels;
-        stbi_uc* pixels = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-        if (!pixels) {
-            load_error(filename);
-        }
+
+    DataTexture::DataTexture(const uint8_t *data, uint32_t width, uint32_t height, uint32_t mip_levels) {
         uint32_t size = width * height * 4;
         Buffer buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
-        memcpy(buffer.map(), pixels, size);
+        memcpy(buffer.map(), data, size);
         buffer.unmap();
-        stbi_image_free(pixels);
         if (mip_levels == 0) {
             mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
         }
+        this->mip_levels = mip_levels;
         image = std::make_unique<Image>(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_SAMPLE_COUNT_1_BIT, VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, mip_levels);
 
         transition_image_layout(image->image, VK_IMAGE_ASPECT_COLOR_BIT, mip_levels, { VK_IMAGE_LAYOUT_UNDEFINED, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT }, { VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT });
@@ -113,9 +108,23 @@ namespace Match {
         image_view = create_image_view(image->image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mip_levels);
     }
 
-    ImgTexture::~ImgTexture() {
+    DataTexture::~DataTexture() {
         vkDestroyImageView(manager->device->device, image_view, manager->allocator);
         image.reset();
+    }
+    
+    ImgTexture::ImgTexture(const std::string &filename, uint32_t mip_levels) {
+        int width, height, channels;
+        stbi_uc* pixels = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+        if (!pixels) {
+            load_error(filename);
+        }
+        texture = std::make_unique<DataTexture>(pixels, width, height, mip_levels);
+        stbi_image_free(pixels);
+    }
+
+    ImgTexture::~ImgTexture() {
+        texture.reset();
     }
 
     KtxTexture::KtxTexture(const std::string &filename) {

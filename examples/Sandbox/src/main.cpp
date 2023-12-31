@@ -27,8 +27,10 @@ int main() {
         
         // 配置Vulkan的RenderPass
         auto builder = factory->create_render_pass_builder();
-        builder->add_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, Match::AttchmentType::eColor);
-        builder->add_attachment("Depth Buffer", Match::AttchmentType::eDepth);
+        // Attchment --> Attachment   之前拼错了
+        // RenderPassBuilder在创建时会自动添加SWAPCHAIN_IMAGE_ATTACHMENT作为PresentSrc
+        // builder->add_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, Match::AttachmentType::eColor);
+        builder->add_attachment("Depth Buffer", Match::AttachmentType::eDepth);
 
         // 创建Subpass
         auto &subpass = builder->add_subpass("MainSubpass");
@@ -44,7 +46,8 @@ int main() {
             { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_ACCESS_NONE }
         );
         // 将RenderPass与Renderer绑定
-        auto renderer = context.create_renderer(builder);
+        // 改为使用ResourceFactory创建Renderer
+        auto renderer = factory->create_renderer(builder);
         // 为renderer添加ImGui渲染层
         // 会在所有Subpass后添加一个渲染ImGui的Subpass
         // 所以渲染ImGui的操作要放到其他渲染的后面
@@ -120,9 +123,11 @@ int main() {
         // 资源描述符的绑定由Shader完成，因为资源描述符与Shader文件有关，与ShaderProgram无关
         // 为vertex shader添加Uniform描述符
         vert_shader->bind_descriptors({
-            // { binding, descriptor type, sizeof uniform }
-            { 0, Match::DescriptorType::eUniform, sizeof(PosScaler) },
-            { 1, Match::DescriptorType::eUniform, sizeof(ColorScaler) },
+            // { binding, descriptor type, (descriptor count) }
+            // 不再需要UniformSize作为参数，因为描述符与资源无关
+            // 可以指定Descriptor的数量
+            { 0, Match::DescriptorType::eUniform },
+            { 1, Match::DescriptorType::eUniform },
         });
         // 为vertex shader添加push constants描述
         vert_shader->bind_push_constants({

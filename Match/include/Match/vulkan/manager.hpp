@@ -22,7 +22,6 @@ namespace Match {
         void initialize(const APIInfo &info);
         std::shared_ptr<RuntimeSetting> get_runtime_setting();
         std::shared_ptr<ResourceFactory> create_resource_factory(const std::string &root);
-        std::shared_ptr<Renderer> create_renderer(std::shared_ptr<RenderPassBuilder> builder);
         CommandPool &get_command_pool();
         void destroy();
     INNER_VISIBLE:

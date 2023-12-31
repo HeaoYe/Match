@@ -14,7 +14,7 @@ public:
         alignas(4) float iFrame;
         alignas(16) glm::vec4 iMouse;
         alignas(16) glm::vec4 iDate;
-    } inner;
+    };
     ShaderToyInputUniform *uniform;
     std::shared_ptr<Match::UniformBuffer> uniform_buffer;
 };

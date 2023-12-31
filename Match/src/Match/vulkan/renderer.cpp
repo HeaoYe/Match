@@ -39,6 +39,9 @@ namespace Match {
         manager->recreate_swapchin();
         framebuffer_set.reset();
         framebuffer_set = std::make_unique<FrameBufferSet>(*this);
+        for (auto &[id, callback] : callbacks) {
+            callback();
+        }
     }
 
     void Renderer::update_renderpass() {
@@ -49,6 +52,7 @@ namespace Match {
 
     Renderer::~Renderer() {
         wait_for_destroy();
+        callbacks.clear();
         for (uint32_t i = 0; i < setting.max_in_flight_frame; i ++) {
             vkDestroySemaphore(manager->device->device, image_available_semaphores[i], manager->allocator);
             vkDestroySemaphore(manager->device->device, render_finished_semaphores[i], manager->allocator);
@@ -60,7 +64,7 @@ namespace Match {
     }
 
     void Renderer::set_clear_value(const std::string &name, const VkClearValue &value) {
-        uint32_t index = render_pass_builder->attachments_map.at(name);
+        uint32_t index = render_pass_builder->get_attachment_index(name, false);
         render_pass_builder->attachments[index].clear_value = value;
     }
 
@@ -196,7 +200,7 @@ namespace Match {
     }
 
     void Renderer::continue_subpass_to(const std::string &subpass_name) {
-        auto subpass_idx = render_pass_builder->subpasses_map.at(subpass_name);
+        auto subpass_idx = render_pass_builder->get_subpass_index(subpass_name);
         while (current_subpass != subpass_idx) {
             next_subpass();
         }
@@ -208,5 +212,15 @@ namespace Match {
 
     VkCommandBuffer Renderer::get_command_buffer() {
         return current_buffer;
+    }
+
+    uint32_t Renderer::register_resource_recreate_callback(const ResourceRecreateCallback &callback) {
+        uint32_t id = callbacks.size();
+        callbacks.insert(std::make_pair(id, std::move(callback)));
+        return id;
+    }
+    
+    void Renderer::remove_resource_recreate_callback(uint32_t id) {
+        callbacks.erase(id);
     }
 }

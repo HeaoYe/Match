@@ -4,18 +4,30 @@
 #include <ktxvulkan.h>
 
 namespace Match {
-    class ImgTexture final : public Texture {
-        no_copy_move_construction(ImgTexture)
+    class DataTexture final : public Texture {
+        no_copy_move_construction(DataTexture)
     public:
-        ImgTexture(const std::string &filename, uint32_t mip_levels);
+        DataTexture(const uint8_t *data, uint32_t width, uint32_t height, uint32_t mip_levels);
         VkImage get_image() override { return image->image; }
         VkImageView get_image_view() override { return image_view; }
-        uint32_t get_mip_levels() override { return mip_levels; }
-        ~ImgTexture() override;
+        uint32_t get_mip_levels() override { return 1; }
+        ~DataTexture() override;
     INNER_VISIBLE:
         std::unique_ptr<Image> image;
         VkImageView image_view;
         uint32_t mip_levels;
+    };
+
+    class ImgTexture final : public Texture {
+        no_copy_move_construction(ImgTexture)
+    public:
+        ImgTexture(const std::string &filename, uint32_t mip_levels);
+        VkImage get_image() override { return texture->image->image; }
+        VkImageView get_image_view() override { return texture->image_view; }
+        uint32_t get_mip_levels() override { return texture->mip_levels; }
+        ~ImgTexture() override;
+    INNER_VISIBLE:
+        std::unique_ptr<DataTexture> texture;
     };
 
     class KtxTexture final : public Texture {

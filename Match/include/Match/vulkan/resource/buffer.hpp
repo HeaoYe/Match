@@ -28,14 +28,15 @@ namespace Match {
         void flush();
         void unmap();
         template <class Type>
-        void upload_data_from_vector(const std::vector<Type> &data) {
+        uint32_t upload_data_from_vector(const std::vector<Type> &data, uint32_t offset_count = 0) {
             auto mapped = staging->is_mapped();
-            auto *ptr = staging->map();
-            memcpy(ptr, data.data(), data.size() * sizeof(Type));
+            auto *ptr = static_cast<uint8_t *>(staging->map());
+            memcpy(ptr + (offset_count * sizeof(Type)), data.data(), data.size() * sizeof(Type));
             flush();
             if (!mapped) {
                 staging->unmap();
             }
+            return data.size();
         }
         ~TwoStageBuffer();
     INNER_VISIBLE:
