@@ -3,6 +3,7 @@
 #include "scenes/shadertoy_scene.hpp"
 #include "scenes/pbr_scene.hpp"
 #include "scenes/ssao_scene.hpp"
+#include "scenes/raymarching_scene.hpp"
 
 int main() {
     // 窗口大小的配置移动到main.cpp中
@@ -12,6 +13,8 @@ int main() {
     Application app;
     // 第一个注册的Scene为默认加载的Scene
     
+    // 光线步进场景
+    app.register_scene<RayMarchingScene>("光线步进");
     // 环境光遮蔽场景
     app.register_scene<SSAOScene>("环境光遮蔽");
     // Physically Based Rendering
