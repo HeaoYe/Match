@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Match/Match.hpp>
 #include "scenes/scene.hpp"
 
