@@ -11,6 +11,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 file(GLOB_RECURSE source CONFIGURE_DEPENDS src/Match/*.cpp)
 add_library(Match SHARED ${source})
 
+# Link tinyobjloader
+target_link_libraries(Match PRIVATE tinyobjloader)
+
+# Link glm
+target_link_libraries(Match PUBLIC glm::glm)
+
 # Link KTX-Software
 target_link_libraries(Match PRIVATE ktx)
 

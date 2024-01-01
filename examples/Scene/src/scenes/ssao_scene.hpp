@@ -12,6 +12,7 @@ private:
     std::shared_ptr<Match::ShaderProgram> prepare_shader_program;
     std::shared_ptr<Match::ShaderProgram> ssao_shader_program;
     std::shared_ptr<Match::ShaderProgram> main_shader_program;
+    std::shared_ptr<Match::Model> model;
     std::shared_ptr<Match::VertexBuffer> vertex_buffer;
     std::shared_ptr<Match::IndexBuffer> index_buffer;
 };

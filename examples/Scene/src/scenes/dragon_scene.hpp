@@ -28,6 +28,7 @@ private:
     std::unique_ptr<LightController> light;
     std::shared_ptr<Match::ShaderProgram> shader_program;
     std::shared_ptr<Match::ShaderProgram> post_shader_program;
+    std::shared_ptr<Match::Model> model;
     std::vector<glm::vec3> offsets;
     std::shared_ptr<Match::VertexBuffer> vertex_buffer;
     std::shared_ptr<Match::VertexBuffer> offset_buffer;

@@ -36,7 +36,7 @@ namespace Match {
             if (!mapped) {
                 staging->unmap();
             }
-            return data.size();
+            return offset_count + data.size();
         }
         ~TwoStageBuffer();
     INNER_VISIBLE:

@@ -8,6 +8,7 @@
 #include <Match/vulkan/resource/shader_program.hpp>
 #include <Match/vulkan/resource/buffer.hpp>
 #include <Match/vulkan/resource/sampler.hpp>
+#include <Match/vulkan/resource/model.hpp>
 #include <Match/vulkan/descriptor_resource/uniform.hpp>
 #include <Match/vulkan/descriptor_resource/texture.hpp>
 
@@ -28,6 +29,7 @@ namespace Match {
         std::shared_ptr<UniformBuffer> create_uniform_buffer(uint32_t size, bool create_for_each_frame_in_flight = false);
         std::shared_ptr<Texture> load_texture(const std::string &filename, uint32_t mip_levels = 0);
         std::shared_ptr<Texture> create_texture(const uint8_t *data, uint32_t width, uint32_t height, uint32_t mip_levels = 0);
+        std::shared_ptr<Model> load_model(const std::string &filename);
     INNER_VISIBLE:
         std::string root;
     };

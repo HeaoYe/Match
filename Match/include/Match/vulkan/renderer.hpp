@@ -5,6 +5,7 @@
 #include <Match/vulkan/framebuffer.hpp>
 #include <Match/vulkan/resource/shader_program.hpp>
 #include <Match/vulkan/resource/buffer.hpp>
+#include <Match/vulkan/resource/model.hpp>
 
 namespace Match {
     class RenderLayer {
@@ -49,6 +50,9 @@ namespace Match {
         void continue_subpass_to(const std::string &subpass_name);
         void draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
         void draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance);
+        void draw_mesh(std::shared_ptr<const Mesh> mesh, uint32_t instance_count, uint32_t first_instance);
+        void draw_model_mesh(std::shared_ptr<const Model> model, const std::string &name, uint32_t instance_count, uint32_t first_instance);
+        void draw_model(std::shared_ptr<const Model> model, uint32_t instance_count, uint32_t first_instance);
     public:
         void set_clear_value(const std::string &name, const vk::ClearValue &value);
         vk::CommandBuffer get_command_buffer();

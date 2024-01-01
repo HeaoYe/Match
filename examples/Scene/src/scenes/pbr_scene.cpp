@@ -58,11 +58,10 @@ void PBRScene::initialize() {
     lights->data->direction = glm::normalize(glm::vec3(0, -1, 0));
     shader_program->bind_uniforms(2, { lights->uniform_buffer });
 
-    load_model("mori_knob.obj");
-    vertex_buffer = factory->create_vertex_buffer(sizeof(Vertex), vertices.size());
-    vertex_buffer->upload_data_from_vector(vertices);
-    index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, indices.size());
-    index_buffer->upload_data_from_vector(indices);
+    model = factory->load_model("mori_knob.obj");
+    vertex_buffer = factory->create_vertex_buffer(sizeof(Match::Vertex), model->get_vertex_count());
+    index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, model->get_index_count());
+    model->upload_data(vertex_buffer, index_buffer);
 }
 
 void PBRScene::update(float delta) {
@@ -80,7 +79,7 @@ void PBRScene::render() {
     renderer->bind_shader_program(shader_program);
     renderer->bind_vertex_buffer(vertex_buffer);
     renderer->bind_index_buffer(index_buffer);
-    renderer->draw_indexed(indices.size(), 1, 0, 0, 0);
+    renderer->draw_model(model, 1, 0);
 }
 
 void PBRScene::render_imgui() {

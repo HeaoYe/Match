@@ -199,6 +199,20 @@ namespace Match {
         current_buffer.drawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
     }
 
+    void Renderer::draw_mesh(std::shared_ptr<const Mesh> mesh, uint32_t instance_count, uint32_t first_instance) {
+        current_buffer.drawIndexed(mesh->indices.size(), instance_count, mesh->position.index_buffer_offset, mesh->position.vertex_buffer_offset, first_instance);
+    }
+
+    void Renderer::draw_model_mesh(std::shared_ptr<const Model> model, const std::string &name, uint32_t instance_count, uint32_t first_instance) {
+        draw_mesh(model->get_mesh_by_name(name), instance_count, first_instance);
+    }
+
+    void Renderer::draw_model(std::shared_ptr<const Model> model, uint32_t instance_count, uint32_t first_instance) {
+        for (auto &[name, mesh] : model->meshes) {
+            draw_mesh(mesh, instance_count, first_instance);
+        }
+    }
+
     void Renderer::next_subpass() {
         current_buffer.nextSubpass(vk::SubpassContents::eInline);
         current_subpass += 1;

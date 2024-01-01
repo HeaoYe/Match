@@ -126,12 +126,14 @@ void SSAOScene::initialize() {
     main_shader_program->bind_input_attachments(1, { "NormalBuffer" }, { sampler });
     main_shader_program->bind_input_attachments(2, { "SSAOBuffer" }, { sampler });
 
-    // load_model("dragon.obj");
-    load_model("mori_knob.obj");
-    vertex_buffer = factory->create_vertex_buffer(sizeof(Vertex), vertices.size());
-    vertex_buffer->upload_data_from_vector(vertices);
-    index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, indices.size());
-    index_buffer->upload_data_from_vector(indices);
+    // 加载模型
+    // model = factory->load_model("dragon.obj");
+    model = factory->load_model("mori_knob.obj");
+    // 创建buffer
+    vertex_buffer = factory->create_vertex_buffer(sizeof(Match::Vertex), model->get_vertex_count());
+    index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, model->get_index_count());
+    // 上传数据
+    model->upload_data(vertex_buffer, index_buffer);
 
     std::uniform_real_distribution<float> float_distribution(0, 1);
     std::default_random_engine engine;
@@ -188,7 +190,8 @@ void SSAOScene::render() {
     renderer->bind_shader_program(prepare_shader_program);
     renderer->bind_vertex_buffer(vertex_buffer);
     renderer->bind_index_buffer(index_buffer);
-    renderer->draw_indexed(indices.size(), 1, 0, 0, 0);
+    // 绘制模型
+    renderer->draw_model(model, 1, 0);
 
     renderer->next_subpass();
     renderer->bind_shader_program(ssao_shader_program);

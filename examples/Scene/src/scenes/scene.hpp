@@ -4,15 +4,7 @@
 #include <glm/glm.hpp>
 #include <imgui.h>
 
-struct Vertex {
-    glm::vec3 in_pos;
-    glm::vec3 in_normal;
-    glm::vec3 in_color;
- 
-    bool operator==(const Vertex& other) const {
-        return in_pos == other.in_pos && in_normal == other.in_normal && in_color == other.in_color;
-    }
-};
+// Vertex类型集成到Match渲染引擎中了
 
 // 添加了定义Scene的宏
 #define define_scene(scene_cls) \
@@ -37,11 +29,9 @@ public:
     virtual void destroy() = 0;
     virtual ~Scene();
 protected:
-    void load_model(const std::string &filename);
+    // 模型加载功能也集成了
     std::shared_ptr<Match::ResourceFactory> factory;
     std::shared_ptr<Match::Renderer> renderer;
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
 };
 
 class SceneManager {
