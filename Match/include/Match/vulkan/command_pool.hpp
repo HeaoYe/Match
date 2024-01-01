@@ -6,12 +6,12 @@ namespace Match {
     class CommandPool {
         no_copy_move_construction(CommandPool)
     public:
-        CommandPool(VkCommandPoolCreateFlags flags);
+        CommandPool(vk::CommandPoolCreateFlags flags);
         ~CommandPool();
-        void allocate_command_buffer(VkCommandBuffer *command_buffers, uint32_t count);
-        VkCommandBuffer  allocate_single_use();
-        void free_single_use(VkCommandBuffer command_buffer);
+        std::vector<vk::CommandBuffer> allocate_command_buffer(uint32_t count);
+        vk::CommandBuffer allocate_single_use();
+        void free_single_use(vk::CommandBuffer command_buffer);
     INNER_VISIBLE:
-        VkCommandPool command_pool;
+        vk::CommandPool command_pool;
     };
 }

@@ -13,9 +13,9 @@ int main() {
     Match::setting.font_size = 26.0f;
 
     // 初始化Match
-    auto &context = Match::Initialize({});
+    auto &context = Match::Initialize();
     // 启用MSAA
-    Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_8_BIT);
+    Match::runtime_setting->set_multisample_count(vk::SampleCountFlagBits::e8);
     // 禁用MSAA
     // Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_1_BIT);
     // 显示全部设备名，可填写在Match::setting.device_name中
@@ -35,15 +35,15 @@ int main() {
         // 创建Subpass
         auto &subpass = builder->add_subpass("MainSubpass");
         // 绑定Subpass为图形流水线
-        subpass.bind(VK_PIPELINE_BIND_POINT_GRAPHICS);
+        subpass.bind(vk::PipelineBindPoint::eGraphics);
         // 设置Subpass的输出为SWAPCHAIN_IMAGE_ATTACHMENT
-        subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        subpass.attach_depth_attachment("Depth Buffer", VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
+        subpass.attach_depth_attachment("Depth Buffer");
         // 添加Subpass Dependency
         subpass.wait_for(
             Match::EXTERNAL_SUBPASS,
-            { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT },
-            { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_ACCESS_NONE }
+            { vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite },
+            { vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eNone }
         );
         // 将RenderPass与Renderer绑定
         // 改为使用ResourceFactory创建Renderer
@@ -149,8 +149,8 @@ int main() {
             .cull_mode = Match::CullMode::eNone,  // 取消面剔除
             .depth_test_enable = VK_TRUE,         // 启用深度测试
             .dynamic_states = {
-                VK_DYNAMIC_STATE_VIEWPORT,    // 动态Viewport
-                VK_DYNAMIC_STATE_SCISSOR,     // 动态Scissor
+                vk::DynamicState::eViewport,    // 动态Viewport
+                vk::DynamicState::eScissor,     // 动态Scissor
             }
         });
 
@@ -234,7 +234,7 @@ int main() {
 
             // 动态变换的背景颜色
             float color = (scale + 3) / 4;
-            renderer->set_clear_value(Match::SWAPCHAIN_IMAGE_ATTACHMENT, { .color = { .float32 = { 0.3f, 1 - color, color, 1.0f } } });
+            renderer->set_clear_value(Match::SWAPCHAIN_IMAGE_ATTACHMENT, { { 0.3f, 1 - color, color, 1.0f } });
 
             // 将数据写入UniformBuffer
             auto pos_scaler = (PosScaler *)pos_uniform->get_uniform_ptr();

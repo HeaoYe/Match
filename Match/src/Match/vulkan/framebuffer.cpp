@@ -7,7 +7,7 @@
 namespace Match {
     Attachment::Attachment() {}
 
-    Attachment::Attachment(const VkAttachmentDescription& description, VkImageUsageFlags usage, VkImageAspectFlags aspect) {
+    Attachment::Attachment(const vk::AttachmentDescription& description, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect) {
         image = std::make_unique<Image>(runtime_setting->window_size.width, runtime_setting->window_size.height, description.format, usage, description.samples, VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
         image_view = create_image_view(image->image, description.format, aspect, 1);
     }
@@ -26,30 +26,28 @@ namespace Match {
 
     Attachment::~Attachment() {
         if (image.get() != nullptr) {
-            vkDestroyImageView(manager->device->device, image_view, manager->allocator);
+            manager->device->device.destroyImageView(image_view);
             image.reset();
         }
     }
 
-    FrameBuffer::FrameBuffer(const Renderer &renderer, const std::vector<VkImageView> &image_views) {
-        VkFramebufferCreateInfo framebuffer_create_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
-        framebuffer_create_info.renderPass = renderer.render_pass->render_pass;
-        framebuffer_create_info.width = runtime_setting->get_window_size().width;
-        framebuffer_create_info.height = runtime_setting->get_window_size().height;
-        framebuffer_create_info.layers = 1;
-        framebuffer_create_info.attachmentCount = image_views.size();
-        framebuffer_create_info.pAttachments = image_views.data();
-
-        vk_assert(vkCreateFramebuffer(manager->device->device, &framebuffer_create_info, manager->allocator, &framebuffer));
+    FrameBuffer::FrameBuffer(const Renderer &renderer, const std::vector<vk::ImageView> &image_views) {
+        vk::FramebufferCreateInfo framebuffer_create_info {};
+        framebuffer_create_info.setRenderPass(renderer.render_pass->render_pass)
+            .setWidth(runtime_setting->get_window_size().width)
+            .setHeight(runtime_setting->get_window_size().height)
+            .setLayers(1)
+            .setAttachments(image_views);
+        framebuffer = manager->device->device.createFramebuffer(framebuffer_create_info);
     }
 
     FrameBuffer::~FrameBuffer() {
-        vkDestroyFramebuffer(manager->device->device, framebuffer, manager->allocator);
+        manager->device->device.destroyFramebuffer(framebuffer);
     }
 
     FrameBufferSet::FrameBufferSet(const Renderer &renderer) {
         uint32_t attachments_count = renderer.render_pass_builder->final_attachments.size();
-        std::vector<VkImageView> image_views(attachments_count);
+        std::vector<vk::ImageView> image_views(attachments_count);
         attachments.resize(attachments_count);
         uint32_t swapchain_image_view_idx;
 

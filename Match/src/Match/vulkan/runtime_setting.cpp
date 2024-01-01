@@ -2,9 +2,10 @@
 #include <Match/vulkan/utils.hpp>
 
 namespace Match {
-    void RuntimeSetting::set_vsync(bool n) {
+    RuntimeSetting &RuntimeSetting::set_vsync(bool n) {
         MCH_INFO("Set V-SYNC {}", n)
         vsync = n;
+        return *this;
     }
 
     void RuntimeSetting::resize(const WindowSize &size) {
@@ -12,15 +13,16 @@ namespace Match {
     }
     
     bool RuntimeSetting::is_msaa_enabled() {
-        return multisample_count != VK_SAMPLE_COUNT_1_BIT;
+        return multisample_count != vk::SampleCountFlagBits::e1;
     }
 
-    void RuntimeSetting::set_multisample_count(VkSampleCountFlagBits count) {
+    RuntimeSetting &RuntimeSetting::set_multisample_count(vk::SampleCountFlagBits count) {
         static auto max_multisample_count = get_max_usable_sample_count();
         if (count > max_multisample_count) {
             MCH_WARN("multisample count {} > max multisample count {}", static_cast<uint32_t>(count), static_cast<uint32_t>(max_multisample_count))
             count = max_multisample_count;
         }
         multisample_count = count;
+        return *this;
     }
 }

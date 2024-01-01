@@ -5,17 +5,14 @@
 
 namespace Match {
     std::vector<std::string> Device::enumerate_devices() const {
-        uint32_t device_count;
-        vkEnumeratePhysicalDevices(manager->instance, &device_count, nullptr);
-        std::vector<VkPhysicalDevice> devices(device_count);
-        vkEnumeratePhysicalDevices(manager->instance, &device_count, devices.data());
+        auto devices = manager->instance.enumeratePhysicalDevices();
         std::vector<std::string> device_names;
-        VkPhysicalDeviceProperties properties;
-        device_count = 0;
+        vk::PhysicalDeviceProperties properties;
+        auto idx = 0;
         for (auto &device : devices) {
-            vkGetPhysicalDeviceProperties(device, &properties);
-            MCH_WARN("No.{} \"{}\"", device_count, properties.deviceName)
-            device_count ++;
+            properties = device.getProperties();
+            MCH_WARN("No.{} \"{}\"", idx, properties.deviceName)
+            idx ++;
         }
         return device_names;
     }
@@ -23,15 +20,12 @@ namespace Match {
     Device::Device() {
         bool selected_device = false;
         if (setting.device_name != "auto") {
-            uint32_t device_count;
-            vkEnumeratePhysicalDevices(manager->instance, &device_count, nullptr);
-            std::vector<VkPhysicalDevice> devices(device_count);
-            vkEnumeratePhysicalDevices(manager->instance, &device_count, devices.data());
-            VkPhysicalDeviceProperties properties;
+            auto devices = manager->instance.enumeratePhysicalDevices();
+            vk::PhysicalDeviceProperties properties;
             bool found_device = false;
             for (auto &device : devices) {
-                vkGetPhysicalDeviceProperties(device, &properties);
-                if (properties.deviceName == setting.device_name) {
+                properties = device.getProperties();
+                if (properties.deviceName.data() == setting.device_name) {
                     MCH_DEBUG("Found device {}", properties.deviceName)
                     if (check_device_suitable(device)) {
                         selected_device = true;
@@ -46,12 +40,8 @@ namespace Match {
         }
         if ((setting.device_name == "auto") || (!selected_device)) {
             MCH_DEBUG("Auto find device")
-            uint32_t device_count;
             selected_device = false;
-            vkEnumeratePhysicalDevices(manager->instance, &device_count, nullptr);
-            std::vector<VkPhysicalDevice> devices(device_count);
-            vkEnumeratePhysicalDevices(manager->instance, &device_count, devices.data());
-            VkPhysicalDeviceProperties properties;
+            auto devices = manager->instance.enumeratePhysicalDevices();
             for (auto &device : devices) {
                 if (check_device_suitable(device)) {
                     selected_device = true;
@@ -64,58 +54,47 @@ namespace Match {
         }
         
         std::set<uint32_t> queue_family_indices = { graphics_family_index, present_family_index, transfer_family_index, compute_family_index };
-        std::vector<VkDeviceQueueCreateInfo> queue_create_infos(queue_family_indices.size());
+        std::vector<vk::DeviceQueueCreateInfo> queue_create_infos(queue_family_indices.size());
         uint32_t i = 0;
         float priorities = 1.0f;
         for (auto queue_family_index : queue_family_indices) {
-            queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queue_create_infos[i].pNext = nullptr;
-            queue_create_infos[i].flags = 0;
-            queue_create_infos[i].queueFamilyIndex = queue_family_index;
-            queue_create_infos[i].queueCount = 1;
-            queue_create_infos[i].pQueuePriorities = &priorities;
+            queue_create_infos[i].setQueueFamilyIndex(queue_family_index)
+                .setQueueCount(1)
+                .setQueuePriorities(priorities);
             i ++;
         }
 
-        VkPhysicalDeviceFeatures features {};
+        vk::PhysicalDeviceFeatures features {};
         features.samplerAnisotropy = VK_TRUE;
         features.depthClamp = VK_TRUE;
         features.sampleRateShading = VK_TRUE;
 
-        VkDeviceCreateInfo device_create_info { .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
-        device_create_info.queueCreateInfoCount = queue_create_infos.size();
-        device_create_info.pQueueCreateInfos = queue_create_infos.data();
+        vk::DeviceCreateInfo device_create_info {};
         const char *extensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-        device_create_info.enabledExtensionCount = 1;
-        device_create_info.ppEnabledExtensionNames = extensions;
         const char *layers[] = { "VK_LAYER_KHRONOS_validation" };
+        device_create_info.setQueueCreateInfos(queue_create_infos)
+            .setPEnabledExtensionNames(extensions)
+            .setPEnabledFeatures(&features);
         if (setting.debug_mode) {
-            device_create_info.enabledLayerCount = 1;
-            device_create_info.ppEnabledLayerNames = layers;
-        } else {
-            device_create_info.enabledLayerCount = 0;
-            device_create_info.ppEnabledLayerNames = nullptr;
+            device_create_info.setPEnabledLayerNames(layers);
         }
-        device_create_info.pEnabledFeatures = &features;
-        vk_assert(vkCreateDevice(physical_device, &device_create_info, manager->allocator, &device))
+        device = physical_device.createDevice(device_create_info);
 
-        vkGetDeviceQueue(device, graphics_family_index, 0, &graphics_queue);
-        vkGetDeviceQueue(device, present_family_index, 0, &present_queue);
-        vkGetDeviceQueue(device, transfer_family_index, 0, &transfer_queue);
-        vkGetDeviceQueue(device, compute_family_index, 0, &compute_queue);
+        graphics_queue = device.getQueue(graphics_family_index, 0);
+        present_queue = device.getQueue(present_family_index, 0);
+        transfer_queue = device.getQueue(transfer_family_index, 0);
+        compute_queue = device.getQueue(compute_family_index, 0);
     }
 
     Device::~Device() {
-        vkDestroyDevice(device, manager->allocator);
+        device.destroy();
     }
 
-    bool Device::check_device_suitable(VkPhysicalDevice device) {
-        VkPhysicalDeviceProperties properties;
-        vkGetPhysicalDeviceProperties(device, &properties);
-        VkPhysicalDeviceFeatures features;
-        vkGetPhysicalDeviceFeatures(device, &features);
+    bool Device::check_device_suitable(vk::PhysicalDevice device) {
+        auto properties = device.getProperties();
+        auto features = device.getFeatures();
 
-        if (properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        if (properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {
             MCH_DEBUG("{} is not a discrete gpu -- skipping", properties.deviceName)
             return false;
         }
@@ -130,26 +109,20 @@ namespace Match {
             return false;
         }
 
-        uint32_t queue_family_count;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
-        std::vector<VkQueueFamilyProperties> queue_families_properties(queue_family_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families_properties.data());
-        queue_family_count = 0;
+        auto queue_families_properties = device.getQueueFamilyProperties();
+        auto queue_family_idx = 0;
         bool found_family = false;
         for (const auto &queue_family_properties : queue_families_properties) {
-            if (queue_family_properties.queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT)) {
-                VkBool32 supported;
-                vk_check(vkGetPhysicalDeviceSurfaceSupportKHR(device, queue_family_count, manager->surface, &supported))
-                if (supported) {
-                    graphics_family_index = queue_family_count;
-                    present_family_index = queue_family_count;
-                    compute_family_index = queue_family_count;
-                    transfer_family_index = queue_family_count;
-                    found_family = true;
-                    break;
-                }
+            if ((queue_family_properties.queueFlags & (vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer | vk::QueueFlagBits::eCompute)) && 
+                (device.getSurfaceSupportKHR(queue_family_idx, manager->surface))) {
+                graphics_family_index = queue_family_idx;
+                present_family_index = queue_family_idx;
+                compute_family_index = queue_family_idx;
+                transfer_family_index = queue_family_idx;
+                found_family = true;
+                break;
             }
-            queue_family_count++;
+            queue_family_idx++;
         }
 
         if (!found_family) {
@@ -161,13 +134,12 @@ namespace Match {
         physical_device = device;
         MCH_INFO("Select Device {}", properties.deviceName)
 
-        VkPhysicalDeviceMemoryProperties memoryProperties;
-        vkGetPhysicalDeviceMemoryProperties(physical_device, &memoryProperties);
+        auto memoryProperties = physical_device.getMemoryProperties();
         MCH_DEBUG("\tDevice Driver Version: {}.{}.{}", VK_VERSION_MAJOR(properties.driverVersion), VK_VERSION_MINOR(properties.driverVersion), VK_VERSION_PATCH(properties.driverVersion))
         MCH_DEBUG("\tVulkan API Version: {}.{}.{}", VK_VERSION_MAJOR(properties.apiVersion), VK_VERSION_MINOR(properties.apiVersion), VK_VERSION_PATCH(properties.apiVersion))
         for (uint32_t i = 0; i < memoryProperties.memoryHeapCount; i++) {
             float size = ((float)memoryProperties.memoryHeaps[i].size) / 1024.0f / 1024.0f / 1024.0f;
-            if (memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
+            if (memoryProperties.memoryHeaps[i].flags & vk::MemoryHeapFlagBits::eDeviceLocal) {
                 MCH_DEBUG("\tLocal GPU Memory: {} Gib", size)
             }
             else {

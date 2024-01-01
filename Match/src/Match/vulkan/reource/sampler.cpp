@@ -4,26 +4,25 @@
 
 namespace Match {
     Sampler::Sampler(const SamplerOptions &options) {
-        VkSamplerCreateInfo sampler_create_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-        sampler_create_info.magFilter = transform<VkFilter>(options.mag_filter);
-        sampler_create_info.minFilter = transform<VkFilter>(options.min_filter);
-        sampler_create_info.addressModeU = transform<VkSamplerAddressMode>(options.address_mode_u);
-        sampler_create_info.addressModeV = transform<VkSamplerAddressMode>(options.address_mode_v);
-        sampler_create_info.addressModeW = transform<VkSamplerAddressMode>(options.address_mode_w);
-        sampler_create_info.anisotropyEnable = VK_TRUE;
-        sampler_create_info.maxAnisotropy = options.max_anisotropy;
-        sampler_create_info.borderColor = transform<VkBorderColor>(options.border_color);
-        sampler_create_info.unnormalizedCoordinates = VK_FALSE;
-        sampler_create_info.compareEnable = VK_FALSE;
-        sampler_create_info.compareOp = VK_COMPARE_OP_ALWAYS;
-        sampler_create_info.mipmapMode = transform<VkSamplerMipmapMode>(options.mipmap_mode);
-        sampler_create_info.minLod = 0.0f;
-        sampler_create_info.maxLod = static_cast<float>(options.mip_levels);
-        sampler_create_info.mipLodBias = 0.0f;
-        vkCreateSampler(manager->device->device, &sampler_create_info, manager->allocator, &sampler);
+        vk::SamplerCreateInfo sampler_create_info {};
+        sampler_create_info.setMagFilter(transform<vk::Filter>(options.mag_filter))
+            .setMinFilter(transform<vk::Filter>(options.min_filter))
+            .setAddressModeU(transform<vk::SamplerAddressMode>(options.address_mode_u))
+            .setAddressModeV(transform<vk::SamplerAddressMode>(options.address_mode_v))
+            .setAddressModeW(transform<vk::SamplerAddressMode>(options.address_mode_w))
+            .setAnisotropyEnable(VK_TRUE)
+            .setMaxAnisotropy(options.max_anisotropy)
+            .setBorderColor(transform<vk::BorderColor>(options.border_color))
+            .setUnnormalizedCoordinates(VK_FALSE)
+            .setCompareOp(vk::CompareOp::eAlways)
+            .setMipmapMode(transform<vk::SamplerMipmapMode>(options.mipmap_mode))
+            .setMinLod(0.0f)
+            .setMaxLod(static_cast<float>(options.mip_levels))
+            .setMipLodBias(0.0f);
+        sampler = manager->device->device.createSampler(sampler_create_info);
     }
 
     Sampler::~Sampler() {
-        vkDestroySampler(manager->device->device, sampler, manager->allocator);
+        manager->device->device.destroySampler(sampler);
     }
 }

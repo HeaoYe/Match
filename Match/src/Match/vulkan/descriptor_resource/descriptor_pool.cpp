@@ -3,26 +3,30 @@
 
 namespace Match {
     DescriptorPool::DescriptorPool() {
-        std::vector<VkDescriptorPoolSize> pool_sizes = {};
-        VkDescriptorPoolCreateInfo pool_create_info { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
-        pool_create_info.poolSizeCount = pool_sizes.size();
-        pool_create_info.pPoolSizes = pool_sizes.data();
-        pool_create_info.maxSets = 16;
-        vkCreateDescriptorPool(manager->device->device, &pool_create_info, manager->allocator, &descriptor_pool);
+        std::vector<vk::DescriptorPoolSize> pool_sizes = {};
+        vk::DescriptorPoolCreateInfo pool_create_info {};
+        pool_create_info.setPoolSizes(pool_sizes)
+            .setMaxSets(16)
+            .setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
+        descriptor_pool = manager->device->device.createDescriptorPool(pool_create_info);
     }
 
-    std::vector<VkDescriptorSet> DescriptorPool::allocate_descriptor_set(VkDescriptorSetLayout layout) {
-        std::vector<VkDescriptorSet> descriptor_sets(setting.max_in_flight_frame);
-        std::vector<VkDescriptorSetLayout> layouts(setting.max_in_flight_frame, layout);
-        VkDescriptorSetAllocateInfo alloc_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-        alloc_info.descriptorPool = manager->descriptor_pool->descriptor_pool;
-        alloc_info.descriptorSetCount = static_cast<uint32_t>(setting.max_in_flight_frame);
-        alloc_info.pSetLayouts = layouts.data();
-        vkAllocateDescriptorSets(manager->device->device, &alloc_info, descriptor_sets.data());
+    std::vector<vk::DescriptorSet> DescriptorPool::allocate_descriptor_set(vk::DescriptorSetLayout layout) {
+        std::vector<vk::DescriptorSet> descriptor_sets(setting.max_in_flight_frame);
+        std::vector<vk::DescriptorSetLayout> layouts(setting.max_in_flight_frame, layout);
+        vk::DescriptorSetAllocateInfo alloc_info {};
+        alloc_info.setDescriptorPool(descriptor_pool)
+            .setDescriptorSetCount(static_cast<uint32_t>(setting.max_in_flight_frame))
+            .setSetLayouts(layouts);
+        descriptor_sets = manager->device->device.allocateDescriptorSets(alloc_info);
         return descriptor_sets;
     }
 
+    void DescriptorPool::free_descriptor_set(vk::DescriptorSet descriptor_set) {
+        manager->device->device.freeDescriptorSets(descriptor_pool, descriptor_set);
+    }
+
     DescriptorPool::~DescriptorPool(){
-        vkDestroyDescriptorPool(manager->device->device, descriptor_pool, manager->allocator);
+        manager->device->device.destroyDescriptorPool(descriptor_pool);
     }
 }

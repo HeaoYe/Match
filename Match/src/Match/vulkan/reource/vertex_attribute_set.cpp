@@ -12,10 +12,10 @@ namespace Match {
         uint32_t offset = 0, size;
         for (const auto &attribute : binding_info.attributes) {
             attributes.push_back({
-                .location = location,
-                .binding = binding_info.binding,
-                .format = transform<VkFormat>(attribute.type),
-                .offset = offset,
+                location,
+                binding_info.binding,
+                transform<vk::Format>(attribute.type),
+                offset,
             });
             location += 1;
             if (attribute.stride == 0) {
@@ -30,9 +30,9 @@ namespace Match {
         }
 
         bindings.push_back({
-            .binding = binding_info.binding,
-            .stride = offset,
-            .inputRate = transform<VkVertexInputRate>(binding_info.rate),
+            binding_info.binding,
+            offset,
+            transform<vk::VertexInputRate>(binding_info.rate),
         });
     }
 

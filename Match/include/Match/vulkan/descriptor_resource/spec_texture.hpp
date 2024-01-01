@@ -8,13 +8,13 @@ namespace Match {
         no_copy_move_construction(DataTexture)
     public:
         DataTexture(const uint8_t *data, uint32_t width, uint32_t height, uint32_t mip_levels);
-        VkImage get_image() override { return image->image; }
-        VkImageView get_image_view() override { return image_view; }
+        vk::Image get_image() override { return image->image; }
+        vk::ImageView get_image_view() override { return image_view; }
         uint32_t get_mip_levels() override { return 1; }
         ~DataTexture() override;
     INNER_VISIBLE:
         std::unique_ptr<Image> image;
-        VkImageView image_view;
+        vk::ImageView image_view;
         uint32_t mip_levels;
     };
 
@@ -22,8 +22,8 @@ namespace Match {
         no_copy_move_construction(ImgTexture)
     public:
         ImgTexture(const std::string &filename, uint32_t mip_levels);
-        VkImage get_image() override { return texture->image->image; }
-        VkImageView get_image_view() override { return texture->image_view; }
+        vk::Image get_image() override { return texture->image->image; }
+        vk::ImageView get_image_view() override { return texture->image_view; }
         uint32_t get_mip_levels() override { return texture->mip_levels; }
         ~ImgTexture() override;
     INNER_VISIBLE:
@@ -34,13 +34,13 @@ namespace Match {
         no_copy_move_construction(KtxTexture)
     public:
         KtxTexture(const std::string &filename);
-        VkImage get_image() override { return vk_texture.image; }
-        VkImageView get_image_view() override { return image_view; }
+        vk::Image get_image() override { return vk_texture.image; }
+        vk::ImageView get_image_view() override { return image_view; }
         uint32_t get_mip_levels() override { return vk_texture.levelCount; }
         ~KtxTexture() override;
     INNER_VISIBLE:
         ktxTexture *texture;
         ktxVulkanTexture vk_texture;
-        VkImageView image_view;
+        vk::ImageView image_view;
     };
 }

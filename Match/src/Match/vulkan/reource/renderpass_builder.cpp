@@ -5,41 +5,53 @@
 #include "../inner.hpp"
 
 namespace Match {
-    VkAttachmentReference SubpassBuilder::create_reference(const std::string &name, VkImageLayout layout, bool is_attachment_read) {
+    vk::AttachmentReference SubpassBuilder::create_reference(const std::string &name, vk::ImageLayout layout, bool is_attachment_read) {
         return { builder.get_attachment_index(name, is_attachment_read), layout };
     }
     
-    void SubpassBuilder::bind(VkPipelineBindPoint bind_point) {
+    SubpassBuilder &SubpassBuilder::bind(vk::PipelineBindPoint bind_point) {
         this->bind_point = bind_point;
+        return *this;
     }
 
-    void SubpassBuilder::attach_input_attachment(const std::string &name, VkImageLayout layout) {
+    SubpassBuilder &SubpassBuilder::attach_input_attachment(const std::string &name, vk::ImageLayout layout) {
         input_attachments.push_back(create_reference(name, layout, true));
+        return *this;
     }
 
-    void SubpassBuilder::attach_output_attachment(const std::string &name, VkImageLayout layout) {
+    SubpassBuilder &SubpassBuilder::attach_output_attachment(const std::string &name, vk::ImageLayout layout) {
         output_attachments.push_back(create_reference(name, layout, false));
         output_attachment_blend_states.push_back({
-            .blendEnable = VK_FALSE,
-            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+            VK_FALSE,
+            vk::BlendFactor::eZero,
+            vk::BlendFactor::eZero,
+            vk::BlendOp::eAdd,
+            vk::BlendFactor::eZero,
+            vk::BlendFactor::eZero,
+            vk::BlendOp::eAdd,
+            vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
+
         });
         resolve_attachments.push_back(create_reference(name, layout, true));
+        return *this;
     }
     
-    void SubpassBuilder::attach_preserve_attachment(const std::string &name) {
+    SubpassBuilder &SubpassBuilder::attach_preserve_attachment(const std::string &name) {
         uint32_t idx1 = builder.get_attachment_index(name, false);
         uint32_t idx2 = builder.get_attachment_index(name, true);
         preserve_attachments.push_back(idx1);
         if (idx1 != idx2) {
             preserve_attachments.push_back(idx2);
         }
+        return *this;
     }
     
-    void SubpassBuilder::attach_depth_attachment(const std::string &name, VkImageLayout layout) {
+    SubpassBuilder &SubpassBuilder::attach_depth_attachment(const std::string &name, vk::ImageLayout layout) {
         depth_attachment = create_reference(name, layout, false);
+        return *this;
     }
 
-    void SubpassBuilder::set_output_attachment_color_blend(const std::string &name, VkPipelineColorBlendAttachmentState state) {
+    SubpassBuilder &SubpassBuilder::set_output_attachment_color_blend(const std::string &name, vk::PipelineColorBlendAttachmentState state) {
         uint32_t i = 0, idx = builder.get_attachment_index(name, false);
         for (const auto &reference : output_attachments) {
             if (reference.attachment == idx) {
@@ -48,9 +60,10 @@ namespace Match {
             }
             i ++;
         }
+        return *this;
     }
 
-    void SubpassBuilder::wait_for(const std::string &name, const AccessInfo &self, const AccessInfo &other) {
+    SubpassBuilder &SubpassBuilder::wait_for(const std::string &name, const AccessInfo &self, const AccessInfo &other) {
         uint32_t src_subpass;
         if (name == EXTERNAL_SUBPASS) {
             src_subpass = VK_SUBPASS_EXTERNAL;
@@ -58,17 +71,18 @@ namespace Match {
             src_subpass = builder.get_subpass_index(name);
         }
         builder.final_dependencies.push_back({
-            .srcSubpass = src_subpass,
-            .dstSubpass = builder.get_subpass_index(this->name),
-            .srcStageMask = other.stage,
-            .dstStageMask = self.stage,
-            .srcAccessMask = other.access,
-            .dstAccessMask = self.access,
+            src_subpass,
+            builder.get_subpass_index(this->name),
+            other.stage,
+            self.stage,
+            other.access,
+            self.access,
         });
+        return *this;
     }
 
-    VkSubpassDescription SubpassBuilder::build() const {
-        VkSubpassDescription desc {};
+    vk::SubpassDescription SubpassBuilder::build() const {
+        vk::SubpassDescription desc {};
         desc.pipelineBindPoint = bind_point;
         desc.inputAttachmentCount = input_attachments.size();
         desc.pInputAttachments = input_attachments.data();
@@ -92,70 +106,69 @@ namespace Match {
         add_attachment(SWAPCHAIN_IMAGE_ATTACHMENT, AttachmentType::eColor);
         auto &attachment = attachments[0];
         if (attachment.description_read.has_value()) {
-            attachment.description_read->finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            attachment.description_read->finalLayout = vk::ImageLayout::ePresentSrcKHR;
         } else {
-            attachment.description_write.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            attachment.description_write.finalLayout = vk::ImageLayout::ePresentSrcKHR;
         }
     }
 
-    void RenderPassBuilder::add_attachment(const std::string &name, AttachmentType type) {
+    RenderPassBuilder &RenderPassBuilder::add_attachment(const std::string &name, AttachmentType type) {
         attachments_map.insert(std::make_pair(name, attachments.size()));
         auto &attachment = attachments.emplace_back();
-        attachment.description_write.flags = 0;
-        attachment.description_write.samples = runtime_setting->multisample_count;
-        attachment.description_write.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachment.description_write.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachment.description_write.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachment.description_write.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachment.description_write.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachment.usage = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachment.description_write.setSamples(runtime_setting->multisample_count)
+            .setLoadOp(vk::AttachmentLoadOp::eClear)
+            .setStoreOp(vk::AttachmentStoreOp::eStore)
+            .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+            .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+            .setInitialLayout(vk::ImageLayout::eUndefined);
         switch (type) {
         case AttachmentType::eColor:
             attachment.description_write.format = manager->swapchain->format.format;
-            attachment.description_write.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            attachment.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            attachment.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-            attachment.clear_value = { .color = { .float32 = { 0.0f, 0.0f, 0.0f, 1.0f } } };
+            attachment.description_write.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+            attachment.usage = vk::ImageUsageFlagBits::eColorAttachment;
+            attachment.aspect = vk::ImageAspectFlagBits::eColor;
+            attachment.clear_value = { { 0.0f, 0.0f, 0.0f, 1.0f } };
             if (runtime_setting->is_msaa_enabled()) {
                 attachment.description_read = attachment.description_write;
-                attachment.description_read->samples = VK_SAMPLE_COUNT_1_BIT;
-                attachment.description_read->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                attachment.usage_read = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                attachment.description_read->samples = vk::SampleCountFlagBits::e1;
+                attachment.description_read->loadOp = vk::AttachmentLoadOp::eDontCare;
+                attachment.usage_read = vk::ImageUsageFlagBits::eColorAttachment;
                 attachment.offset = resolved_attachment_count;
                 resolved_attachment_count += 1;
             }
             break;
         case AttachmentType::eDepthBuffer:
-            attachment.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            attachment.usage = vk::ImageUsageFlagBits::eInputAttachment | vk::ImageUsageFlagBits::eSampled;
         case AttachmentType::eDepth:
             attachment.description_write.format = get_supported_depth_format();
-            attachment.description_write.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            attachment.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-            attachment.aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+            attachment.description_write.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+            attachment.usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+            attachment.aspect = vk::ImageAspectFlagBits::eDepth;
             if (has_stencil_component(attachment.description_write.format)) {
-                attachment.aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                attachment.aspect |= vk::ImageAspectFlagBits::eStencil;
             }
-            attachment.clear_value = { .depthStencil = { 1.0f, 0 } };
+            attachment.clear_value = { { 1.0f, 0 } };
             break;
         case AttachmentType::eFloat4Buffer:
-            attachment.description_write.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-            attachment.description_write.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            attachment.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            attachment.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-            attachment.clear_value = { .color = { .float32 = { 0.0f, 0.0f, 0.0f, 1.0f } } };
+            attachment.description_write.format = vk::Format::eR32G32B32A32Sfloat;
+            attachment.description_write.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            attachment.usage = vk::ImageUsageFlagBits::eColorAttachment;
+            attachment.aspect = vk::ImageAspectFlagBits::eColor;
+            attachment.clear_value = { { 0.0f, 0.0f, 0.0f, 1.0f } };
             if (runtime_setting->is_msaa_enabled()) {
                 attachment.description_read = attachment.description_write;
-                attachment.description_read->samples = VK_SAMPLE_COUNT_1_BIT;
-                attachment.description_read->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                attachment.description_write.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                attachment.usage_read = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+                attachment.description_read->samples = vk::SampleCountFlagBits::e1;
+                attachment.description_read->loadOp = vk::AttachmentLoadOp::eDontCare;
+                attachment.description_write.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+                attachment.usage_read = vk::ImageUsageFlagBits::eInputAttachment | vk::ImageUsageFlagBits::eSampled;
                 attachment.offset = resolved_attachment_count;
                 resolved_attachment_count += 1;
             } else {
-                attachment.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+                attachment.usage |= vk::ImageUsageFlagBits::eInputAttachment | vk::ImageUsageFlagBits::eSampled;
             }
             break;
         }
+        return *this;
     }
 
     SubpassBuilder &RenderPassBuilder::add_subpass(const std::string &name) {
@@ -164,8 +177,8 @@ namespace Match {
         return *subpass_builders.back();
     }
 
-    VkRenderPassCreateInfo RenderPassBuilder::build() {
-        VkRenderPassCreateInfo create_info { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+    vk::RenderPassCreateInfo RenderPassBuilder::build() {
+        vk::RenderPassCreateInfo create_info {};
         final_attachments.clear();
         final_attachments.reserve(attachments.size() + resolved_attachment_count);
         for (const auto &attachment : attachments) {
@@ -178,17 +191,14 @@ namespace Match {
                 }
             }
         }
-        create_info.attachmentCount = final_attachments.size();
-        create_info.pAttachments = final_attachments.data();
         final_subpasses.clear();
         final_subpasses.reserve(subpass_builders.size());
         for (const auto &subpass_builder : subpass_builders) {
             final_subpasses.push_back(subpass_builder->build());
         }
-        create_info.subpassCount = final_subpasses.size();
-        create_info.pSubpasses = final_subpasses.data();
-        create_info.dependencyCount = final_dependencies.size();
-        create_info.pDependencies = final_dependencies.data();
+        create_info.setAttachments(final_attachments)
+            .setSubpasses(final_subpasses)
+            .setDependencies(final_dependencies);
         return std::move(create_info);
     }
 

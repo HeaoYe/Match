@@ -2,13 +2,12 @@
 #pragma once
 
 #include <Match/vulkan/commons.hpp>
-#include <Match/vulkan/api_info.hpp>
 
 namespace Match {
     struct SwapchainDetails {
-        VkSurfaceCapabilitiesKHR capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> present_modes;
+        vk::SurfaceCapabilitiesKHR capabilities;
+        std::vector<vk::SurfaceFormatKHR> formats;
+        std::vector<vk::PresentModeKHR> present_modes;
     };
 
     class Swapchain {
@@ -19,11 +18,11 @@ namespace Match {
     private:
         void query_swapchain_details(SwapchainDetails &details);
     INNER_VISIBLE:
-        VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-        VkSurfaceFormatKHR format;
-        VkPresentModeKHR present_mode;
+        vk::SwapchainKHR swapchain;
+        vk::SurfaceFormatKHR format;
+        vk::PresentModeKHR present_mode;
         uint32_t image_count;
-        std::vector<VkImage> images;
-        std::vector<VkImageView> image_views;
+        std::vector<vk::Image> images;
+        std::vector<vk::ImageView> image_views;
     };
 }

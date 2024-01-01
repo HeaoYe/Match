@@ -37,7 +37,7 @@ void PBRScene::initialize() {
     shader_program->bind_vertex_attribute_set(vas);
     shader_program->compile({
         .cull_mode = Match::CullMode::eBack,
-        .front_face = Match::FrontFace::eClockwise,
+        .front_face = Match::FrontFace::eCounterClockwise,
         .depth_test_enable = VK_TRUE,
     });
 

@@ -3,27 +3,6 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    enum class SamplerFilter {
-        eNearest,
-        eLinear,
-    };
-
-    enum class SamplerAddressMode {
-        eRepeat,
-        eMirroredRepeat,
-        eClampToEdge,
-        eClampToBorder,
-    };
-
-    enum class SamplerBorderColor {
-        eFloatTransparentBlack,
-        eIntTransparentBlack,
-        eFloatOpaqueBlack,
-        eIntOpaqueBlack,
-        eFloatOpaqueWhite,
-        eIntOpaqueWhite,
-    };
-
     struct SamplerOptions {
         SamplerFilter mag_filter = SamplerFilter::eLinear;
         SamplerFilter min_filter = SamplerFilter::eLinear;
@@ -42,6 +21,6 @@ namespace Match {
         Sampler(const SamplerOptions &options);
         ~Sampler();
     INNER_VISIBLE:
-        VkSampler sampler;
+        vk::Sampler sampler;
     };
 }

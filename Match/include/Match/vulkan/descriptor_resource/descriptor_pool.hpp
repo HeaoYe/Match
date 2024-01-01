@@ -7,9 +7,10 @@ namespace Match {
         no_copy_move_construction(DescriptorPool)
     public:
         DescriptorPool();
-        std::vector<VkDescriptorSet> allocate_descriptor_set(VkDescriptorSetLayout layout);
+        std::vector<vk::DescriptorSet> allocate_descriptor_set(vk::DescriptorSetLayout layout);
+        void free_descriptor_set(vk::DescriptorSet set);
         ~DescriptorPool();
     INNER_VISIBLE:
-        VkDescriptorPool descriptor_pool;
+        vk::DescriptorPool descriptor_pool;
     };
 }
