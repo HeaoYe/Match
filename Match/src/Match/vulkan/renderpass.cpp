@@ -6,10 +6,10 @@
 namespace Match {
     RenderPass::RenderPass(std::shared_ptr<RenderPassBuilder> builder) {
         auto create_info = builder->build();
-        vk_assert(vkCreateRenderPass(manager->device->device, &create_info, manager->allocator, &render_pass));
+        render_pass = manager->device->device.createRenderPass(create_info);
     }
 
     RenderPass::~RenderPass() {
-        vkDestroyRenderPass(manager->device->device, render_pass, manager->allocator);
+        manager->device->device.destroyRenderPass(render_pass);
     }
 }

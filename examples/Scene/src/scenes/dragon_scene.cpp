@@ -24,15 +24,15 @@ void DragonScene::initialize() {
     post_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
 
     post_subpass.wait_for(
-        "main", 
-        { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT },
-        { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT }
+        "main",
+        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentRead }, 
+        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite }
     );
     
     renderer = factory->create_renderer(builder);
     renderer->attach_render_layer<Match::ImGuiLayer>("imgui layer");
 
-    renderer->set_clear_value(Match::SWAPCHAIN_IMAGE_ATTACHMENT, { 0.3f, 0.5f, 0.7f, 1.0f });
+    renderer->set_clear_value(Match::SWAPCHAIN_IMAGE_ATTACHMENT, { { 0.3f, 0.5f, 0.7f, 1.0f } });
 
     auto vert_shader = factory->load_shader("dragon_shader/main_subpass.vert", Match::ShaderType::eVertexShaderNeedCompile);
     vert_shader->bind_descriptors({
@@ -63,7 +63,7 @@ void DragonScene::initialize() {
     shader_program->bind_vertex_attribute_set(vas);
     shader_program->compile({
         .cull_mode = Match::CullMode::eBack,
-        .front_face = Match::FrontFace::eClockwise,
+        .front_face = Match::FrontFace::eCounterClockwise,
         .depth_test_enable = VK_TRUE,
     });
 

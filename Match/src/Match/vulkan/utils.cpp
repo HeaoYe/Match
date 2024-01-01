@@ -2,88 +2,86 @@
 #include "inner.hpp"
 
 namespace Match {
-    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect, uint32_t mipmap_levels, uint32_t layer_count, VkImageViewType view_type) {
-        VkImageViewCreateInfo create_info { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-        create_info.image = image;
-        create_info.format = format;
-        create_info.viewType = view_type;
-        create_info.components = VkComponentMapping {
-            .r = VK_COMPONENT_SWIZZLE_R,
-            .g = VK_COMPONENT_SWIZZLE_G,
-            .b = VK_COMPONENT_SWIZZLE_B,
-            .a = VK_COMPONENT_SWIZZLE_A,
-        };
-        create_info.subresourceRange = VkImageSubresourceRange {
-            .aspectMask = aspect,
-            .baseMipLevel = 0,
-            .levelCount = mipmap_levels,
-            .baseArrayLayer = 0,
-            .layerCount = layer_count,
-        };
-        VkImageView view;
-        vk_check(vkCreateImageView(manager->device->device, &create_info, manager->allocator, &view))
-        return view;
+    vk::ImageView create_image_view(vk::Image image, vk::Format format, vk::ImageAspectFlags aspect, uint32_t mipmap_levels, uint32_t layer_count, vk::ImageViewType view_type) {
+        vk::ImageViewCreateInfo create_info {};
+        create_info.setImage(image)
+            .setFormat(format)
+            .setViewType(view_type)
+            .setComponents({
+                vk::ComponentSwizzle::eR,
+                vk::ComponentSwizzle::eG,
+                vk::ComponentSwizzle::eB,
+                vk::ComponentSwizzle::eA,
+            })
+            .setSubresourceRange({
+                aspect,
+                0,
+                mipmap_levels,
+                0,
+                layer_count
+            });
+        return manager->device->device.createImageView(create_info);
     }
     
-    VkFormat find_supported_format(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+    vk::Format find_supported_format(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features) {
         for (const auto &format : candidates) {
-            VkFormatProperties properties;
-            vkGetPhysicalDeviceFormatProperties(manager->device->physical_device, format, &properties);
-            if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & features) == features) {
+            auto properties = manager->device->physical_device.getFormatProperties(format);
+            if (tiling == vk::ImageTiling::eLinear && (properties.linearTilingFeatures & features) == features) {
                 return format;
-            } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & features) == features) {
+            } else if (tiling == vk::ImageTiling::eOptimal && (properties.optimalTilingFeatures & features) == features) {
                 return format;
             }
         }
         MCH_ERROR("Failed to find supported vulkan format")
-        return VK_FORMAT_UNDEFINED;
+        return vk::Format::eUndefined;
     }
 
-    void transition_image_layout(VkImage image, VkImageAspectFlags aspect, uint32_t mip_levels, const TransitionInfo &src, const TransitionInfo &dst) {
+    void transition_image_layout(vk::Image image, vk::ImageAspectFlags aspect, uint32_t mip_levels, const TransitionInfo &src, const TransitionInfo &dst) {
         auto command_buffer = manager->command_pool->allocate_single_use();
-        VkImageMemoryBarrier barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
-        barrier.oldLayout = src.layout;
-        barrier.srcAccessMask = src.access;
-        barrier.newLayout = dst.layout;
-        barrier.dstAccessMask = dst.access;
-        barrier.image = image;
-        barrier.subresourceRange.aspectMask = aspect;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = mip_levels;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        vkCmdPipelineBarrier(
-            command_buffer,
+        vk::ImageMemoryBarrier barrier {};
+        barrier.setOldLayout(src.layout)
+            .setSrcAccessMask(src.access)
+            .setNewLayout(dst.layout)
+            .setDstAccessMask(dst.access)
+            .setImage(image)
+            .setSubresourceRange({
+                aspect,
+                0,
+                mip_levels,
+                0,
+                1
+            })
+            .setSrcQueueFamilyIndex(vk::QueueFamilyIgnored)
+            .setDstQueueFamilyIndex(vk::QueueFamilyIgnored);
+        command_buffer.pipelineBarrier(
             src.stage,
             dst.stage,
-            0, 0, nullptr, 0, nullptr,
-            1, &barrier
+            vk::DependencyFlagBits::eByRegion,
+            {}, {},
+            { barrier }
         );
         manager->command_pool->free_single_use(command_buffer);
     }
 
-    VkFormat get_supported_depth_format() {
-        return find_supported_format({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT }, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vk::Format get_supported_depth_format() {
+        return find_supported_format({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
     }
 
-    bool has_stencil_component(VkFormat format) {
-        return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+    bool has_stencil_component(vk::Format format) {
+        return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
     }
 
-    VkSampleCountFlagBits get_max_usable_sample_count() {
-        VkPhysicalDeviceProperties properties;
-        vkGetPhysicalDeviceProperties(manager->device->physical_device, &properties);
+    SampleCount get_max_usable_sample_count() {
+        auto properties = manager->device->physical_device.getProperties();
 
-        VkSampleCountFlags counts = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
-        if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
-        if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
-        if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
-        if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
-        if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
-        if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+        vk::SampleCountFlags counts = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
+        if (counts & vk::SampleCountFlagBits::e64) { return SampleCount::e64; }
+        if (counts & vk::SampleCountFlagBits::e32) { return SampleCount::e32; }
+        if (counts & vk::SampleCountFlagBits::e16) { return SampleCount::e16; }
+        if (counts & vk::SampleCountFlagBits::e8) { return SampleCount::e8; }
+        if (counts & vk::SampleCountFlagBits::e4) { return SampleCount::e4; }
+        if (counts & vk::SampleCountFlagBits::e2) { return SampleCount::e2; }
 
-        return VK_SAMPLE_COUNT_1_BIT;
+        return SampleCount::e1;
     }
 }

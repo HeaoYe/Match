@@ -13,20 +13,6 @@
 #endif
 
 namespace Match {
-    enum class LogLevel {
-        eTrace,
-        eDebug,
-        eInfo,
-        eError,
-        eWarn,
-        eFatal,
-    };
-
-    struct WindowSize {
-        uint32_t width;
-        uint32_t height;
-    };
-
     #define no_copy_construction(cls_name) cls_name(const cls_name &) = delete;
     #define no_move_construction(cls_name) cls_name(cls_name &&) = delete;
     #define default_construction(cls_name) public: \
@@ -35,4 +21,5 @@ namespace Match {
     #define default_no_copy_move_construction(cls_name) default_construction(cls_name) no_copy_construction(cls_name) no_move_construction(cls_name)
 }
 
+#include <Match/types.hpp>
 #include <Match/core/logger.hpp>

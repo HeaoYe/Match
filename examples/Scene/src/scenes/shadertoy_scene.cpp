@@ -67,8 +67,8 @@ void ShaderToyScene::updata_shader_program() {
         .cull_mode = Match::CullMode::eNone,
         .depth_test_enable = VK_FALSE,
         .dynamic_states = {
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR,
+            vk::DynamicState::eViewport,
+            vk::DynamicState::eScissor,
         }
     });
     shader_program->bind_uniforms(0, { shader_input->uniform_buffer });

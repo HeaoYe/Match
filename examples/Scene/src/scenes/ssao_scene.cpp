@@ -20,9 +20,9 @@ void SSAOScene::initialize() {
     ssao_subpass.attach_input_attachment("NormalBuffer");
     ssao_subpass.attach_output_attachment("SSAOBuffer");
     ssao_subpass.wait_for(
-        "prepare", 
-        { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT }, 
-        { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT }
+        "prepare",
+        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentRead }, 
+        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite }
     );
 
     auto &main_subpass = builder->add_subpass("main");
@@ -31,15 +31,15 @@ void SSAOScene::initialize() {
     main_subpass.attach_input_attachment("SSAOBuffer");
     main_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
     main_subpass.wait_for(
-        "ssao", 
-        { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT }, 
-        { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT }
+        "prepare", 
+        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentRead }, 
+        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite }
     );
 
     renderer = factory->create_renderer(builder);
     renderer->attach_render_layer<Match::ImGuiLayer>("imgui layer");
     // 设置NormalBuffer的ClearValue，将最后一个Float清零
-    renderer->set_clear_value("NormalBuffer", { 0, 0, 0, 0 });
+    renderer->set_clear_value("NormalBuffer", { { 0.0f, 0.0f, 0.0f, 0.0f } });
 
     prepare_shader_program = factory->create_shader_program(renderer, "prepare");
     ssao_shader_program = factory->create_shader_program(renderer, "ssao");
@@ -99,7 +99,7 @@ void SSAOScene::initialize() {
     prepare_shader_program->bind_vertex_attribute_set(vas);
     prepare_shader_program->compile({
         .cull_mode = Match::CullMode::eBack,
-        .front_face = Match::FrontFace::eClockwise,
+        .front_face = Match::FrontFace::eCounterClockwise,
         .depth_test_enable = VK_TRUE,
     });
 

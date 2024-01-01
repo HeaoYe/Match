@@ -50,8 +50,8 @@ namespace Match {
         void draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
         void draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance);
     public:
-        void set_clear_value(const std::string &name, const VkClearValue &value);
-        VkCommandBuffer get_command_buffer();
+        void set_clear_value(const std::string &name, const vk::ClearValue &value);
+        vk::CommandBuffer get_command_buffer();
         void set_resize_flag();
         void wait_for_destroy();
         void update_resources();
@@ -70,10 +70,10 @@ namespace Match {
         uint32_t index;
         uint32_t current_in_flight;
         uint32_t current_subpass;
-        VkCommandBuffer current_buffer;
-        std::vector<VkCommandBuffer> command_buffers;
-        std::vector<VkSemaphore> image_available_semaphores;
-        std::vector<VkSemaphore> render_finished_semaphores;
-        std::vector<VkFence> in_flight_fences;
+        vk::CommandBuffer current_buffer;
+        std::vector<vk::CommandBuffer> command_buffers;
+        std::vector<vk::Semaphore> image_available_semaphores;
+        std::vector<vk::Semaphore> render_finished_semaphores;
+        std::vector<vk::Fence> in_flight_fences;
     };
 }

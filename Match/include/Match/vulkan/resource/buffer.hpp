@@ -6,7 +6,7 @@ namespace Match {
     class Buffer {
         no_copy_construction(Buffer);
     public:
-        Buffer(uint32_t size, VkBufferUsageFlags buffer_usage, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags);
+        Buffer(uint32_t size, vk::BufferUsageFlags buffer_usage, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags);
         Buffer(Buffer &&rhs);
         void *map();
         bool is_mapped();
@@ -16,14 +16,14 @@ namespace Match {
         uint32_t size;
         bool mapped;
         void *data_ptr;
-        VkBuffer buffer;
+        vk::Buffer buffer;
         VmaAllocation buffer_allocation;
     };
 
     class TwoStageBuffer {
         no_copy_move_construction(TwoStageBuffer)
     public:
-        TwoStageBuffer(uint32_t size, VkBufferUsageFlags usage);
+        TwoStageBuffer(uint32_t size, vk::BufferUsageFlags usage);
         void *map();
         void flush();
         void unmap();
@@ -50,16 +50,11 @@ namespace Match {
         VertexBuffer(uint32_t vertex_size, uint32_t count);
     };
     
-    enum class IndexType {
-        eUint16,
-        eUint32,
-    };
-    
     class IndexBuffer : public TwoStageBuffer {
         no_copy_move_construction(IndexBuffer)
     public:
         IndexBuffer(IndexType type, uint32_t count);
     INNER_VISIBLE:
-        VkIndexType type;
+        vk::IndexType type;
     };
 }

@@ -11,17 +11,19 @@ namespace Match {
         std::vector<std::string> enumerate_devices() const;
         ~Device();
     private:
-        bool check_device_suitable(VkPhysicalDevice device);
+        bool check_device_suitable(vk::PhysicalDevice device);
     INNER_VISIBLE:
-        VkPhysicalDevice physical_device;
-        VkDevice device;
-        VkQueue graphics_queue;
+        vk::Device *operator->() { return &device; }
+    INNER_VISIBLE:
+        vk::PhysicalDevice physical_device;
+        vk::Device device;
+        vk::Queue graphics_queue;
         uint32_t graphics_family_index = -1;
-        VkQueue present_queue;
+        vk::Queue present_queue;
         uint32_t present_family_index = -1;
-        VkQueue compute_queue;
+        vk::Queue compute_queue;
         uint32_t compute_family_index = -1;
-        VkQueue transfer_queue;
+        vk::Queue transfer_queue;
         uint32_t transfer_family_index = -1;    
     };
 }

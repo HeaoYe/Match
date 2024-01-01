@@ -5,206 +5,220 @@
 #include <Match/vulkan/resource/sampler.hpp>
 
 namespace Match {
-    #define _case(D, T, e) case T::e: return D;
+    #define __case(R, Y, e) case Y::e: return R;
+    #define _case(T, d, Y, e) __case(T::d, Y, e);
     template <>
-    VkPrimitiveTopology transform<VkPrimitiveTopology>(Topology topology) {
+    vk::PrimitiveTopology transform<vk::PrimitiveTopology>(Topology topology) {
         switch (topology) {
-        _case(VK_PRIMITIVE_TOPOLOGY_POINT_LIST, Topology, ePointList)
-        _case(VK_PRIMITIVE_TOPOLOGY_LINE_LIST, Topology, eLineList)
-        _case(VK_PRIMITIVE_TOPOLOGY_LINE_STRIP, Topology, eLineStrip)
-        _case(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, Topology, eTriangleList)
-        _case(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, Topology, eTriangleFan)
+        _case(vk::PrimitiveTopology, ePointList, Topology, ePointList)
+        _case(vk::PrimitiveTopology, eLineList, Topology, eLineList)
+        _case(vk::PrimitiveTopology, eLineStrip, Topology, eLineStrip)
+        _case(vk::PrimitiveTopology, eTriangleList, Topology, eTriangleList)
+        _case(vk::PrimitiveTopology, eTriangleFan, Topology, eTriangleFan)
         }
     }
 
     template <>
-    VkPolygonMode transform<VkPolygonMode>(PolygonMode mode) {
+    vk::PolygonMode transform<vk::PolygonMode>(PolygonMode mode) {
         switch (mode) {
-        _case(VK_POLYGON_MODE_FILL, PolygonMode, eFill)
-        _case(VK_POLYGON_MODE_LINE, PolygonMode, eLine)
-        _case(VK_POLYGON_MODE_POINT, PolygonMode, ePoint)
+        _case(vk::PolygonMode, eFill, PolygonMode, eFill)
+        _case(vk::PolygonMode, eLine, PolygonMode, eLine)
+        _case(vk::PolygonMode, ePoint, PolygonMode, ePoint)
         }
     }
 
     template <>
-    VkCullModeFlags transform<VkCullModeFlags>(CullMode mode) {
+    vk::CullModeFlags transform<vk::CullModeFlags>(CullMode mode) {
         switch (mode) {
-        _case(VK_CULL_MODE_NONE, CullMode, eNone)
-        _case(VK_CULL_MODE_FRONT_BIT, CullMode, eFront)
-        _case(VK_CULL_MODE_BACK_BIT, CullMode, eBack)
-        _case(VK_CULL_MODE_FRONT_AND_BACK, CullMode, eFrontAndBack)
+        _case(vk::CullModeFlagBits, eNone, CullMode, eNone)
+        _case(vk::CullModeFlagBits, eFront, CullMode, eFront)
+        _case(vk::CullModeFlagBits, eBack, CullMode, eBack)
+        _case(vk::CullModeFlagBits, eFrontAndBack, CullMode, eFrontAndBack)
         }
     }
 
     template <>
-    VkFrontFace transform<VkFrontFace>(FrontFace mode) {
+    vk::FrontFace transform<vk::FrontFace>(FrontFace mode) {
         switch (mode) {
-        _case(VK_FRONT_FACE_COUNTER_CLOCKWISE, FrontFace, eClockwise)
-        _case(VK_FRONT_FACE_CLOCKWISE, FrontFace, eCounterClockwise)
+        _case(vk::FrontFace, eClockwise, FrontFace, eClockwise)
+        _case(vk::FrontFace, eCounterClockwise, FrontFace, eCounterClockwise)
         }
     }
 
     template <>
-    VkFormat transform<VkFormat>(VertexType type) {
+    vk::Format transform<vk::Format>(VertexType type) {
         switch (type) {
-        _case(VK_FORMAT_R8_SINT, VertexType, eInt8)
-        _case(VK_FORMAT_R8G8_SINT, VertexType, eInt8x2)
-        _case(VK_FORMAT_R8G8B8_SINT, VertexType, eInt8x3)
-        _case(VK_FORMAT_R8G8B8A8_SINT, VertexType, eInt8x4)
-        _case(VK_FORMAT_R16_SINT, VertexType, eInt16)
-        _case(VK_FORMAT_R16G16_SINT, VertexType, eInt16x2)
-        _case(VK_FORMAT_R16G16B16_SINT, VertexType, eInt16x3)
-        _case(VK_FORMAT_R16G16B16A16_SINT, VertexType, eInt16x4)
-        _case(VK_FORMAT_R32_SINT, VertexType, eInt32)
-        _case(VK_FORMAT_R32G32_SINT, VertexType, eInt32x2)
-        _case(VK_FORMAT_R32G32B32_SINT, VertexType, eInt32x3)
-        _case(VK_FORMAT_R32G32B32A32_SINT, VertexType, eInt32x4)
-        _case(VK_FORMAT_R64_SINT, VertexType, eInt64)
-        _case(VK_FORMAT_R64G64_SINT, VertexType, eInt64x2)
-        _case(VK_FORMAT_R64G64B64_SINT, VertexType, eInt64x3)
-        _case(VK_FORMAT_R64G64B64A64_SINT, VertexType, eInt64x4)
-        _case(VK_FORMAT_R8_UINT, VertexType, eUint8)
-        _case(VK_FORMAT_R8G8_UINT, VertexType, eUint8x2)
-        _case(VK_FORMAT_R8G8B8_UINT, VertexType, eUint8x3)
-        _case(VK_FORMAT_R8G8B8A8_UINT, VertexType, eUint8x4)
-        _case(VK_FORMAT_R16_UINT, VertexType, eUint16)
-        _case(VK_FORMAT_R16G16_UINT, VertexType, eUint16x2)
-        _case(VK_FORMAT_R16G16B16_UINT, VertexType, eUint16x3)
-        _case(VK_FORMAT_R16G16B16A16_UINT, VertexType, eUint16x4)
-        _case(VK_FORMAT_R32_UINT, VertexType, eUint32)
-        _case(VK_FORMAT_R32G32_UINT, VertexType, eUint32x2)
-        _case(VK_FORMAT_R32G32B32_UINT, VertexType, eUint32x3)
-        _case(VK_FORMAT_R32G32B32A32_UINT, VertexType, eUint32x4)
-        _case(VK_FORMAT_R64_UINT, VertexType, eUint64)
-        _case(VK_FORMAT_R64G64_UINT, VertexType, eUint64x2)
-        _case(VK_FORMAT_R64G64B64_UINT, VertexType, eUint64x3)
-        _case(VK_FORMAT_R64G64B64A64_UINT, VertexType, eUint64x4)
-        _case(VK_FORMAT_R32_SFLOAT, VertexType, eFloat)
-        _case(VK_FORMAT_R32G32_SFLOAT, VertexType, eFloat2)
-        _case(VK_FORMAT_R32G32B32_SFLOAT, VertexType, eFloat3)
-        _case(VK_FORMAT_R32G32B32A32_SFLOAT, VertexType, eFloat4)
-        _case(VK_FORMAT_R64_SFLOAT, VertexType, eDouble)
-        _case(VK_FORMAT_R64G64_SFLOAT, VertexType, eDouble2)
-        _case(VK_FORMAT_R64G64B64_SFLOAT, VertexType, eDouble3)
-        _case(VK_FORMAT_R64G64B64A64_SFLOAT, VertexType, eDouble4)
+        _case(vk::Format, eR8Sint, VertexType, eInt8)
+        _case(vk::Format, eR8G8Sint, VertexType, eInt8x2)
+        _case(vk::Format, eR8G8B8Sint, VertexType, eInt8x3)
+        _case(vk::Format, eR8G8B8A8Sint, VertexType, eInt8x4)
+        _case(vk::Format, eR16Sint, VertexType, eInt16)
+        _case(vk::Format, eR16G16Sint, VertexType, eInt16x2)
+        _case(vk::Format, eR16G16B16Sint, VertexType, eInt16x3)
+        _case(vk::Format, eR16G16B16A16Sint, VertexType, eInt16x4)
+        _case(vk::Format, eR32Sint, VertexType, eInt32)
+        _case(vk::Format, eR32G32Sint, VertexType, eInt32x2)
+        _case(vk::Format, eR32G32B32Sint, VertexType, eInt32x3)
+        _case(vk::Format, eR32G32B32A32Sint, VertexType, eInt32x4)
+        _case(vk::Format, eR64Sint, VertexType, eInt64)
+        _case(vk::Format, eR64G64Sint, VertexType, eInt64x2)
+        _case(vk::Format, eR64G64B64Sint, VertexType, eInt64x3)
+        _case(vk::Format, eR64G64B64A64Sint, VertexType, eInt64x4)
+        _case(vk::Format, eR8Uint, VertexType, eUint8)
+        _case(vk::Format, eR8G8Uint, VertexType, eUint8x2)
+        _case(vk::Format, eR8G8B8Uint, VertexType, eUint8x3)
+        _case(vk::Format, eR8G8B8A8Uint, VertexType, eUint8x4)
+        _case(vk::Format, eR16Uint, VertexType, eUint16)
+        _case(vk::Format, eR16G16Uint, VertexType, eUint16x2)
+        _case(vk::Format, eR16G16B16Uint, VertexType, eUint16x3)
+        _case(vk::Format, eR16G16B16A16Uint, VertexType, eUint16x4)
+        _case(vk::Format, eR32Uint, VertexType, eUint32)
+        _case(vk::Format, eR32G32Uint, VertexType, eUint32x2)
+        _case(vk::Format, eR32G32B32Uint, VertexType, eUint32x3)
+        _case(vk::Format, eR32G32B32A32Uint, VertexType, eUint32x4)
+        _case(vk::Format, eR64Uint, VertexType, eUint64)
+        _case(vk::Format, eR64G64Uint, VertexType, eUint64x2)
+        _case(vk::Format, eR64G64B64Uint, VertexType, eUint64x3)
+        _case(vk::Format, eR64G64B64A64Uint, VertexType, eUint64x4)
+        _case(vk::Format, eR32Sfloat, VertexType, eFloat)
+        _case(vk::Format, eR32G32Sfloat, VertexType, eFloat2)
+        _case(vk::Format, eR32G32B32Sfloat, VertexType, eFloat3)
+        _case(vk::Format, eR32G32B32A32Sfloat, VertexType, eFloat4)
+        _case(vk::Format, eR64Sfloat, VertexType, eDouble)
+        _case(vk::Format, eR64G64Sfloat, VertexType, eDouble2)
+        _case(vk::Format, eR64G64B64Sfloat, VertexType, eDouble3)
+        _case(vk::Format, eR64G64B64A64Sfloat, VertexType, eDouble4)
         }
     }
 
     template <>
     uint32_t transform<uint32_t>(VertexType type) {
         switch (type) {
-        _case(1, VertexType, eInt8)
-        _case(2, VertexType, eInt8x2)
-        _case(3, VertexType, eInt8x3)
-        _case(4, VertexType, eInt8x4)
-        _case(2, VertexType, eInt16)
-        _case(4, VertexType, eInt16x2)
-        _case(6, VertexType, eInt16x3)
-        _case(8, VertexType, eInt16x4)
-        _case(4, VertexType, eInt32)
-        _case(8, VertexType, eInt32x2)
-        _case(12, VertexType, eInt32x3)
-        _case(16, VertexType, eInt32x4)
-        _case(8, VertexType, eInt64)
-        _case(16, VertexType, eInt64x2)
-        _case(24, VertexType, eInt64x3)
-        _case(32, VertexType, eInt64x4)
-        _case(1, VertexType, eUint8)
-        _case(2, VertexType, eUint8x2)
-        _case(3, VertexType, eUint8x3)
-        _case(4, VertexType, eUint8x4)
-        _case(2, VertexType, eUint16)
-        _case(4, VertexType, eUint16x2)
-        _case(6, VertexType, eUint16x3)
-        _case(8, VertexType, eUint16x4)
-        _case(4, VertexType, eUint32)
-        _case(8, VertexType, eUint32x2)
-        _case(12, VertexType, eUint32x3)
-        _case(16, VertexType, eUint32x4)
-        _case(8, VertexType, eUint64)
-        _case(16, VertexType, eUint64x2)
-        _case(24, VertexType, eUint64x3)
-        _case(32, VertexType, eUint64x4)
-        _case(4, VertexType, eFloat)
-        _case(8, VertexType, eFloat2)
-        _case(12, VertexType, eFloat3)
-        _case(16, VertexType, eFloat4)
-        _case(8, VertexType, eDouble)
-        _case(16, VertexType, eDouble2)
-        _case(24, VertexType, eDouble3)
-        _case(32, VertexType, eDouble4)
+        __case(1, VertexType, eInt8)
+        __case(2, VertexType, eInt8x2)
+        __case(3, VertexType, eInt8x3)
+        __case(4, VertexType, eInt8x4)
+        __case(2, VertexType, eInt16)
+        __case(4, VertexType, eInt16x2)
+        __case(6, VertexType, eInt16x3)
+        __case(8, VertexType, eInt16x4)
+        __case(4, VertexType, eInt32)
+        __case(8, VertexType, eInt32x2)
+        __case(12, VertexType, eInt32x3)
+        __case(16, VertexType, eInt32x4)
+        __case(8, VertexType, eInt64)
+        __case(16, VertexType, eInt64x2)
+        __case(24, VertexType, eInt64x3)
+        __case(32, VertexType, eInt64x4)
+        __case(1, VertexType, eUint8)
+        __case(2, VertexType, eUint8x2)
+        __case(3, VertexType, eUint8x3)
+        __case(4, VertexType, eUint8x4)
+        __case(2, VertexType, eUint16)
+        __case(4, VertexType, eUint16x2)
+        __case(6, VertexType, eUint16x3)
+        __case(8, VertexType, eUint16x4)
+        __case(4, VertexType, eUint32)
+        __case(8, VertexType, eUint32x2)
+        __case(12, VertexType, eUint32x3)
+        __case(16, VertexType, eUint32x4)
+        __case(8, VertexType, eUint64)
+        __case(16, VertexType, eUint64x2)
+        __case(24, VertexType, eUint64x3)
+        __case(32, VertexType, eUint64x4)
+        __case(4, VertexType, eFloat)
+        __case(8, VertexType, eFloat2)
+        __case(12, VertexType, eFloat3)
+        __case(16, VertexType, eFloat4)
+        __case(8, VertexType, eDouble)
+        __case(16, VertexType, eDouble2)
+        __case(24, VertexType, eDouble3)
+        __case(32, VertexType, eDouble4)
         }
     }
 
     template <>
-    VkVertexInputRate transform<VkVertexInputRate>(InputRate rate) {
+    vk::VertexInputRate transform<vk::VertexInputRate>(InputRate rate) {
         switch (rate) {
-        _case(VK_VERTEX_INPUT_RATE_VERTEX, InputRate, ePerVertex)
-        _case(VK_VERTEX_INPUT_RATE_INSTANCE, InputRate, ePerInstance)
+        _case(vk::VertexInputRate, eVertex, InputRate, ePerVertex)
+        _case(vk::VertexInputRate, eInstance, InputRate, ePerInstance)
         }
     }
 
     template <>
-    VkIndexType transform<VkIndexType>(IndexType type) {
+    vk::IndexType transform<vk::IndexType>(IndexType type) {
         switch (type) {
-        _case(VK_INDEX_TYPE_UINT16, IndexType, eUint16)
-        _case(VK_INDEX_TYPE_UINT32, IndexType, eUint32)
+        _case(vk::IndexType, eUint16, IndexType, eUint16)
+        _case(vk::IndexType, eUint32, IndexType, eUint32)
         }
     }
 
     template <>
     uint32_t transform<uint32_t>(IndexType type) {
         switch (type) {
-        _case(2, IndexType, eUint16)
-        _case(4, IndexType, eUint32)
+        __case(2, IndexType, eUint16)
+        __case(4, IndexType, eUint32)
         }
     }
 
     template <>
-    VkDescriptorType transform<VkDescriptorType>(DescriptorType type) {
+    vk::DescriptorType transform<vk::DescriptorType>(DescriptorType type) {
         switch (type) {
-        _case(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, DescriptorType, eUniform)
-        _case(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, DescriptorType, eTexture)
-        _case(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, DescriptorType, eTextureAttachment)
-        _case(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, DescriptorType, eInputAttachment)
+        _case(vk::DescriptorType, eUniformBuffer, DescriptorType, eUniform)
+        _case(vk::DescriptorType, eCombinedImageSampler, DescriptorType, eTexture)
+        _case(vk::DescriptorType, eCombinedImageSampler, DescriptorType, eTextureAttachment)
+        _case(vk::DescriptorType, eInputAttachment, DescriptorType, eInputAttachment)
         }
     }
 
     template <>
-    VkFilter transform<VkFilter>(SamplerFilter filter) {
+    vk::Filter transform<vk::Filter>(SamplerFilter filter) {
         switch (filter) {
-        _case(VK_FILTER_LINEAR, SamplerFilter, eLinear)
-        _case(VK_FILTER_NEAREST, SamplerFilter, eNearest)
+        _case(vk::Filter, eLinear, SamplerFilter, eLinear)
+        _case(vk::Filter, eNearest, SamplerFilter, eNearest)
         }
     }
 
     template <>
-    VkSamplerMipmapMode transform<VkSamplerMipmapMode>(SamplerFilter filter) {
+    vk::SamplerMipmapMode transform<vk::SamplerMipmapMode>(SamplerFilter filter) {
         switch (filter) {
-        _case(VK_SAMPLER_MIPMAP_MODE_LINEAR, SamplerFilter, eLinear)
-        _case(VK_SAMPLER_MIPMAP_MODE_NEAREST, SamplerFilter, eNearest)
+        _case(vk::SamplerMipmapMode, eLinear, SamplerFilter, eLinear)
+        _case(vk::SamplerMipmapMode, eNearest, SamplerFilter, eNearest)
         }
     }
 
     template <>
-    VkSamplerAddressMode transform<VkSamplerAddressMode>(SamplerAddressMode mode) {
+    vk::SamplerAddressMode transform<vk::SamplerAddressMode>(SamplerAddressMode mode) {
         switch (mode) {
-        _case(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, SamplerAddressMode, eClampToBorder)
-        _case(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, SamplerAddressMode, eClampToEdge)
-        _case(VK_SAMPLER_ADDRESS_MODE_REPEAT, SamplerAddressMode, eRepeat)
-        _case(VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT, SamplerAddressMode, eMirroredRepeat)
+        _case(vk::SamplerAddressMode, eClampToBorder, SamplerAddressMode, eClampToBorder)
+        _case(vk::SamplerAddressMode, eClampToEdge, SamplerAddressMode, eClampToEdge)
+        _case(vk::SamplerAddressMode, eRepeat, SamplerAddressMode, eRepeat)
+        _case(vk::SamplerAddressMode, eMirroredRepeat, SamplerAddressMode, eMirroredRepeat)
         }
     }
 
     template <>
-    VkBorderColor transform<VkBorderColor>(SamplerBorderColor color) {
+    vk::BorderColor transform<vk::BorderColor>(SamplerBorderColor color) {
         switch (color) {
-        _case(VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK, SamplerBorderColor, eFloatOpaqueBlack)
-        _case(VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE, SamplerBorderColor, eFloatOpaqueWhite)
-        _case(VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK, SamplerBorderColor, eFloatTransparentBlack)
-        _case(VK_BORDER_COLOR_INT_OPAQUE_BLACK, SamplerBorderColor, eIntOpaqueBlack)
-        _case(VK_BORDER_COLOR_INT_OPAQUE_WHITE, SamplerBorderColor, eIntOpaqueWhite)
-        _case(VK_BORDER_COLOR_INT_TRANSPARENT_BLACK, SamplerBorderColor, eIntTransparentBlack)
+        _case(vk::BorderColor, eFloatOpaqueBlack, SamplerBorderColor, eFloatOpaqueBlack)
+        _case(vk::BorderColor, eFloatOpaqueWhite, SamplerBorderColor, eFloatOpaqueWhite)
+        _case(vk::BorderColor, eFloatTransparentBlack, SamplerBorderColor, eFloatTransparentBlack)
+        _case(vk::BorderColor, eIntOpaqueBlack, SamplerBorderColor, eIntOpaqueBlack)
+        _case(vk::BorderColor, eIntOpaqueWhite, SamplerBorderColor, eIntOpaqueWhite)
+        _case(vk::BorderColor, eIntTransparentBlack, SamplerBorderColor, eIntTransparentBlack)
+        }
+    }
+
+    template <>
+    vk::SampleCountFlagBits transform<vk::SampleCountFlagBits>(SampleCount count) {
+        switch (count) {
+        _case(vk::SampleCountFlagBits, e1, SampleCount, e1)
+        _case(vk::SampleCountFlagBits, e2, SampleCount, e2)
+        _case(vk::SampleCountFlagBits, e4, SampleCount, e4)
+        _case(vk::SampleCountFlagBits, e8, SampleCount, e8)
+        _case(vk::SampleCountFlagBits, e16, SampleCount, e16)
+        _case(vk::SampleCountFlagBits, e32, SampleCount, e32)
+        _case(vk::SampleCountFlagBits, e64, SampleCount, e64)
         }
     }
 }

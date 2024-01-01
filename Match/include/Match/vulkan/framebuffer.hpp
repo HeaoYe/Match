@@ -11,22 +11,22 @@ namespace Match {
         no_copy_construction(Attachment)
     public:
         Attachment();
-        Attachment(const VkAttachmentDescription& description, VkImageUsageFlags usage, VkImageAspectFlags aspect);
+        Attachment(const vk::AttachmentDescription& description, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect);
         Attachment(Attachment &&rhs);
         void operator=(Attachment &&rhs);
         ~Attachment();
     INNER_VISIBLE:
         std::unique_ptr<Image> image;
-        VkImageView image_view;
+        vk::ImageView image_view;
     };
 
     class FrameBuffer {
         no_copy_move_construction(FrameBuffer)
     public:
-        FrameBuffer(const Renderer &renderer, const std::vector<VkImageView> &image_views);
+        FrameBuffer(const Renderer &renderer, const std::vector<vk::ImageView> &image_views);
         ~FrameBuffer();
     INNER_VISIBLE:
-        VkFramebuffer framebuffer;
+        vk::Framebuffer framebuffer;
     };
 
     class FrameBufferSet {

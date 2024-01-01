@@ -35,14 +35,14 @@ namespace Match {
 
     void Shader::create(const uint32_t *data, uint32_t size) {
         constants_size = 0;
-        VkShaderModuleCreateInfo shader_module_create_info { .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
-        shader_module_create_info.pCode = data;
-        shader_module_create_info.codeSize = size;
+        vk::ShaderModuleCreateInfo shader_module_create_info {};
+        shader_module_create_info.setPCode(data)
+            .setCodeSize(size);
         module = VK_NULL_HANDLE;
-        vk_check(vkCreateShaderModule(manager->device->device, &shader_module_create_info, manager->allocator, &module))
+        module = manager->device->device.createShaderModule(shader_module_create_info);
     }
 
-    VkDescriptorSetLayoutBinding *Shader::get_layout_binding(uint32_t binding) {
+    vk::DescriptorSetLayoutBinding *Shader::get_layout_binding(uint32_t binding) {
         for (auto &layout_binding : layout_bindings) {
             if (layout_binding.binding == binding) {
                 return &layout_binding;
@@ -58,24 +58,25 @@ namespace Match {
     Shader::~Shader() {
         constant_offset_map.clear();
         layout_bindings.clear();
-        vkDestroyShaderModule(manager->device->device, module, manager->allocator);
+        manager->device->device.destroyShaderModule(module);
     }
 
-    void Shader::bind_descriptors(const std::vector<DescriptorInfo> &descriptor_infos) {
+    Shader &Shader::bind_descriptors(const std::vector<DescriptorInfo> &descriptor_infos) {
         for (const auto &descriptor_info : descriptor_infos) {
             layout_bindings.push_back({
-                .binding = descriptor_info.binding,
-                .descriptorType = transform<VkDescriptorType>(descriptor_info.type),
-                .descriptorCount = descriptor_info.count,
-                .stageFlags = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM,  // set by shader program
+                descriptor_info.binding,
+                transform<vk::DescriptorType>(descriptor_info.type),
+                descriptor_info.count,
+                vk::ShaderStageFlagBits::eAllGraphics,  // set by shader program
             });
             if (descriptor_info.type == DescriptorType::eTexture) {
                 layout_bindings.back().pImmutableSamplers = descriptor_info.immutable_samplers;
             }
         }
+        return *this;
     }
 
-    void Shader::bind_push_constants(const std::vector<ConstantInfo> &constant_infos) {
+    Shader &Shader::bind_push_constants(const std::vector<ConstantInfo> &constant_infos) {
         for (auto info : constant_infos) {
             auto size = transform<uint32_t>(info.type);
             uint32_t align = 4;
@@ -94,5 +95,6 @@ namespace Match {
             constant_size_map.insert(std::make_pair(info.name, size));
             constants_size += size;
         }
+        return *this;
     }
 }

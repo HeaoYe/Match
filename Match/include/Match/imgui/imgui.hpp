@@ -11,6 +11,6 @@ namespace Match {
         void end_render() override;
         ~ImGuiLayer();
     INNER_VISIBLE:
-        VkDescriptorPool descriptor_pool;
+        vk::DescriptorPool descriptor_pool;
     };
 }

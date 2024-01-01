@@ -3,21 +3,21 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect, uint32_t mipmap_levels, uint32_t layer_count = 1, VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D);
+    vk::ImageView create_image_view(vk::Image image, vk::Format format, vk::ImageAspectFlags aspect, uint32_t mipmap_levels, uint32_t layer_count = 1, vk::ImageViewType view_type = vk::ImageViewType::e2D);
 
-    VkFormat find_supported_format(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    vk::Format find_supported_format(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
 
     struct TransitionInfo {
-        VkImageLayout layout;
-        VkAccessFlags access;
-        VkPipelineStageFlags stage;
+        vk::ImageLayout layout;
+        vk::AccessFlags access;
+        vk::PipelineStageFlags stage;
     };
 
-    void transition_image_layout(VkImage image, VkImageAspectFlags aspect, uint32_t mip_levels, const TransitionInfo &src, const TransitionInfo &dst);
+    void transition_image_layout(vk::Image image, vk::ImageAspectFlags aspect, uint32_t mip_levels, const TransitionInfo &src, const TransitionInfo &dst);
 
-    VkFormat get_supported_depth_format();
+    vk::Format get_supported_depth_format();
 
-    bool has_stencil_component(VkFormat format);
+    bool has_stencil_component(vk::Format format);
 
-    VkSampleCountFlagBits get_max_usable_sample_count();
+    SampleCount get_max_usable_sample_count();
 }

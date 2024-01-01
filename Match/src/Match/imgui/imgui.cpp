@@ -22,30 +22,33 @@ namespace Match {
         style.WindowMinSize = { 160, 160 };
         style.WindowRounding = 2;
 
-        std::vector<VkDescriptorPoolSize> pool_sizes = {
-            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+        std::vector<vk::DescriptorPoolSize> pool_sizes = {
+            { vk::DescriptorType::eSampler, 1000 },
+            { vk::DescriptorType::eCombinedImageSampler, 1000 },
+            { vk::DescriptorType::eSampledImage, 1000 },
+            { vk::DescriptorType::eStorageImage, 1000 },
+            { vk::DescriptorType::eUniformTexelBuffer, 1000 },
+            { vk::DescriptorType::eStorageTexelBuffer, 1000 },
+            { vk::DescriptorType::eUniformBuffer, 1000 },
+            { vk::DescriptorType::eStorageBuffer, 1000 },
+            { vk::DescriptorType::eUniformBufferDynamic, 1000 },
+            { vk::DescriptorType::eStorageBufferDynamic, 1000 },
+            { vk::DescriptorType::eInputAttachment, 1000 }
         };
-        VkDescriptorPoolCreateInfo create_info = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
-        create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        create_info.maxSets = pool_sizes.size() * 1000;
-        create_info.poolSizeCount = pool_sizes.size();
-        create_info.pPoolSizes = pool_sizes.data();
-        vkCreateDescriptorPool(manager->device->device, &create_info, manager->allocator, &descriptor_pool);
+        vk::DescriptorPoolCreateInfo create_info {};
+        create_info.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet)
+            .setMaxSets(pool_sizes.size() * 1000)
+            .setPoolSizes(pool_sizes);
+        descriptor_pool = manager->device->device.createDescriptorPool(create_info);
 
         auto &last_subpass_name = renderer.render_pass_builder->subpass_builders.back()->name;
-        auto &subpass = renderer.render_pass_builder->add_subpass("ImGui Layer");
-        subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        subpass.wait_for(last_subpass_name, { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT }, { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT });
+        renderer.render_pass_builder->add_subpass("ImGui Layer")
+            .attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT)
+            .wait_for(
+                last_subpass_name,
+                { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite },
+                { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite }
+            );
         renderer.update_renderpass();
 
         std::vector<ImFontConfig> font_configs;
@@ -82,8 +85,8 @@ namespace Match {
         init_info.Subpass = renderer.render_pass_builder->subpass_builders.size() - 1;
         init_info.MinImageCount = manager->swapchain->image_count;
         init_info.ImageCount = manager->swapchain->image_count;
-        init_info.MSAASamples = runtime_setting->multisample_count;
-        init_info.Allocator = manager->allocator;
+        init_info.MSAASamples = static_cast<VkSampleCountFlagBits>(runtime_setting->multisample_count);
+        init_info.Allocator = nullptr;
         init_info.CheckVkResultFn = [](VkResult res) {
             if (res != VK_SUCCESS) {
                 MCH_ERROR("ImGui Vulkan Error: {}", static_cast<uint32_t>(res))
@@ -107,10 +110,10 @@ namespace Match {
     }
 
     ImGuiLayer::~ImGuiLayer() {
-        vkDeviceWaitIdle(manager->device->device);
+        manager->device->device.waitIdle();
         ImGui_ImplVulkan_Shutdown();
         ImGui_ImplGlfw_Shutdown();
-        vkDestroyDescriptorPool(manager->device->device, descriptor_pool, manager->allocator);
+        manager->device->device.destroyDescriptorPool(descriptor_pool);
         ImGui::DestroyContext();
     }
 }

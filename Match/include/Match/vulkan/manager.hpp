@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Match/vulkan/api_info.hpp>
 #include <Match/vulkan/commons.hpp>
 #include <Match/vulkan/device.hpp>
 #include <Match/vulkan/swapchain.hpp>
@@ -10,8 +9,6 @@
 #include <Match/vulkan/descriptor_resource/descriptor_pool.hpp>
 
 namespace Match {
-    struct APIInfo;
-    
     class APIManager {
         no_copy_move_construction(APIManager)
     private:
@@ -19,7 +16,7 @@ namespace Match {
     public:
         ~APIManager();
         std::vector<std::string> enumerate_devices();
-        void initialize(const APIInfo &info);
+        void initialize();
         std::shared_ptr<RuntimeSetting> get_runtime_setting();
         std::shared_ptr<ResourceFactory> create_resource_factory(const std::string &root);
         CommandPool &get_command_pool();
@@ -31,15 +28,14 @@ namespace Match {
         void recreate_swapchin();
     private:
         void create_vk_instance();
-        void create_vk_surface(const APIInfo &info);
+        void create_vk_surface();
         void initialize_vma();
     private:
         static std::unique_ptr<APIManager> manager;
     INNER_VISIBLE:
-        VkAllocationCallbacks* allocator;
         VmaAllocator vma_allocator;
-        VkInstance instance;
-        VkSurfaceKHR surface;
+        vk::Instance instance;
+        vk::SurfaceKHR surface;
         std::shared_ptr<RuntimeSetting> runtime_setting;
         std::unique_ptr<Device> device;
         std::unique_ptr<Swapchain> swapchain;
