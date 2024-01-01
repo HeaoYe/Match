@@ -208,4 +208,17 @@ namespace Match {
         _case(vk::BorderColor, eIntTransparentBlack, SamplerBorderColor, eIntTransparentBlack)
         }
     }
+
+    template <>
+    vk::SampleCountFlagBits transform<vk::SampleCountFlagBits>(SampleCount count) {
+        switch (count) {
+        _case(vk::SampleCountFlagBits, e1, SampleCount, e1)
+        _case(vk::SampleCountFlagBits, e2, SampleCount, e2)
+        _case(vk::SampleCountFlagBits, e4, SampleCount, e4)
+        _case(vk::SampleCountFlagBits, e8, SampleCount, e8)
+        _case(vk::SampleCountFlagBits, e16, SampleCount, e16)
+        _case(vk::SampleCountFlagBits, e32, SampleCount, e32)
+        _case(vk::SampleCountFlagBits, e64, SampleCount, e64)
+        }
+    }
 }

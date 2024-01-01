@@ -1,5 +1,6 @@
 #include <Match/vulkan/resource/renderpass_builder.hpp>
 #include <Match/vulkan/utils.hpp>
+#include <Match/core/utils.hpp>
 #include <Match/core/setting.hpp>
 #include <Match/constant.hpp>
 #include "../inner.hpp"
@@ -115,7 +116,7 @@ namespace Match {
     RenderPassBuilder &RenderPassBuilder::add_attachment(const std::string &name, AttachmentType type) {
         attachments_map.insert(std::make_pair(name, attachments.size()));
         auto &attachment = attachments.emplace_back();
-        attachment.description_write.setSamples(runtime_setting->multisample_count)
+        attachment.description_write.setSamples(transform<vk::SampleCountFlagBits>(runtime_setting->multisample_count))
             .setLoadOp(vk::AttachmentLoadOp::eClear)
             .setStoreOp(vk::AttachmentStoreOp::eStore)
             .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)

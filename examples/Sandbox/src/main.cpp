@@ -15,7 +15,7 @@ int main() {
     // 初始化Match
     auto &context = Match::Initialize();
     // 启用MSAA
-    Match::runtime_setting->set_multisample_count(vk::SampleCountFlagBits::e8);
+    Match::runtime_setting->set_multisample_count(Match::SampleCount::e8);
     // 禁用MSAA
     // Match::runtime_setting->set_multisample_count(VK_SAMPLE_COUNT_1_BIT);
     // 显示全部设备名，可填写在Match::setting.device_name中

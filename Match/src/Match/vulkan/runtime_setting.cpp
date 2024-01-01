@@ -13,12 +13,12 @@ namespace Match {
     }
     
     bool RuntimeSetting::is_msaa_enabled() {
-        return multisample_count != vk::SampleCountFlagBits::e1;
+        return multisample_count != SampleCount::e1;
     }
 
-    RuntimeSetting &RuntimeSetting::set_multisample_count(vk::SampleCountFlagBits count) {
+    RuntimeSetting &RuntimeSetting::set_multisample_count(SampleCount count) {
         static auto max_multisample_count = get_max_usable_sample_count();
-        if (count > max_multisample_count) {
+        if (static_cast<int>(count) > static_cast<int>(max_multisample_count)) {
             MCH_WARN("multisample count {} > max multisample count {}", static_cast<uint32_t>(count), static_cast<uint32_t>(max_multisample_count))
             count = max_multisample_count;
         }

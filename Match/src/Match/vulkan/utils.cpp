@@ -71,17 +71,17 @@ namespace Match {
         return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
     }
 
-    vk::SampleCountFlagBits get_max_usable_sample_count() {
+    SampleCount get_max_usable_sample_count() {
         auto properties = manager->device->physical_device.getProperties();
 
         vk::SampleCountFlags counts = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
-        if (counts & vk::SampleCountFlagBits::e64) { return vk::SampleCountFlagBits::e64; }
-        if (counts & vk::SampleCountFlagBits::e32) { return vk::SampleCountFlagBits::e32; }
-        if (counts & vk::SampleCountFlagBits::e16) { return vk::SampleCountFlagBits::e16; }
-        if (counts & vk::SampleCountFlagBits::e8) { return vk::SampleCountFlagBits::e8; }
-        if (counts & vk::SampleCountFlagBits::e4) { return vk::SampleCountFlagBits::e4; }
-        if (counts & vk::SampleCountFlagBits::e2) { return vk::SampleCountFlagBits::e2; }
+        if (counts & vk::SampleCountFlagBits::e64) { return SampleCount::e64; }
+        if (counts & vk::SampleCountFlagBits::e32) { return SampleCount::e32; }
+        if (counts & vk::SampleCountFlagBits::e16) { return SampleCount::e16; }
+        if (counts & vk::SampleCountFlagBits::e8) { return SampleCount::e8; }
+        if (counts & vk::SampleCountFlagBits::e4) { return SampleCount::e4; }
+        if (counts & vk::SampleCountFlagBits::e2) { return SampleCount::e2; }
 
-        return vk::SampleCountFlagBits::e1;
+        return SampleCount::e1;
     }
 }

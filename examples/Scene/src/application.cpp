@@ -9,7 +9,7 @@ Application::Application() {
     auto &context = Match::Initialize();
 
     // 启用了8xMSAA
-    Match::runtime_setting->set_multisample_count(vk::SampleCountFlagBits::e8);
+    Match::runtime_setting->set_multisample_count(Match::SampleCount::e8);
     Match::runtime_setting->set_vsync(true);
     
     auto factory = context.create_resource_factory("resource");

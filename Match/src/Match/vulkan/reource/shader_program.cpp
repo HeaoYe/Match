@@ -81,10 +81,10 @@ namespace Match {
             .setLineWidth(1.0f);
 
         vk::PipelineMultisampleStateCreateInfo multisample_state {};
-        multisample_state.rasterizationSamples = runtime_setting->multisample_count;
+        multisample_state.rasterizationSamples = transform<vk::SampleCountFlagBits>(runtime_setting->multisample_count);
         multisample_state.sampleShadingEnable = VK_TRUE;
         multisample_state.minSampleShading = 0.2f;
-        multisample_state.setRasterizationSamples(runtime_setting->multisample_count)
+        multisample_state.setRasterizationSamples(transform<vk::SampleCountFlagBits>(runtime_setting->multisample_count))
             .setSampleShadingEnable(VK_TRUE)
             .setMinSampleShading(0.2f);
 

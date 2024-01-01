@@ -28,14 +28,14 @@ namespace Match {
         bool is_vsync() { return vsync; }
         const WindowSize &get_window_size() { return window_size; }
         bool is_msaa_enabled();
-        RuntimeSetting &set_multisample_count(vk::SampleCountFlagBits count);
-        vk::SampleCountFlagBits get_multisample_count() { return multisample_count; }
+        RuntimeSetting &set_multisample_count(SampleCount count);
+        SampleCount get_multisample_count() { return multisample_count; }
     INNER_VISIBLE:
         void resize(const WindowSize &size);
     INNER_VISIBLE:
         bool vsync = true;
         WindowSize window_size;
-        vk::SampleCountFlagBits multisample_count = vk::SampleCountFlagBits::e1;
+        SampleCount multisample_count = SampleCount::e1;
         uint32_t current_in_flight = 0;
     };
 

@@ -19,5 +19,5 @@ namespace Match {
 
     bool has_stencil_component(vk::Format format);
 
-    vk::SampleCountFlagBits get_max_usable_sample_count();
+    SampleCount get_max_usable_sample_count();
 }
