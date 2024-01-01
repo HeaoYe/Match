@@ -19,6 +19,7 @@ namespace Match {
         std::string default_font_filename = "";
         std::string chinese_font_filename = "";
         float font_size = 13.0f;
+        bool enable_ray_tracing = false;
     };
 
     class RuntimeSetting {

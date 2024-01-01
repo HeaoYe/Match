@@ -19,6 +19,12 @@ namespace Match {
 
     APIManager::APIManager() {
         create_vk_instance();
+        if (setting.enable_ray_tracing) {
+            vk::DynamicLoader dl;
+            auto vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+            auto dispatcher = vk::DispatchLoaderDynamic(instance, vkGetInstanceProcAddr);
+        }
+
         this->runtime_setting = std::make_shared<RuntimeSetting>();
         ::Match::manager = this;
     }
@@ -90,8 +96,7 @@ namespace Match {
             }
         }
 
-        instance_create_info.enabledExtensionCount = enabled_extensions.size();
-        instance_create_info.ppEnabledExtensionNames = enabled_extensions.data();
+        instance_create_info.setPEnabledExtensionNames(enabled_extensions);
 
         const char *validation_layers[] = { "VK_LAYER_KHRONOS_validation" };
         if (setting.debug_mode) {
@@ -100,8 +105,7 @@ namespace Match {
             for (auto &layer : layers) {
                 if (strcmp(validation_layers[0], layer.layerName) == 0) {
                     found = true;
-                    instance_create_info.enabledLayerCount = 1;
-                    instance_create_info.ppEnabledLayerNames = validation_layers;
+                    instance_create_info.setPEnabledLayerNames(validation_layers);
                 }
                 MCH_TRACE("LYR: {} \"{}\" {}-{}", layer.layerName, layer.description, layer.implementationVersion, layer.specVersion)
             }
