@@ -22,7 +22,7 @@ namespace Match {
         if (setting.enable_ray_tracing) {
             vk::DynamicLoader dl;
             auto vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-            auto dispatcher = vk::DispatchLoaderDynamic(instance, vkGetInstanceProcAddr);
+            dispatcher = vk::DispatchLoaderDynamic(instance, vkGetInstanceProcAddr);
         }
 
         this->runtime_setting = std::make_shared<RuntimeSetting>();
@@ -125,7 +125,7 @@ namespace Match {
 
     void APIManager::initialize_vma() {
         VmaAllocatorCreateInfo create_info {};
-        create_info.flags = 0;
+        create_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
         create_info.vulkanApiVersion = VK_API_VERSION_1_3;
         create_info.instance = instance;
         create_info.physicalDevice = device->physical_device;

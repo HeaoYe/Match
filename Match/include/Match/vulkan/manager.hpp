@@ -33,6 +33,7 @@ namespace Match {
     private:
         static std::unique_ptr<APIManager> manager;
     INNER_VISIBLE:
+        vk::DispatchLoaderDynamic dispatcher;
         VmaAllocator vma_allocator;
         vk::Instance instance;
         vk::SurfaceKHR surface;
