@@ -4,6 +4,7 @@
 #include "scenes/pbr_scene.hpp"
 #include "scenes/ssao_scene.hpp"
 #include "scenes/raymarching_scene.hpp"
+#include "scenes/model_viewer_scene.hpp"
 
 int main() {
     // 窗口大小的配置移动到main.cpp中
@@ -12,7 +13,9 @@ int main() {
     Match::setting.debug_mode = true;
     Application app;
     // 第一个注册的Scene为默认加载的Scene
-    
+
+    // 模型加载器场景
+    app.register_scene<ModelViewerScene>("模型加载器");
     // 光线步进场景
     app.register_scene<RayMarchingScene>("光线步进");
     // 环境光遮蔽场景

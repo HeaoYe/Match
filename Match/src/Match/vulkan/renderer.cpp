@@ -153,8 +153,8 @@ namespace Match {
         }
     }
 
-    void Renderer::bind_vertex_buffer(const std::shared_ptr<VertexBuffer> &vertex_buffer) {
-        current_buffer.bindVertexBuffers(0, { vertex_buffer->buffer->buffer }, { 0 });
+    void Renderer::bind_vertex_buffer(const std::shared_ptr<VertexBuffer> &vertex_buffer, uint32_t binding) {
+        current_buffer.bindVertexBuffers(binding, { vertex_buffer->buffer->buffer }, { 0 });
     }
 
     void Renderer::bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers) {
