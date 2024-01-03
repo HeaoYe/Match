@@ -9,7 +9,7 @@ public:
     BLAS(std::shared_ptr<Match::Model> model) {
         model->upload_data(vertex_buffer, index_buffer);
         std::vector<vk::AccelerationStructureGeometryKHR> geometries;
-        std::vector<vk::AccelerationStructureBuildRangeInfoKHR *> ranges;
+        std::vector<vk::AccelerationStructureBuildRangeInfoKHR> ranges;
         std::vector<uint32_t> max_primitive_counts;
         for (auto &[name, mesh] : model->meshes) {
             max_primitive_counts.push_back(mesh->get_index_count() / 3);
@@ -24,9 +24,8 @@ public:
             geometry.setGeometry(triangles)
                 .setGeometryType(vk::GeometryTypeKHR::eTriangles)
                 .setFlags(vk::GeometryFlagBitsKHR::eOpaque);
-            auto range = new vk::AccelerationStructureBuildRangeInfoKHR {};
-            ranges.push_back(range);
-            range->setFirstVertex(mesh->position.vertex_buffer_offset)
+            auto &range = ranges.emplace_back();
+            range.setFirstVertex(mesh->position.vertex_buffer_offset)
                 .setPrimitiveOffset(mesh->position.index_buffer_offset / 3)
                 .setPrimitiveCount(max_primitive_counts.back())
                 .setTransformOffset(0);
@@ -56,7 +55,7 @@ public:
         auto cmd_buf = ctx->command_pool->allocate_single_use();
         build.setDstAccelerationStructure(temp_blas)
             .setScratchData(scratch_addr);
-        cmd_buf.buildAccelerationStructuresKHR(build, ranges, ctx->dispatcher);
+        cmd_buf.buildAccelerationStructuresKHR(build, ranges.data(), ctx->dispatcher);
         ctx->command_pool->free_single_use(cmd_buf);
 
         cmd_buf = ctx->command_pool->allocate_single_use();
@@ -114,8 +113,8 @@ public:
     }
 
     void create_as() {
-        // auto model = factory->load_model("mori_knob.obj");
-        auto model = factory->load_model("dragon.obj");
+        auto model = factory->load_model("mori_knob.obj");
+        // auto model = factory->load_model("dragon.obj");
         BLAS a(model);
     }
 
