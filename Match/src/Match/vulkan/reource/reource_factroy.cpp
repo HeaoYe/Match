@@ -36,12 +36,12 @@ namespace Match {
         return std::make_shared<ShaderProgram>(renderer, subpass_name);
     }
 
-    std::shared_ptr<VertexBuffer> ResourceFactory::create_vertex_buffer(uint32_t vertex_size, uint32_t count) {
-        return std::make_shared<VertexBuffer>(vertex_size, count);
+    std::shared_ptr<VertexBuffer> ResourceFactory::create_vertex_buffer(uint32_t vertex_size, uint32_t count, vk::BufferUsageFlags additional_usage) {
+        return std::make_shared<VertexBuffer>(vertex_size, count, additional_usage);
     }
 
-    std::shared_ptr<IndexBuffer> ResourceFactory::create_index_buffer(IndexType type, uint32_t count) {
-        return std::make_shared<IndexBuffer>(type, count);
+    std::shared_ptr<IndexBuffer> ResourceFactory::create_index_buffer(IndexType type, uint32_t count, vk::BufferUsageFlags additional_usage) {
+        return std::make_shared<IndexBuffer>(type, count, additional_usage);
     }
 
     std::shared_ptr<Sampler> ResourceFactory::create_sampler(const SamplerOptions &options) {

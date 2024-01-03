@@ -23,7 +23,7 @@ namespace Match {
     class TwoStageBuffer {
         no_copy_move_construction(TwoStageBuffer)
     public:
-        TwoStageBuffer(uint32_t size, vk::BufferUsageFlags usage);
+        TwoStageBuffer(uint32_t size, vk::BufferUsageFlags usage, vk::BufferUsageFlags additional_usage);
         void *map();
         void flush();
         void unmap();
@@ -47,13 +47,13 @@ namespace Match {
     class VertexBuffer : public TwoStageBuffer {
         no_copy_move_construction(VertexBuffer)
     public:
-        VertexBuffer(uint32_t vertex_size, uint32_t count);
+        VertexBuffer(uint32_t vertex_size, uint32_t count, vk::BufferUsageFlags additional_usage);
     };
     
     class IndexBuffer : public TwoStageBuffer {
         no_copy_move_construction(IndexBuffer)
     public:
-        IndexBuffer(IndexType type, uint32_t count);
+        IndexBuffer(IndexType type, uint32_t count, vk::BufferUsageFlags additional_usage);
     INNER_VISIBLE:
         vk::IndexType type;
     };

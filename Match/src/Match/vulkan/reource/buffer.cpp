@@ -52,9 +52,9 @@ namespace Match {
         vmaDestroyBuffer(manager->vma_allocator, buffer, buffer_allocation);
     }
 
-    TwoStageBuffer::TwoStageBuffer(uint32_t size, vk::BufferUsageFlags usage) {
+    TwoStageBuffer::TwoStageBuffer(uint32_t size, vk::BufferUsageFlags usage, vk::BufferUsageFlags additional_usage) {
         staging = std::make_unique<Buffer>(size, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
-        buffer = std::make_unique<Buffer>(size, usage | vk::BufferUsageFlagBits::eTransferDst, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);        
+        buffer = std::make_unique<Buffer>(size, usage | vk::BufferUsageFlagBits::eTransferDst | additional_usage, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);        
     }
 
     void *TwoStageBuffer::map() {
@@ -83,6 +83,6 @@ namespace Match {
         buffer.reset();
     }
 
-    VertexBuffer::VertexBuffer(uint32_t vertex_size, uint32_t count) : TwoStageBuffer(vertex_size * count, vk::BufferUsageFlagBits::eVertexBuffer) {}
-    IndexBuffer::IndexBuffer(IndexType type, uint32_t count) : type(transform<vk::IndexType>(type)), TwoStageBuffer(transform<uint32_t>(type) * count, vk::BufferUsageFlagBits::eIndexBuffer) {}
+    VertexBuffer::VertexBuffer(uint32_t vertex_size, uint32_t count, vk::BufferUsageFlags additional_usage) : TwoStageBuffer(vertex_size * count, vk::BufferUsageFlagBits::eVertexBuffer, additional_usage) {}
+    IndexBuffer::IndexBuffer(IndexType type, uint32_t count, vk::BufferUsageFlags additional_usage) : type(transform<vk::IndexType>(type)), TwoStageBuffer(transform<uint32_t>(type) * count, vk::BufferUsageFlagBits::eIndexBuffer, additional_usage) {}
 }
