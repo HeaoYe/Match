@@ -13,12 +13,13 @@ void ModelViewerScene::initialize() {
     camera->data.pos = { 0, 0, -3 };
     camera->upload_data();
     
+    auto shader_program_ds = factory->create_descriptor_set(renderer);
     shader_program = factory->create_shader_program(renderer, "main");
-    auto vert_shader = factory->load_shader("model_viewer_shader/shader.vert", Match::ShaderType::eVertexShaderNeedCompile);
-    vert_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eUniform },
+    auto vert_shader = factory->compile_shader("model_viewer_shader/shader.vert", Match::ShaderStage::eVertex);
+    shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eVertex, 0, Match::DescriptorType::eUniform },
     });
-    auto frag_shader = factory->load_shader("model_viewer_shader/shader.frag", Match::ShaderType::eFragmentShaderNeedCompile);
+    auto frag_shader = factory->compile_shader("model_viewer_shader/shader.frag", Match::ShaderStage::eFragment);
     auto vas = factory->create_vertex_attribute_set({
          Match::Vertex::generate_input_binding(0),
          {
@@ -29,13 +30,14 @@ void ModelViewerScene::initialize() {
     });
     shader_program->attach_vertex_shader(vert_shader)
         .attach_fragment_shader(frag_shader)
-        .bind_vertex_attribute_set(vas)
+        .attach_vertex_attribute_set(vas)
+        .attach_descriptor_set(shader_program_ds)
         .compile({
             .cull_mode = Match::CullMode::eBack,
             .front_face = Match::FrontFace::eCounterClockwise,
             .depth_test_enable = VK_TRUE,
-        })
-        .bind_uniforms(0, { camera->uniform });
+        });
+    shader_program_ds->bind_uniform(0, camera->uniform);
     
     vertex_buffer = factory->create_vertex_buffer(sizeof(Match::Vertex), 4096000);
     index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, 4096000);

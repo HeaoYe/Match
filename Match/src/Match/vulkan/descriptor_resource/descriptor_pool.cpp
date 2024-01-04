@@ -11,7 +11,7 @@ namespace Match {
         descriptor_pool = manager->device->device.createDescriptorPool(pool_create_info);
     }
 
-    std::vector<vk::DescriptorSet> DescriptorPool::allocate_descriptor_set(vk::DescriptorSetLayout layout) {
+    std::vector<vk::DescriptorSet> DescriptorPool::allocate_descriptor_sets(vk::DescriptorSetLayout layout) {
         std::vector<vk::DescriptorSet> descriptor_sets(setting.max_in_flight_frame);
         std::vector<vk::DescriptorSetLayout> layouts(setting.max_in_flight_frame, layout);
         vk::DescriptorSetAllocateInfo alloc_info {};
@@ -22,8 +22,8 @@ namespace Match {
         return descriptor_sets;
     }
 
-    void DescriptorPool::free_descriptor_set(vk::DescriptorSet descriptor_set) {
-        manager->device->device.freeDescriptorSets(descriptor_pool, descriptor_set);
+    void DescriptorPool::free_descriptor_sets(const std::vector<vk::DescriptorSet> &sets) {
+        manager->device->device.freeDescriptorSets(descriptor_pool, sets);
     }
 
     DescriptorPool::~DescriptorPool(){

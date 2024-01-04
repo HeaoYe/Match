@@ -34,14 +34,16 @@ void DragonScene::initialize() {
 
     renderer->set_clear_value(Match::SWAPCHAIN_IMAGE_ATTACHMENT, { { 0.3f, 0.5f, 0.7f, 1.0f } });
 
-    auto vert_shader = factory->load_shader("dragon_shader/main_subpass.vert", Match::ShaderType::eVertexShaderNeedCompile);
-    vert_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eUniform },  // Camera
+    auto vert_shader = factory->compile_shader("dragon_shader/main_subpass.vert", Match::ShaderStage::eVertex);
+    auto frag_shader = factory->compile_shader("dragon_shader/main_subpass.frag", Match::ShaderStage::eFragment);
+    auto shader_program_ds = factory->create_descriptor_set(renderer);
+    shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eVertex, 0, Match::DescriptorType::eUniform }
     });
-    auto frag_shader = factory->load_shader("dragon_shader/main_subpass.frag", Match::ShaderType::eFragmentShaderNeedCompile);
     shader_program = factory->create_shader_program(renderer, "main");
     shader_program->attach_vertex_shader(vert_shader, "main");
     shader_program->attach_fragment_shader(frag_shader, "main");
+    shader_program->attach_descriptor_set(shader_program_ds);
     // 集成了模型的顶点输入格式
     auto vas = factory->create_vertex_attribute_set({
         Match::Vertex::generate_input_binding(0),
@@ -53,43 +55,49 @@ void DragonScene::initialize() {
             },
         }
     });
-    shader_program->bind_vertex_attribute_set(vas);
+    shader_program->attach_vertex_attribute_set(vas);
     shader_program->compile({
         .cull_mode = Match::CullMode::eBack,
         .front_face = Match::FrontFace::eCounterClockwise,
         .depth_test_enable = VK_TRUE,
     });
 
-    auto post_vert_shader = factory->load_shader("dragon_shader/post_subpass.vert", Match::ShaderType::eVertexShaderNeedCompile);
-    auto post_frag_shader = factory->load_shader("dragon_shader/post_subpass.frag", Match::ShaderType::eFragmentShaderNeedCompile);
-    post_frag_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eInputAttachment, 3 },
-        { 1, Match::DescriptorType::eUniform },
-        { 2, Match::DescriptorType::eUniform },
+    auto post_vert_shader = factory->compile_shader("dragon_shader/post_subpass.vert", Match::ShaderStage::eVertex);
+    auto post_frag_shader = factory->compile_shader("dragon_shader/post_subpass.frag", Match::ShaderStage::eFragment);
+    auto post_shader_program_ds = factory->create_descriptor_set(renderer);
+    post_shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eFragment, 0, Match::DescriptorType::eInputAttachment, 3 },
+        { Match::ShaderStage::eFragment, 1, Match::DescriptorType::eUniform },
+        { Match::ShaderStage::eFragment, 2, Match::DescriptorType::eUniform },
     });
     post_shader_program = factory->create_shader_program(renderer, "post");
     post_shader_program->attach_vertex_shader(post_vert_shader, "main");
     post_shader_program->attach_fragment_shader(post_frag_shader, "main");
+    post_shader_program->attach_descriptor_set(post_shader_program_ds);
     post_shader_program->compile({
         .cull_mode = Match::CullMode::eNone,
         .depth_test_enable = VK_FALSE,
     });
     auto sampler = factory->create_sampler();
-    post_shader_program->bind_input_attachments(
+    // 在一个binding上绑定到多个descriptor
+    post_shader_program_ds->bind_input_attachments(
         0,
-        { "PosBuffer", "NormalBuffer", "ColorBuffer" },
-        { sampler, sampler, sampler }
+        {
+            { "PosBuffer", sampler },
+            { "NormalBuffer", sampler },
+            { "ColorBuffer", sampler }
+        }
     );
 
     camera = std::make_unique<Camera>(*factory);
-    shader_program->bind_uniforms(0, { camera->uniform });
-    post_shader_program->bind_uniforms(1, { camera->uniform });
+    shader_program_ds->bind_uniform(0, camera->uniform);
+    post_shader_program_ds->bind_uniform(1, camera->uniform);
 
     light = std::make_unique<LightController>(factory);
     light->data->lights[0].pos = { 1, 1, 1 };
     light->data->lights[0].color = { 1, 1, 1 };
     light->data->num = 1;
-    post_shader_program->bind_uniforms(2, { light->uniform });
+    post_shader_program_ds->bind_uniform(2, light->uniform);
 
     int n = 8, n2 = n / 2;
     offsets.reserve(n * n * n);

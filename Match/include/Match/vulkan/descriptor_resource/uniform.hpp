@@ -10,7 +10,7 @@ namespace Match {
         void *get_uniform_ptr();
         ~UniformBuffer();
     INNER_VISIBLE:
-        Buffer &get_buffer(int in_flight_index);
+        Buffer &get_buffer(uint32_t in_flight_index);
     INNER_VISIBLE:
         uint32_t size;
         std::vector<Buffer> buffers;

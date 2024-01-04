@@ -4,33 +4,30 @@
 #include <shaderc/shaderc.hpp>
 
 namespace Match {
-    Shader::Shader(const std::string &name, const std::string &code, ShaderType type) {
-        if (type != ShaderType::eCompiled) {
-            shaderc_shader_kind kind;
-            switch (type) {
-            case Match::ShaderType::eVertexShaderNeedCompile:
-                kind = shaderc_glsl_vertex_shader;
-                break;
-            case Match::ShaderType::eFragmentShaderNeedCompile:
-                kind = shaderc_glsl_fragment_shader;
-                break;
-            default:
-                throw std::runtime_error("");
-            }
-            shaderc::Compiler compiler;
-            auto module = compiler.CompileGlslToSpv(code.data(), code.size(), kind, name.c_str(), {});
-            if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-                MCH_ERROR("Compile {} faild: {}", name, module.GetErrorMessage());
-            }
-            std::vector<uint32_t> spirv(module.cbegin(), module.cend());
-            create(spirv.data(), spirv.size() * 4);
-        } else {
-            MCH_FATAL("Compile Shader Error: Unknown Shader Type {}", static_cast<uint32_t>(type));
+    Shader::Shader(const std::string &name, const std::string &code, ShaderStage stage) {
+        shaderc_shader_kind kind;
+        switch (stage) {
+        case Match::ShaderStage::eVertex:
+            kind = shaderc_glsl_vertex_shader;
+            break;
+        case Match::ShaderStage::eFragment:
+            kind = shaderc_glsl_fragment_shader;
+            break;
+        default:
+            throw std::runtime_error("");
         }
+        shaderc::Compiler compiler;
+        auto module = compiler.CompileGlslToSpv(code.data(), code.size(), kind, name.c_str(), {});
+        if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
+            MCH_ERROR("Compile {} faild: {}", name, module.GetErrorMessage());
+            return;
+        }
+        std::vector<uint32_t> spirv(module.cbegin(), module.cend());
+        create(spirv.data(), spirv.size() * 4);
     }
 
     Shader::Shader(const std::vector<char> &code) {
-        create(reinterpret_cast<const uint32_t *>(code.data()), code.size());
+        create(reinterpret_cast<const uint32_t *>(code.data()), code.size() / 4);
     }
 
     void Shader::create(const uint32_t *data, uint32_t size) {
@@ -38,42 +35,20 @@ namespace Match {
         vk::ShaderModuleCreateInfo shader_module_create_info {};
         shader_module_create_info.setPCode(data)
             .setCodeSize(size);
-        module = VK_NULL_HANDLE;
         module = manager->device->device.createShaderModule(shader_module_create_info);
     }
 
-    vk::DescriptorSetLayoutBinding *Shader::get_layout_binding(uint32_t binding) {
-        for (auto &layout_binding : layout_bindings) {
-            if (layout_binding.binding == binding) {
-                return &layout_binding;
-            }
-        }
-        return nullptr;
-    }
-    
     bool Shader::is_ready() {
-        return module != VK_NULL_HANDLE;
+        return module.has_value();
     }
 
     Shader::~Shader() {
         constant_offset_map.clear();
-        layout_bindings.clear();
-        manager->device->device.destroyShaderModule(module);
-    }
+        if (module.has_value()) {
+            manager->device->device.destroyShaderModule(module.value());
+            module.reset();
 
-    Shader &Shader::bind_descriptors(const std::vector<DescriptorInfo> &descriptor_infos) {
-        for (const auto &descriptor_info : descriptor_infos) {
-            layout_bindings.push_back({
-                descriptor_info.binding,
-                transform<vk::DescriptorType>(descriptor_info.type),
-                descriptor_info.count,
-                vk::ShaderStageFlagBits::eAllGraphics,  // set by shader program
-            });
-            if (descriptor_info.type == DescriptorType::eTexture) {
-                layout_bindings.back().pImmutableSamplers = descriptor_info.immutable_samplers;
-            }
         }
-        return *this;
     }
 
     Shader &Shader::bind_push_constants(const std::vector<ConstantInfo> &constant_infos) {

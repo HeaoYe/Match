@@ -13,7 +13,7 @@ namespace Match {
         return get_buffer(runtime_setting->current_in_flight).data_ptr;
     }
 
-    Buffer &UniformBuffer::get_buffer(int in_flight_index) {
+    Buffer &UniformBuffer::get_buffer(uint32_t in_flight_index) {
         return buffers[in_flight_index % buffers.size()];
     }
 

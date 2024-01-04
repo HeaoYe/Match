@@ -22,12 +22,14 @@ public:
 class ShaderToyScene : public Scene {
     define_scene(ShaderToyScene)
 private:
+    bool need_update_shader_program = false;
     void updata_shader_program();
     float time = 0;
     std::unique_ptr<ShaderToyInput> shader_input;
     char shader_file_name[1024] = "editor.frag";
     std::shared_ptr<Match::Shader> vert_shader, frag_shader;
     std::shared_ptr<Match::VertexAttributeSet> vas;
+    std::shared_ptr<Match::DescriptorSet> shader_program_ds;
     std::shared_ptr<Match::ShaderProgram> shader_program;
     std::shared_ptr<Match::VertexBuffer> vertex_buffer;
     std::shared_ptr<Match::IndexBuffer> index_buffer;

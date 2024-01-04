@@ -2,9 +2,7 @@
 
 #include <Match/vulkan/resource/shader.hpp>
 #include <Match/vulkan/resource/vertex_attribute_set.hpp>
-#include <Match/vulkan/resource/sampler.hpp>
-#include <Match/vulkan/descriptor_resource/uniform.hpp>
-#include <Match/vulkan/descriptor_resource/texture.hpp>
+#include <Match/vulkan/descriptor_resource/descriptor_set.hpp>
 
 namespace Match {
     struct ShaderProgramCompileOptions {
@@ -22,16 +20,13 @@ namespace Match {
 
     class ShaderProgram {
         no_copy_move_construction(ShaderProgram)
-        using binding = uint32_t;
     public:
         ShaderProgram(std::weak_ptr<Renderer> renderer, const std::string &subpass_name);
-        ShaderProgram &bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set);
+        ShaderProgram &attach_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set);
         ShaderProgram &attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
         ShaderProgram &attach_fragment_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
+        ShaderProgram &attach_descriptor_set(std::shared_ptr<DescriptorSet> descriptor_set, uint32_t set_index = 0);
         ShaderProgram &compile(const ShaderProgramCompileOptions &options = {});
-        ShaderProgram &bind_uniforms(binding binding, const std::vector<std::shared_ptr<UniformBuffer>> &uniform_buffers);
-        ShaderProgram &bind_textures(binding binding, const std::vector<std::shared_ptr<Texture>> &textures, const std::vector<std::shared_ptr<Sampler>> &samplers);
-        ShaderProgram &bind_input_attachments(binding binding, const std::vector<std::string> &attachment_names, const std::vector<std::shared_ptr<Sampler>> &samplers);
         ShaderProgram &push_constants(const std::string &name, BasicConstantValue basic_value);
         ShaderProgram &push_constants(const std::string &name, void *data);
         ~ShaderProgram();
@@ -45,16 +40,13 @@ namespace Match {
         std::string subpass_name;
         vk::PipelineBindPoint bind_point;
         std::shared_ptr<VertexAttributeSet> vertex_attribute_set;
-        std::map<uint32_t, std::pair<std::vector<std::string>, std::vector<std::shared_ptr<Sampler>>>> input_attachments_temp;
-        std::optional<uint32_t> callback_id;
-        std::vector<vk::DescriptorSet> descriptor_sets;
+        std::vector<std::optional<std::shared_ptr<DescriptorSet>>> descriptor_sets;
         std::map<vk::ShaderStageFlags, std::pair<uint32_t, uint32_t>> constant_offset_size_map;
         std::vector<uint8_t> constants;
         std::shared_ptr<Shader> vertex_shader;
         std::string vertex_shader_entry;
         std::shared_ptr<Shader> fragment_shader;
         std::string fragment_shader_entry;
-        vk::DescriptorSetLayout descriptor_set_layout;
         vk::PipelineLayout layout;
         vk::Pipeline pipeline;
     };

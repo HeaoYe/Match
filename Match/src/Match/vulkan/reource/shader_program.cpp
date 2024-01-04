@@ -20,7 +20,7 @@ namespace Match {
     
     ShaderProgram::ShaderProgram(std::weak_ptr<Renderer> renderer, const std::string &subpass_name) : subpass_name(subpass_name), renderer(renderer) {}
 
-    ShaderProgram &ShaderProgram::bind_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set) {
+    ShaderProgram &ShaderProgram::attach_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set) {
         vertex_attribute_set.reset();
         vertex_attribute_set = std::move(attribute_set);
         return *this;
@@ -37,11 +37,19 @@ namespace Match {
         fragment_shader_entry = entry;
         return *this;
     }
+    
+    ShaderProgram &ShaderProgram::attach_descriptor_set(std::shared_ptr<DescriptorSet> descriptor_set, uint32_t set_index) {
+        if (set_index + 1 > descriptor_sets.size()) {
+            descriptor_sets.resize(set_index + 1);
+        }
+        descriptor_sets[set_index] = descriptor_set;
+        return *this;
+    }
 
     ShaderProgram &ShaderProgram::compile(const ShaderProgramCompileOptions &options) {
         std::vector<vk::PipelineShaderStageCreateInfo> stages = {
-            create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eVertex, vertex_shader->module, vertex_shader_entry),
-            create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eFragment, fragment_shader->module, fragment_shader_entry),
+            create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eVertex, vertex_shader->module.value(), vertex_shader_entry),
+            create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eFragment, fragment_shader->module.value(), fragment_shader_entry),
         };
 
         vk::PipelineVertexInputStateCreateInfo vertex_input_state {};
@@ -107,15 +115,9 @@ namespace Match {
         vk::PipelineDynamicStateCreateInfo dynamic_state {};
         dynamic_state.setDynamicStates(options.dynamic_states);
 
-        std::vector<vk::DescriptorSetLayoutBinding> layout_bindings;
         std::vector<vk::PushConstantRange> constant_ranges;
         uint32_t current_offset = 0;
-        layout_bindings.reserve(vertex_shader->layout_bindings.size() + fragment_shader->layout_bindings.size());
         constant_ranges.reserve(2);
-        for (const auto &layout_binding : vertex_shader->layout_bindings) {
-            layout_bindings.push_back(layout_binding);
-            layout_bindings.back().stageFlags = vk::ShaderStageFlagBits::eVertex;
-        }
         if (vertex_shader->constants_size != 0) {
             constant_offset_size_map.insert(std::make_pair(vk::ShaderStageFlagBits::eVertex, std::make_pair(current_offset, vertex_shader->constants_size)));
             constant_ranges.push_back({
@@ -124,21 +126,6 @@ namespace Match {
                 vertex_shader->constants_size,
             });
             current_offset += vertex_shader->constants_size;
-        }
-        for (const auto &layout_binding : fragment_shader->layout_bindings) {
-            bool exist = false;
-            for (auto &exist_binding : layout_bindings) {
-                if (exist_binding.binding == layout_binding.binding) {
-                    assert(exist_binding.descriptorType == layout_binding.descriptorType);
-                    exist_binding.stageFlags |= vk::ShaderStageFlagBits::eFragment;
-                    exist = true;
-                }
-            }
-            if (exist) {
-                continue;
-            }
-            layout_bindings.push_back(layout_binding);
-            layout_bindings.back().stageFlags = vk::ShaderStageFlagBits::eFragment;
         }
         if (fragment_shader->constants_size != 0) {
             if (current_offset % fragment_shader->first_align.value() != 0) {
@@ -153,16 +140,20 @@ namespace Match {
             current_offset += fragment_shader->constants_size;
         }
         constants.resize(current_offset);
-        vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info {};
-        descriptor_set_layout_create_info.setBindings(layout_bindings);
-        descriptor_set_layout = manager->device->device.createDescriptorSetLayout(descriptor_set_layout_create_info);
 
+        std::vector<vk::DescriptorSetLayout> descriptor_layouts;
+        descriptor_layouts.reserve(descriptor_sets.size());
+        for (auto &descriptor_set : descriptor_sets) {
+            if (!descriptor_set.has_value()) {
+                MCH_ERROR("Miss descriptor set at index {}", descriptor_layouts.size());
+            } else if (!descriptor_set.value()->is_allocated()) {
+                MCH_DEBUG("Auto allocate descriptor set")
+                descriptor_set.value()->allocate();
+            }
+            descriptor_layouts.push_back(descriptor_set.value()->descriptor_layout);
+        }
         vk::PipelineLayoutCreateInfo pipeline_layout_create_info {};
-        pipeline_layout_create_info.setLayoutCount = 1;
-        pipeline_layout_create_info.pSetLayouts = &descriptor_set_layout;
-        pipeline_layout_create_info.pushConstantRangeCount = constant_ranges.size();
-        pipeline_layout_create_info.pPushConstantRanges = constant_ranges.data();
-        pipeline_layout_create_info.setSetLayouts(descriptor_set_layout)
+        pipeline_layout_create_info.setSetLayouts(descriptor_layouts)
             .setPushConstantRanges(constant_ranges);
         layout = manager->device->device.createPipelineLayout(pipeline_layout_create_info);
 
@@ -186,114 +177,8 @@ namespace Match {
 
         pipeline = manager->device->device.createGraphicsPipelines(nullptr, { create_info }).value[0];
 
-        descriptor_sets = manager->descriptor_pool->allocate_descriptor_set(descriptor_set_layout);
         return *this;
     }
-
-    ShaderProgram &ShaderProgram::bind_uniforms(binding binding, const std::vector<std::shared_ptr<UniformBuffer>> &uniform_buffers) {
-        for (const auto &shader : { vertex_shader, fragment_shader }) {
-            auto *layout_binding = shader->get_layout_binding(binding);
-            if (layout_binding == nullptr) {
-                continue;
-            }
-            if (layout_binding->descriptorType != vk::DescriptorType::eUniformBuffer) {
-                MCH_ERROR("Binding {} is not a uniform descriptor", binding)
-                return *this;
-            }
-            for (size_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
-                std::vector<vk::DescriptorBufferInfo> buffer_infos(layout_binding->descriptorCount);
-                for (uint32_t i = 0; i < layout_binding->descriptorCount; i ++) {
-                    buffer_infos[i].setBuffer(uniform_buffers[i]->get_buffer(in_flight).buffer)
-                        .setOffset(0)
-                        .setRange(uniform_buffers[i]->size);
-                }
-                vk::WriteDescriptorSet descriptor_write {};
-                descriptor_write.setDstSet(descriptor_sets[in_flight])
-                    .setDstBinding(layout_binding->binding)
-                    .setDstArrayElement(0)
-                    .setDescriptorType(layout_binding->descriptorType)
-                    .setBufferInfo(buffer_infos);
-                manager->device->device.updateDescriptorSets({ descriptor_write }, {});
-            }
-        }
-        return *this;
-    }
-
-    ShaderProgram &ShaderProgram::bind_textures(binding binding, const std::vector<std::shared_ptr<Texture>> &textures, const std::vector<std::shared_ptr<Sampler>> &samplers) {
-        for (const auto &shader : { vertex_shader, fragment_shader }) {
-            auto *layout_binding = shader->get_layout_binding(binding);
-            if (layout_binding == nullptr) {
-                continue;
-            }
-            if (layout_binding->descriptorType != vk::DescriptorType::eCombinedImageSampler) {
-                MCH_ERROR("Binding {} is not a texture descriptor", binding)
-                return *this;
-            }
-            for (size_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
-                std::vector<vk::DescriptorImageInfo> image_infos(layout_binding->descriptorCount);
-                for (uint32_t i = 0; i < layout_binding->descriptorCount; i ++) {
-                    image_infos[i].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-                        .setImageView(textures[i]->get_image_view())
-                        .setSampler(samplers[i]->sampler);
-                }
-                vk::WriteDescriptorSet descriptor_write {};
-                descriptor_write.setDstSet(descriptor_sets[in_flight])
-                    .setDstBinding(layout_binding->binding)
-                    .setDstArrayElement(0)
-                    .setDescriptorType(layout_binding->descriptorType)
-                    .setImageInfo(image_infos);
-                manager->device->device.updateDescriptorSets({ descriptor_write }, {});
-            }
-        }
-        return *this;
-    }
-    
-    ShaderProgram &ShaderProgram::bind_input_attachments(binding binding, const std::vector<std::string> &attachment_names, const std::vector<std::shared_ptr<Sampler>> &samplers) {
-        auto locked_renderer = renderer.lock();
-        if (!callback_id.has_value()) {
-            callback_id = locked_renderer->register_resource_recreate_callback([this]() {
-                update_input_attachments();
-            });
-        }
-        for (const auto &shader : { vertex_shader, fragment_shader }) {
-            auto *layout_binding = shader->get_layout_binding(binding);
-            if (layout_binding == nullptr) {
-                continue;
-            }
-            if ((layout_binding->descriptorType != vk::DescriptorType::eInputAttachment) && (layout_binding->descriptorType != vk::DescriptorType::eCombinedImageSampler)) {
-                MCH_ERROR("Binding {} is not a InputAttachment descriptor", binding)
-                return *this;
-            }
-            auto pos = input_attachments_temp.find(binding);
-            if (pos == input_attachments_temp.end()) {
-                input_attachments_temp.insert(std::make_pair(binding, std::make_pair(attachment_names, samplers)));
-            }
-            for (size_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
-                std::vector<vk::DescriptorImageInfo> image_infos(layout_binding->descriptorCount);
-                for (uint32_t i = 0; i < layout_binding->descriptorCount; i ++) {
-                    auto attachment_idx = locked_renderer->render_pass_builder->get_attachment_index(attachment_names[i], true);
-                    auto &attachment = locked_renderer->framebuffer_set->attachments[attachment_idx];
-                    image_infos[i].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-                        .setImageView(attachment.image_view)
-                        .setSampler(samplers[i]->sampler);
-                }
-                vk::WriteDescriptorSet descriptor_write {};
-                descriptor_write.setDstSet(descriptor_sets[in_flight])
-                    .setDstBinding(layout_binding->binding)
-                    .setDstArrayElement(0)
-                    .setDescriptorType(layout_binding->descriptorType)
-                    .setImageInfo(image_infos);
-                manager->device->device.updateDescriptorSets({ descriptor_write }, {});
-            }
-        }
-        return *this;
-    }
-
-    void ShaderProgram::update_input_attachments() {
-        for (auto [binding, info] : input_attachments_temp) {
-            bind_input_attachments(binding, info.first, info.second);
-        }
-    };
 
     ShaderProgram &ShaderProgram::push_constants(const std::string &name, BasicConstantValue basic_value) {
         push_constants(name, &basic_value);
@@ -322,17 +207,9 @@ namespace Match {
     }
 
     ShaderProgram::~ShaderProgram() {
-        if (callback_id.has_value()) {
-            renderer.lock()->remove_resource_recreate_callback(callback_id.value());
-            callback_id.reset();
-        }
-        for (auto &descriptor_set : descriptor_sets) {
-            manager->descriptor_pool->free_descriptor_set(descriptor_set);
-        }
-        descriptor_sets.clear();
         manager->device->device.destroyPipeline(pipeline);
-        manager->device->device.destroyDescriptorSetLayout(descriptor_set_layout);
         manager->device->device.destroyPipelineLayout(layout);
+        descriptor_sets.clear();
         vertex_attribute_set.reset();
         vertex_shader.reset();
         fragment_shader.reset();

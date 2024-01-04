@@ -15,17 +15,18 @@ namespace Match {
         return std::make_shared<Renderer>(builder);
     }
 
-    std::shared_ptr<Shader> ResourceFactory::load_shader(const std::string &filename, ShaderType type) {
+    std::shared_ptr<Shader> ResourceFactory::load_shader(const std::string &filename) {
         auto code = read_binary_file(root + "/shaders/" + filename);
-
-        if (type != ShaderType::eCompiled) {
-            return std::make_shared<Shader>(filename, std::string(code.data(), code.size()), type);
-        }
         return std::make_shared<Shader>(code);
     }
 
-    std::shared_ptr<Shader> ResourceFactory::load_shader_from_string(const std::string &code, ShaderType type) {
-        return std::make_shared<Shader>("string code", code, type);
+    std::shared_ptr<Shader> ResourceFactory::compile_shader(const std::string &filename, ShaderStage stage) {
+        auto code = read_binary_file(root + "/shaders/" + filename);
+        return std::make_shared<Shader>(filename, std::string(code.data(), code.size()), stage);
+    }
+
+    std::shared_ptr<Shader> ResourceFactory::compile_shader_from_string(const std::string &code, ShaderStage stage) {
+        return std::make_shared<Shader>("string code", code, stage);
     }
 
     std::shared_ptr<VertexAttributeSet> ResourceFactory::create_vertex_attribute_set(const std::vector<InputBindingInfo> &binding_infos) {
@@ -42,6 +43,10 @@ namespace Match {
 
     std::shared_ptr<IndexBuffer> ResourceFactory::create_index_buffer(IndexType type, uint32_t count, vk::BufferUsageFlags additional_usage) {
         return std::make_shared<IndexBuffer>(type, count, additional_usage);
+    }
+
+    std::shared_ptr<DescriptorSet> ResourceFactory::create_descriptor_set(std::weak_ptr<Renderer> renderer) {
+        return std::make_shared<DescriptorSet>(renderer);
     }
 
     std::shared_ptr<Sampler> ResourceFactory::create_sampler(const SamplerOptions &options) {

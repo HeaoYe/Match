@@ -221,4 +221,9 @@ namespace Match {
         _case(vk::SampleCountFlagBits, e64, SampleCount, e64)
         }
     }
+ 
+    template <>
+    vk::ShaderStageFlags transform<vk::ShaderStageFlags>(ShaderStages stages) {
+        return vk::ShaderStageFlags (static_cast<uint32_t>(stages));
+    }
 }

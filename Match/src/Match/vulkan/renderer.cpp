@@ -146,7 +146,11 @@ namespace Match {
     void Renderer::bind_shader_program(std::shared_ptr<ShaderProgram> shader_program) {
         current_buffer.bindPipeline(shader_program->bind_point, shader_program->pipeline);
         if (!shader_program->descriptor_sets.empty()) {
-            current_buffer.bindDescriptorSets(shader_program->bind_point, shader_program->layout, 0, { shader_program->descriptor_sets[current_in_flight] }, {});
+            std::vector<vk::DescriptorSet> sets;
+            for (auto &descriptor_set : shader_program->descriptor_sets) {
+                sets.push_back(descriptor_set.value()->descriptor_sets[current_in_flight]);
+            }
+            current_buffer.bindDescriptorSets(shader_program->bind_point, shader_program->layout, 0, sets, {});
         }
         for (const auto &[stage, offset_size] : shader_program->constant_offset_size_map) {
             current_buffer.pushConstants(shader_program->layout, stage, offset_size.first, offset_size.second, shader_program->constants.data() + offset_size.first);

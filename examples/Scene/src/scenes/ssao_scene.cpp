@@ -41,15 +41,18 @@ void SSAOScene::initialize() {
     // 设置NormalBuffer的ClearValue，将最后一个Float清零
     renderer->set_clear_value("NormalBuffer", { { 0.0f, 0.0f, 0.0f, 0.0f } });
 
+    auto prepare_shader_program_ds = factory->create_descriptor_set(renderer);
+    auto ssao_shader_program_ds = factory->create_descriptor_set(renderer);
+    auto main_shader_program_ds = factory->create_descriptor_set(renderer);
     prepare_shader_program = factory->create_shader_program(renderer, "prepare");
     ssao_shader_program = factory->create_shader_program(renderer, "ssao");
     main_shader_program = factory->create_shader_program(renderer, "main");
 
-    auto prepare_vert_shader = factory->load_shader("ssao_shader/prepare.vert", Match::ShaderType::eVertexShaderNeedCompile);
-    auto prepare_frag_shader = factory->load_shader("ssao_shader/prepare.frag", Match::ShaderType::eFragmentShaderNeedCompile);
-    auto deferred_vert_shader = factory->load_shader("ssao_shader/deferred.vert", Match::ShaderType::eVertexShaderNeedCompile);
-    auto ssao_frag_shader = factory->load_shader("ssao_shader/ssao.frag", Match::ShaderType::eFragmentShaderNeedCompile);
-    auto main_frag_shader = factory->load_shader("ssao_shader/main.frag", Match::ShaderType::eFragmentShaderNeedCompile);
+    auto prepare_vert_shader = factory->compile_shader("ssao_shader/prepare.vert", Match::ShaderStage::eVertex);
+    auto prepare_frag_shader = factory->compile_shader("ssao_shader/prepare.frag", Match::ShaderStage::eFragment);
+    auto deferred_vert_shader = factory->compile_shader("ssao_shader/deferred.vert", Match::ShaderStage::eVertex);
+    auto ssao_frag_shader = factory->compile_shader("ssao_shader/ssao.frag", Match::ShaderStage::eFragment);
+    auto main_frag_shader = factory->compile_shader("ssao_shader/main.frag", Match::ShaderStage::eFragment);
     auto vas = factory->create_vertex_attribute_set({
         {
             .binding = 0,
@@ -66,15 +69,15 @@ void SSAOScene::initialize() {
         .depth_test_enable = VK_FALSE,
     };
 
-    prepare_vert_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eUniform },
+    prepare_shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eVertex, 0, Match::DescriptorType::eUniform },
     });
-    ssao_frag_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eTextureAttachment },
-        { 1, Match::DescriptorType::eInputAttachment },
-        { 2, Match::DescriptorType::eUniform },
-        { 3, Match::DescriptorType::eTexture },
-        { 4, Match::DescriptorType::eUniform },
+    ssao_shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eFragment, 0, Match::DescriptorType::eTextureAttachment },
+        { Match::ShaderStage::eFragment, 1, Match::DescriptorType::eInputAttachment },
+        { Match::ShaderStage::eFragment, 2, Match::DescriptorType::eUniform },
+        { Match::ShaderStage::eFragment, 3, Match::DescriptorType::eTexture },
+        { Match::ShaderStage::eFragment, 4, Match::DescriptorType::eUniform },
     });
     ssao_frag_shader->bind_push_constants({
         { "window_size", Match::ConstantType::eFloat2 },
@@ -82,10 +85,10 @@ void SSAOScene::initialize() {
         { "sample_count", Match::ConstantType::eInt32 },
         { "r", Match::ConstantType::eFloat },
     });
-    main_frag_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eInputAttachment },
-        { 1, Match::DescriptorType::eInputAttachment },
-        { 2, Match::DescriptorType::eTextureAttachment },
+    main_shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eFragment, 0, Match::DescriptorType::eInputAttachment },
+        { Match::ShaderStage::eFragment, 1, Match::DescriptorType::eInputAttachment },
+        { Match::ShaderStage::eFragment, 2, Match::DescriptorType::eTextureAttachment },
     });
     main_frag_shader->bind_push_constants({
         { "window_size", Match::ConstantType::eFloat2 },
@@ -96,7 +99,8 @@ void SSAOScene::initialize() {
     // entry默认为"main"
     prepare_shader_program->attach_vertex_shader(prepare_vert_shader);
     prepare_shader_program->attach_fragment_shader(prepare_frag_shader);
-    prepare_shader_program->bind_vertex_attribute_set(vas);
+    prepare_shader_program->attach_vertex_attribute_set(vas);
+    prepare_shader_program->attach_descriptor_set(prepare_shader_program_ds);
     prepare_shader_program->compile({
         .cull_mode = Match::CullMode::eBack,
         .front_face = Match::FrontFace::eCounterClockwise,
@@ -105,26 +109,28 @@ void SSAOScene::initialize() {
 
     ssao_shader_program->attach_vertex_shader(deferred_vert_shader);
     ssao_shader_program->attach_fragment_shader(ssao_frag_shader);
+    ssao_shader_program->attach_descriptor_set(ssao_shader_program_ds);
     ssao_shader_program->compile(deferred_option);
 
     main_shader_program->attach_vertex_shader(deferred_vert_shader);
     main_shader_program->attach_fragment_shader(main_frag_shader);
+    main_shader_program->attach_descriptor_set(main_shader_program_ds);
     main_shader_program->compile(deferred_option);
 
     camera = std::make_unique<Camera>(*factory);
     camera->data.pos = { 0, 0, -3 };
     camera->upload_data();
-    prepare_shader_program->bind_uniforms(0, { camera->uniform });
+    prepare_shader_program_ds->bind_uniform(0, camera->uniform);
 
     auto sampler = factory->create_sampler({
         .address_mode_u = Match::SamplerAddressMode::eRepeat,
         .address_mode_v = Match::SamplerAddressMode::eRepeat,
     });
-    ssao_shader_program->bind_input_attachments(0, { "PosBuffer" }, { sampler });
-    ssao_shader_program->bind_input_attachments(1, { "NormalBuffer" }, { sampler });
-    main_shader_program->bind_input_attachments(0, { "PosBuffer" }, { sampler });
-    main_shader_program->bind_input_attachments(1, { "NormalBuffer" }, { sampler });
-    main_shader_program->bind_input_attachments(2, { "SSAOBuffer" }, { sampler });
+    ssao_shader_program_ds->bind_input_attachment(0, "PosBuffer", sampler);
+    ssao_shader_program_ds->bind_input_attachment(1, "NormalBuffer", sampler);
+    main_shader_program_ds->bind_input_attachment(0, "PosBuffer", sampler);
+    main_shader_program_ds->bind_input_attachment(1, "NormalBuffer", sampler);
+    main_shader_program_ds->bind_input_attachment(2, "SSAOBuffer", sampler);
 
     // 加载模型
     // model = factory->load_model("dragon.obj");
@@ -169,10 +175,10 @@ void SSAOScene::initialize() {
     memcpy(ssao_samples_uniform_buffer->get_uniform_ptr(), ssao_samples.data(), sizeof(glm::vec4) * ssao_samples.size());
     ssao_random_vecs_texture = factory->create_texture(reinterpret_cast<uint8_t *>(ssao_random_vecs.data()), a, a);
 
-    ssao_shader_program->bind_uniforms(2, { ssao_samples_uniform_buffer });
+    ssao_shader_program_ds->bind_uniform(2, ssao_samples_uniform_buffer);
     // ssao_random_vecs_texture的sampler的address_mode_uv需要设置为Repeat
-    ssao_shader_program->bind_textures(3, { ssao_random_vecs_texture }, { sampler });
-    ssao_shader_program->bind_uniforms(4, { camera->uniform });
+    ssao_shader_program_ds->bind_texture(3, ssao_random_vecs_texture, sampler);
+    ssao_shader_program_ds->bind_uniform(4, camera->uniform);
 }
 
 void SSAOScene::update(float dt) {
