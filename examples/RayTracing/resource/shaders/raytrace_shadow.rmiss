@@ -3,7 +3,8 @@
 
 #include "ray.glsl"
 
-layout (location = 0) rayPayloadInEXT hitPayload prd;
+layout (location = 1) rayPayloadInEXT bool is_shadow;
 
 void main() {
+    is_shadow = false;
 }

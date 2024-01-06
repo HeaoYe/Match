@@ -25,11 +25,9 @@ namespace Match {
     public:
         Mesh();
         ~Mesh();
-        uint32_t get_vertex_count() const { return vertices.size(); }
         uint32_t get_index_count() const { return indices.size(); }
     INNER_VISIBLE:
         BufferPosition position;
-        std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
     };
 
@@ -45,6 +43,8 @@ namespace Match {
         uint32_t get_index_count() const { return index_count; }
         ~Model();
     INNER_VISIBLE:
+        BufferPosition position;
+        std::vector<Vertex> vertices;
         uint32_t vertex_count;
         uint32_t index_count;
         std::map<std::string, std::shared_ptr<Mesh>> meshes;

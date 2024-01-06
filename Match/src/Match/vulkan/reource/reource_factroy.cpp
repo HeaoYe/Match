@@ -53,7 +53,7 @@ namespace Match {
         return std::make_shared<Sampler>(options);
     }
 
-    std::shared_ptr<UniformBuffer> ResourceFactory::create_uniform_buffer(uint32_t size, bool create_for_each_frame_in_flight) {
+    std::shared_ptr<UniformBuffer> ResourceFactory::create_uniform_buffer(uint64_t size, bool create_for_each_frame_in_flight) {
         return std::make_shared<UniformBuffer>(size, create_for_each_frame_in_flight);
     }
 

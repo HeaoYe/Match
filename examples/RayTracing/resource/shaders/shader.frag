@@ -7,12 +7,6 @@ layout (binding = 0, set = 1) uniform G {
     vec3 clear_color;
 } g;
 
-layout(binding = 1, set = 1) uniform CameraUniform {
-    vec3 pos;
-    mat4 view;
-    mat4 project;
-} camera;
-
 layout (location = 0) out vec4 out_color;
 
 void main() {

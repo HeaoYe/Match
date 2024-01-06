@@ -168,6 +168,7 @@ namespace Match {
         _case(vk::DescriptorType, eCombinedImageSampler, DescriptorType, eTexture)
         _case(vk::DescriptorType, eCombinedImageSampler, DescriptorType, eTextureAttachment)
         _case(vk::DescriptorType, eInputAttachment, DescriptorType, eInputAttachment)
+        _case(vk::DescriptorType, eStorageBuffer, DescriptorType, eStorageBuffer)
         _case(vk::DescriptorType, eStorageImage, DescriptorType, eStorageImage)
         _case(vk::DescriptorType, eAccelerationStructureKHR, DescriptorType, eAccelerationStructure)
         }

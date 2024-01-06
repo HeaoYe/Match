@@ -26,7 +26,6 @@ namespace Match {
     }
 
     Mesh::~Mesh() {
-        vertices.clear();
         indices.clear();
     }
 
@@ -46,11 +45,17 @@ namespace Match {
             return;
         }
 
+        uint32_t size = 0;
+        for (const auto& shape : shapes) {
+            size += shape.mesh.indices.size();
+        }
+
+        std::unordered_map<Vertex, uint32_t> unique_vertices;
+        unique_vertices.reserve(size);
+        vertices.reserve(size);
+
         for (const auto& shape : shapes) {
             std::unique_ptr<Mesh> mesh = std::make_unique<Mesh>();
-            std::unordered_map<Vertex, uint32_t> unique_vertices;
-            unique_vertices.reserve(shape.mesh.indices.size());
-            mesh->vertices.reserve(shape.mesh.indices.size());
             mesh->indices.reserve(shape.mesh.indices.size());
             for (const auto& index : shape.mesh.indices) {
                 Vertex vertex {};
@@ -67,28 +72,32 @@ namespace Match {
                 vertex.color = { 1, 1, 1 };
 
                 if (unique_vertices.count(vertex) == 0) {
-                    unique_vertices.insert(std::make_pair(vertex, mesh->vertices.size()));
-                    mesh->vertices.push_back(vertex);
+                    unique_vertices.insert(std::make_pair(vertex, vertices.size()));
+                    vertices.push_back(vertex);
                 }
                 mesh->indices.push_back(unique_vertices.at(vertex));
             }
-            vertex_count += mesh->get_vertex_count();
             index_count += mesh->get_index_count();
             meshes.insert(std::make_pair(shape.name, std::move(mesh)));
         }
+        vertex_count = vertices.size();
     }
 
     Model::~Model() {
+        vertices.clear();
         meshes.clear();
     }
 
     BufferPosition Model::upload_data(std::shared_ptr<VertexBuffer> vertex_buffer, std::shared_ptr<IndexBuffer> index_buffer, BufferPosition position) {
+        this->position = position;
+        auto temp_position = position;
+        temp_position.vertex_buffer_offset = vertex_buffer->upload_data_from_vector(vertices, temp_position.vertex_buffer_offset);
         for (auto &[name, mesh] : meshes) {
-            mesh->position = position;
-            position.vertex_buffer_offset = vertex_buffer->upload_data_from_vector(mesh->vertices, position.vertex_buffer_offset);
-            position.index_buffer_offset = index_buffer->upload_data_from_vector(mesh->indices, position.index_buffer_offset);
+            mesh->position.vertex_buffer_offset = this->position.vertex_buffer_offset;
+            mesh->position.index_buffer_offset = temp_position.index_buffer_offset;
+            temp_position.index_buffer_offset = index_buffer->upload_data_from_vector(mesh->indices, temp_position.index_buffer_offset);
         }
-        return position;
+        return temp_position;
     }
 
     std::shared_ptr<const Mesh> Model::get_mesh_by_name(const std::string &name) const {

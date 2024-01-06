@@ -318,6 +318,7 @@ namespace Match {
         eTexture,
         eTextureAttachment,
         eInputAttachment,
+        eStorageBuffer,
         eStorageImage,
         eAccelerationStructure,
     };

@@ -68,6 +68,7 @@ namespace Match {
         features.samplerAnisotropy = VK_TRUE;
         features.depthClamp = VK_TRUE;
         features.sampleRateShading = VK_TRUE;
+        features.shaderInt64 = VK_TRUE;
         vk::DeviceCreateInfo device_create_info {};
 
         std::map<std::string, bool> required_extensions = {
@@ -106,6 +107,10 @@ namespace Match {
                     )
                 )
             );
+        }
+
+        for (const auto &extension : setting.device_extensions) {
+            required_extensions.insert(std::make_pair(extension, false));
         }
 
         std::vector<const char *> enabled_extensions;
@@ -174,6 +179,10 @@ namespace Match {
         if (!features.sampleRateShading) {
             MCH_DEBUG("{} does not support sampler rate shading -- skipping", properties.deviceName)
             return false;
+        }
+
+        if (!features.shaderInt64) {
+            MCH_DEBUG("{} does not support type int 64 -- warning", properties.deviceName)
         }
 
         auto queue_families_properties = device.getQueueFamilyProperties();

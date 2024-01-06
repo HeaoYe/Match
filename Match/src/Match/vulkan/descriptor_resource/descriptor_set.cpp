@@ -77,7 +77,7 @@ namespace Match {
         for (uint32_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
             std::vector<vk::DescriptorBufferInfo> buffer_infos(layout_binding.descriptorCount);
             for (uint32_t i = 0; i < layout_binding.descriptorCount; i ++) {
-                buffer_infos[i].setBuffer(uniform_buffers[i]->get_buffer(in_flight).buffer)
+                buffer_infos[i].setBuffer(uniform_buffers[i]->get_buffer(in_flight))
                     .setOffset(0)
                     .setRange(uniform_buffers[i]->size);
             }
@@ -168,6 +168,34 @@ namespace Match {
             bind_input_attachments(binding, args);
         }
     };
+    DescriptorSet &DescriptorSet::bind_storage_buffers(uint32_t binding, const std::vector<std::shared_ptr<StorageBuffer>> &storage_buffers) {
+        auto layout_binding = get_layout_binding(binding);
+        if (layout_binding.descriptorType != vk::DescriptorType::eStorageBuffer) {
+            MCH_ERROR("Binding {} is not a storage buffer descriptor", binding)
+            return *this;
+        }
+        assert(layout_binding.descriptorCount == storage_buffers.size());
+        for (uint32_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
+            std::vector<vk::DescriptorBufferInfo> buffer_infos(layout_binding.descriptorCount);
+            for (uint32_t i = 0; i < layout_binding.descriptorCount; i ++) {
+                buffer_infos[i].setBuffer(storage_buffers[i]->get_buffer(in_flight))
+                    .setOffset(0)
+                    .setRange(storage_buffers[i]->get_size());
+            }
+            vk::WriteDescriptorSet descriptor_write {};
+            descriptor_write.setDstSet(descriptor_sets[in_flight])
+                .setDstBinding(layout_binding.binding)
+                .setDstArrayElement(0)
+                .setDescriptorType(layout_binding.descriptorType)
+                .setBufferInfo(buffer_infos);
+            manager->device->device.updateDescriptorSets({ descriptor_write }, {});
+        }
+        return *this;
+    }
+
+    DescriptorSet &DescriptorSet::bind_storage_buffer(uint32_t binding, std::shared_ptr<StorageBuffer> storage_buffer) {
+        return bind_storage_buffers(binding, { storage_buffer });
+    }
  
     DescriptorSet &DescriptorSet::bind_storage_images(uint32_t binding, const std::vector<std::shared_ptr<StorageImage>> &storage_images) {
         auto layout_binding = get_layout_binding(binding);

@@ -227,9 +227,7 @@ namespace Match {
     }
 
     void Renderer::draw_model(std::shared_ptr<const Model> model, uint32_t instance_count, uint32_t first_instance) {
-        for (auto &[name, mesh] : model->meshes) {
-            draw_mesh(mesh, instance_count, first_instance);
-        }
+        current_buffer.drawIndexed(model->index_count, instance_count, model->position.index_buffer_offset, model->position.vertex_buffer_offset, first_instance);
     }
 
     void Renderer::next_subpass() {
