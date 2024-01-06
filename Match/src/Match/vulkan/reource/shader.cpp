@@ -1,4 +1,5 @@
 #include <Match/vulkan/resource/shader.hpp>
+#include <Match/vulkan/resource/shader_includer.hpp>
 #include <Match/core/utils.hpp>
 #include "../inner.hpp"
 #include <shaderc/shaderc.hpp>
@@ -27,6 +28,7 @@ namespace Match {
         }
         shaderc::Compiler compiler {};
         shaderc::CompileOptions options {};
+        options.SetIncluder(std::make_unique<ShaderIncluder>());
         if (setting.enable_ray_tracing) {
            options.SetTargetSpirv(shaderc_spirv_version_1_6);
         }

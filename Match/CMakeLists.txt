@@ -32,7 +32,9 @@ target_include_directories(Match PUBLIC include)
 
 # Link Render API
 target_link_libraries(Match PUBLIC Vulkan::Vulkan)
-target_link_libraries(Match PUBLIC shaderc)
 target_link_libraries(Match PUBLIC VulkanMemoryAllocator)
+
+# Link Shaderc
+target_link_libraries(Match PRIVATE shaderc_shared)
 
 target_compile_definitions(Match PRIVATE MATCH_INNER_VISIBLE)

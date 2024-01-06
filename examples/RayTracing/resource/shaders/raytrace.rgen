@@ -1,8 +1,13 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
 
+#include "ray.glsl"
+
 layout (binding = 0, set = 0) uniform accelerationStructureEXT tlas;
 layout (binding = 1, set = 0, rgba32f) uniform image2D image;
+
+layout(buffer_reference, scalar) buffer Vertices {Vertex v[]; }; // Positions of an object
+layout(buffer_reference, scalar) buffer Indices {ivec3 i[]; }; // Triangle indices
 
 layout (binding = 0, set = 1) uniform G {
     vec2 window_size;
@@ -14,10 +19,6 @@ layout(binding = 1, set = 1) uniform CameraUniform {
     mat4 view;
     mat4 project;
 } camera;
-
-struct hitPayload {
-  vec3 hit_value;
-};
 
 layout(location = 0) rayPayloadEXT hitPayload prd;
 
