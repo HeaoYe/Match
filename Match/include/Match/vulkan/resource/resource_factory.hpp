@@ -28,6 +28,7 @@ namespace Match {
         std::shared_ptr<IndexBuffer> create_index_buffer(IndexType type, uint32_t count, vk::BufferUsageFlags additional_usage = vk::BufferUsageFlags {});
         std::shared_ptr<DescriptorSet> create_descriptor_set(std::weak_ptr<Renderer> renderer);
         std::shared_ptr<UniformBuffer> create_uniform_buffer(uint32_t size, bool create_for_each_frame_in_flight = false);
+        std::shared_ptr<StorageImage> create_storage_image(uint32_t width, uint32_t height, bool sampled = true);
         std::shared_ptr<Sampler> create_sampler(const SamplerOptions &options = {});
         std::shared_ptr<Texture> load_texture(const std::string &filename, uint32_t mip_levels = 0);
         std::shared_ptr<Texture> create_texture(const uint8_t *data, uint32_t width, uint32_t height, uint32_t mip_levels = 0);

@@ -13,11 +13,24 @@ namespace Match {
         case Match::ShaderStage::eFragment:
             kind = shaderc_glsl_fragment_shader;
             break;
+        case Match::ShaderStage::eRayGen:
+            kind = shaderc_glsl_raygen_shader;
+            break;
+        case Match::ShaderStage::eMiss:
+            kind = shaderc_glsl_miss_shader;
+            break;
+        case Match::ShaderStage::eClosestHit:
+            kind = shaderc_glsl_closesthit_shader;
+            break;
         default:
             throw std::runtime_error("");
         }
-        shaderc::Compiler compiler;
-        auto module = compiler.CompileGlslToSpv(code.data(), code.size(), kind, name.c_str(), {});
+        shaderc::Compiler compiler {};
+        shaderc::CompileOptions options {};
+        if (setting.enable_ray_tracing) {
+           options.SetTargetSpirv(shaderc_spirv_version_1_6);
+        }
+        auto module = compiler.CompileGlslToSpv(code.data(), code.size(), kind, name.c_str(), options);
         if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
             MCH_ERROR("Compile {} faild: {}", name, module.GetErrorMessage());
             return;

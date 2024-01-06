@@ -8,7 +8,7 @@ namespace Match {
         no_copy_move_construction(DataTexture)
     public:
         DataTexture(const uint8_t *data, uint32_t width, uint32_t height, uint32_t mip_levels);
-        vk::Image get_image() override { return image->image; }
+        vk::ImageLayout get_image_layout() override { return vk::ImageLayout::eShaderReadOnlyOptimal; }
         vk::ImageView get_image_view() override { return image_view; }
         uint32_t get_mip_levels() override { return 1; }
         ~DataTexture() override;
@@ -22,7 +22,7 @@ namespace Match {
         no_copy_move_construction(ImgTexture)
     public:
         ImgTexture(const std::string &filename, uint32_t mip_levels);
-        vk::Image get_image() override { return texture->image->image; }
+        vk::ImageLayout get_image_layout() override { return vk::ImageLayout::eShaderReadOnlyOptimal; }
         vk::ImageView get_image_view() override { return texture->image_view; }
         uint32_t get_mip_levels() override { return texture->mip_levels; }
         ~ImgTexture() override;
@@ -34,7 +34,7 @@ namespace Match {
         no_copy_move_construction(KtxTexture)
     public:
         KtxTexture(const std::string &filename);
-        vk::Image get_image() override { return vk_texture.image; }
+        vk::ImageLayout get_image_layout() override { return vk::ImageLayout::eShaderReadOnlyOptimal; }
         vk::ImageView get_image_view() override { return image_view; }
         uint32_t get_mip_levels() override { return vk_texture.levelCount; }
         ~KtxTexture() override;

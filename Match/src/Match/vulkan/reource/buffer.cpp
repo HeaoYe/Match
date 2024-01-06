@@ -64,13 +64,10 @@ namespace Match {
     void TwoStageBuffer::flush() {
         auto command_buffer = manager->command_pool->allocate_single_use();
         vk::BufferCopy copy;
-        copy.srcOffset = 0;
-        copy.dstOffset = 0;
-        copy.size = staging->size;
         copy.setSrcOffset(0)
             .setDstOffset(0)
             .setSize(staging->size);
-        command_buffer.copyBuffer(staging->buffer, buffer->buffer, { copy });
+        command_buffer.copyBuffer(staging->buffer, buffer->buffer, copy);
         manager->command_pool->free_single_use(command_buffer);
     }
 

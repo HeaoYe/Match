@@ -296,13 +296,16 @@ namespace Match {
     enum class ShaderStage : uint32_t {
         eVertex = static_cast<uint32_t>(vk::ShaderStageFlagBits::eVertex),
         eFragment = static_cast<uint32_t>(vk::ShaderStageFlagBits::eFragment),
+        eRayGen = static_cast<uint32_t>(vk::ShaderStageFlagBits::eRaygenKHR),
+        eMiss = static_cast<uint32_t>(vk::ShaderStageFlagBits::eMissKHR),
+        eClosestHit = static_cast<uint32_t>(vk::ShaderStageFlagBits::eClosestHitKHR),
     };
     
     using ShaderStages = Flags<ShaderStage>;
     template <>
     struct FlagTraits<ShaderStage> {
         static VULKAN_HPP_CONST_OR_CONSTEXPR bool             isBitmask = true;
-        static VULKAN_HPP_CONST_OR_CONSTEXPR ShaderStages allFlags = ShaderStage::eVertex | ShaderStage::eFragment;
+        static VULKAN_HPP_CONST_OR_CONSTEXPR ShaderStages allFlags = ShaderStage::eVertex | ShaderStage::eFragment | ShaderStage::eRayGen | ShaderStage::eMiss | ShaderStage::eClosestHit;
     };
     
     enum class InputRate {
@@ -315,6 +318,8 @@ namespace Match {
         eTexture,
         eTextureAttachment,
         eInputAttachment,
+        eStorageImage,
+        eAccelerationStructure,
     };
 
     enum class SampleCount {

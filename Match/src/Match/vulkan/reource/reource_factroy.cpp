@@ -57,6 +57,10 @@ namespace Match {
         return std::make_shared<UniformBuffer>(size, create_for_each_frame_in_flight);
     }
 
+    std::shared_ptr<StorageImage> ResourceFactory::create_storage_image(uint32_t width, uint32_t height, bool sampled) {
+        return std::make_shared<StorageImage>(width, height, sampled);
+    }
+
     std::shared_ptr<Texture> ResourceFactory::load_texture(const std::string &filename, uint32_t mip_levels) {
         auto pos = filename.find_last_of('.') + 1;
         auto filetype = filename.substr(pos, filename.size() - pos);

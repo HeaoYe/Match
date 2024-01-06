@@ -1,0 +1,45 @@
+#version 460
+#extension GL_EXT_ray_tracing : require
+
+layout (binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+layout (binding = 1, set = 0, rgba32f) uniform image2D image;
+
+layout (binding = 0, set = 1) uniform G {
+    vec2 window_size;
+    vec3 clear_color;
+} g;
+
+layout(binding = 1, set = 1) uniform CameraUniform {
+    vec3 pos;
+    mat4 view;
+    mat4 project;
+} camera;
+
+struct hitPayload {
+  vec3 hit_value;
+};
+
+layout(location = 0) rayPayloadEXT hitPayload prd;
+
+void main() {
+    vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
+    vec2 uv = center / gl_LaunchSizeEXT.xy;
+    uv = uv * 2 - 1;
+    vec3 view_direction = normalize(inverse(camera.view) * vec4((inverse(camera.project) * vec4(uv, -1, 1)).xyz, 0)).xyz;
+
+    uint ray_flags = gl_RayFlagsOpaqueEXT;
+
+    traceRayEXT(
+        tlas,
+        ray_flags,
+        0xff,
+        0, 0,
+        0,
+        camera.pos,
+        0.001,
+        view_direction,
+        10000.0,
+        0
+    );
+    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(prd.hit_value, 1.0));
+}

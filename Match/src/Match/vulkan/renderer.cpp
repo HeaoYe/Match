@@ -66,8 +66,7 @@ namespace Match {
         render_pass_builder->attachments[index].clear_value = value;
     }
 
-    void Renderer::begin_render() {
-        current_subpass = 0;
+    void Renderer::acquire_next_image() {
         vk_check(manager->device->device.waitForFences({ in_flight_fences[current_in_flight] }, VK_TRUE, UINT64_MAX));
         
         try {
@@ -83,11 +82,14 @@ namespace Match {
         
         manager->device->device.resetFences({ in_flight_fences[current_in_flight] });
 
+        current_subpass = 0;
         current_buffer.reset();
 
         vk::CommandBufferBeginInfo begin_info {};
         current_buffer.begin(begin_info);
+    }
 
+    void Renderer::begin_render_pass() {
         std::vector<vk::ClearValue> clear_values;
         clear_values.reserve(render_pass_builder->attachments.size());
         for (const auto &attachment_description : render_pass_builder->attachments) {
@@ -105,8 +107,11 @@ namespace Match {
         current_buffer.beginRenderPass(render_pass_begin_info, vk::SubpassContents::eInline);
     }
 
-    void Renderer::end_render() {
+    void Renderer::end_render_pass() {
         current_buffer.endRenderPass();
+    }
+
+    void Renderer::present() {
         current_buffer.end();
 
         vk::SubmitInfo submit_info {};
@@ -133,6 +138,16 @@ namespace Match {
         current_in_flight = (current_in_flight + 1) % setting.max_in_flight_frame;
         runtime_setting->current_in_flight = current_in_flight;
         current_buffer = command_buffers[current_in_flight];
+    }
+
+    void Renderer::begin_render() {
+        acquire_next_image();
+        begin_render_pass();
+    }
+
+    void Renderer::end_render() {
+        end_render_pass();
+        present();
     }
 
     void Renderer::begin_layer_render(const std::string &name) {

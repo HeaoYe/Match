@@ -4,6 +4,7 @@
 #include <Match/vulkan/resource/sampler.hpp>
 #include <Match/vulkan/descriptor_resource/uniform.hpp>
 #include <Match/vulkan/descriptor_resource/texture.hpp>
+#include <Match/vulkan/descriptor_resource/storage_image.hpp>
 #include <optional>
 
 namespace Match {
@@ -34,6 +35,8 @@ namespace Match {
         DescriptorSet &bind_texture(uint32_t binding, std::shared_ptr<Texture> texture, std::shared_ptr<Sampler> sampler);
         DescriptorSet &bind_input_attachments(uint32_t binding, const std::vector<std::pair<std::string, std::shared_ptr<Sampler>>> &attachment_names_samplers);
         DescriptorSet &bind_input_attachment(uint32_t binding, const std::string &attachment_name, std::shared_ptr<Sampler> sampler);
+        DescriptorSet &bind_storage_images(uint32_t binding, const std::vector<std::shared_ptr<StorageImage>> &storage_images);
+        DescriptorSet &bind_storage_image(uint32_t binding, std::shared_ptr<StorageImage> storage_image);
         ~DescriptorSet();
         bool is_allocated() const { return allocated; }
     INNER_VISIBLE:

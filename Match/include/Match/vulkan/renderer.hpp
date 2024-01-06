@@ -35,6 +35,10 @@ namespace Match {
             layers_map.insert(std::make_pair(name, layers.size()));
             layers.push_back(std::make_unique<LayerType>(*this, std::forward<Args>(args)...));
         }
+        void acquire_next_image();
+        void begin_render_pass();
+        void end_render_pass();
+        void present();
         void begin_render();
         void end_render();
         void begin_layer_render(const std::string &name);

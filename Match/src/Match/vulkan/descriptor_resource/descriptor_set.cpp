@@ -106,7 +106,7 @@ namespace Match {
         for (uint32_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
             std::vector<vk::DescriptorImageInfo> image_infos(layout_binding.descriptorCount);
             for (uint32_t i = 0; i < layout_binding.descriptorCount; i ++) {
-                image_infos[i].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+                image_infos[i].setImageLayout(textures_samplers[i].first->get_image_layout())
                     .setImageView(textures_samplers[i].first->get_image_view())
                     .setSampler(textures_samplers[i].second->sampler);
             }
@@ -125,7 +125,6 @@ namespace Match {
         return bind_textures(binding, { { texture, sampler } });
     }
 
-    
     DescriptorSet &DescriptorSet::bind_input_attachments(uint32_t binding, const std::vector<std::pair<std::string, std::shared_ptr<Sampler>>> &attachment_names_samplers) {
         auto locked_renderer = renderer.lock();
         if (!callback_id.has_value()) {
@@ -169,4 +168,33 @@ namespace Match {
             bind_input_attachments(binding, args);
         }
     };
+ 
+    DescriptorSet &DescriptorSet::bind_storage_images(uint32_t binding, const std::vector<std::shared_ptr<StorageImage>> &storage_images) {
+        auto layout_binding = get_layout_binding(binding);
+        if (layout_binding.descriptorType != vk::DescriptorType::eStorageImage) {
+            MCH_ERROR("Binding {} is not a storage image descriptor", binding)
+            return *this;
+        }
+        assert(layout_binding.descriptorCount == storage_images.size());
+        for (uint32_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
+            std::vector<vk::DescriptorImageInfo> image_infos(layout_binding.descriptorCount);
+            for (uint32_t i = 0; i < layout_binding.descriptorCount; i ++) {
+                image_infos[i].setImageLayout(vk::ImageLayout::eGeneral)
+                    .setImageView(storage_images[i]->image_view);
+            }
+            vk::WriteDescriptorSet descriptor_write {};
+            descriptor_write.setDstSet(descriptor_sets[in_flight])
+                .setDstBinding(layout_binding.binding)
+                .setDstArrayElement(0)
+                .setDescriptorType(layout_binding.descriptorType)
+                .setImageInfo(image_infos);
+            manager->device->device.updateDescriptorSets({ descriptor_write }, {});
+        }
+        return *this;
+    }
+ 
+    DescriptorSet &DescriptorSet::bind_storage_image(uint32_t binding, std::shared_ptr<StorageImage> storage_image) {
+        bind_storage_images(binding, { storage_image });
+        return *this;
+    }
 }
