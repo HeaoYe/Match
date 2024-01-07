@@ -4,14 +4,14 @@
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_EXT_buffer_reference2 : enable
 
-#include "ray.glsl"
+#include <MatchTypes>
 
 layout (binding = 0, set = 0) uniform accelerationStructureEXT tlas;
 
 layout (location = 0) rayPayloadInEXT hitPayload prd;
 layout (location = 1) rayPayloadEXT bool is_shadow;
 
-layout (binding = 2, set = 0, scalar) buffer InstanceInfo_ { InstanceInfo infos[]; } info_;
+layout (binding = 2, set = 0, scalar) buffer InstanceInfo_ { InstanceAddressInfo infos[]; } info_;
 
 layout (binding = 2, set = 1) uniform Light_ {
     vec3 pos;
@@ -20,20 +20,20 @@ layout (binding = 2, set = 1) uniform Light_ {
 } light;
 
 layout(buffer_reference, scalar) buffer Vertices { Vertex vertices[]; };
-layout(buffer_reference, scalar) buffer Indices { uvec3 indices[]; };
+layout(buffer_reference, scalar) buffer Indices { Index indices[]; };
 
 hitAttributeEXT vec3 attribs;
 
 void main() {
-    InstanceInfo info = info_.infos[gl_InstanceCustomIndexEXT];
+    InstanceAddressInfo info = info_.infos[gl_InstanceCustomIndexEXT];
 
     Vertices vertices = Vertices(info.vertex_buffer_address);
     Indices indices = Indices(info.index_buffer_address);
-    uvec3 idxs = indices.indices[gl_PrimitiveID];
+    Index idxs = indices.indices[gl_PrimitiveID];
     vec3 W = vec3(1.0 - attribs.x - attribs.y, attribs.x, attribs.y);
-    Vertex v0 = vertices.vertices[idxs.x];
-    Vertex v1 = vertices.vertices[idxs.y];
-    Vertex v2 = vertices.vertices[idxs.z];
+    Vertex v0 = vertices.vertices[idxs.i0];
+    Vertex v1 = vertices.vertices[idxs.i1];
+    Vertex v2 = vertices.vertices[idxs.i2];
 
     vec3 pos = v0.pos * W.x + v1.pos * W.y + v2.pos * W.z;
     vec3 normal = normalize(v0.normal * W.x + v1.normal * W.y + v2.normal * W.z);
@@ -61,4 +61,6 @@ void main() {
     if (is_shadow) {
         prd.hit_value *= 0.3;
     }
+    
+    prd.hit_value = (v0.normal + v1.normal + v2.normal) / 3 * 0.5 + 0.5;
 }

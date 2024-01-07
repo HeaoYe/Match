@@ -121,6 +121,7 @@ public:
         shared_ds->bind_uniform(0, g);
         shared_ds->bind_uniform(2, light);
         g_info = static_cast<GlobalInfo *>(g->get_uniform_ptr());
+        g_info->scale = 1;
         light_ptr = static_cast<PointLight *>(light->get_uniform_ptr());
         light_ptr->pos = { 2, 2, 2 };
         light_ptr->color = { 1, 1, 1 };
