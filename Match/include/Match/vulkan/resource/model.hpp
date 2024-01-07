@@ -2,6 +2,8 @@
 
 #include <Match/vulkan/resource/buffer.hpp>
 #include <Match/vulkan/resource/vertex_attribute_set.hpp>
+#include <Match/vulkan/resource/model_acceleration_structure.hpp>
+#include <optional>
 
 namespace Match {
     struct Vertex {
@@ -48,5 +50,6 @@ namespace Match {
         uint32_t vertex_count;
         uint32_t index_count;
         std::map<std::string, std::shared_ptr<Mesh>> meshes;
+        std::optional<std::unique_ptr<ModelAccelerationStructure>> acceleration_structure;
     };
 }

@@ -43,7 +43,18 @@ namespace Match {
         void end_render();
         void begin_layer_render(const std::string &name);
         void end_layer_render(const std::string &name);
-        void bind_shader_program(std::shared_ptr<ShaderProgram> shader_program);
+        template <class ShaderProgramClass>
+        void bind_shader_program(std::shared_ptr<ShaderProgramClass> shader_program) {
+            constexpr auto bind_point = ShaderProgramBindPoint<ShaderProgramClass>::bind_point;
+            if constexpr (bind_point == vk::PipelineBindPoint::eGraphics) {
+                current_graphics_shader_program = shader_program;
+            } else if constexpr (bind_point == vk::PipelineBindPoint::eRayTracingKHR) {
+                current_ray_tracing_shader_program = shader_program;
+            } else {
+                throw std::runtime_error("Match Core Fatal");
+            }
+            inner_bind_shader_program(bind_point, shader_program);
+        }
         void bind_vertex_buffer(const std::shared_ptr<VertexBuffer> &vertex_buffer, uint32_t binding = 0);
         void bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers);
         void bind_index_buffer(std::shared_ptr<IndexBuffer> index_buffer);
@@ -57,6 +68,9 @@ namespace Match {
         void draw_mesh(std::shared_ptr<const Mesh> mesh, uint32_t instance_count, uint32_t first_instance);
         void draw_model_mesh(std::shared_ptr<const Model> model, const std::string &name, uint32_t instance_count, uint32_t first_instance);
         void draw_model(std::shared_ptr<const Model> model, uint32_t instance_count, uint32_t first_instance);
+        void trace_rays(uint32_t width = uint32_t(-1), uint32_t height = uint32_t(-1), uint32_t depth = 1);
+    private:
+        void inner_bind_shader_program(vk::PipelineBindPoint bind_point, std::shared_ptr<ShaderProgram> shader_program);
     public:
         void set_clear_value(const std::string &name, const vk::ClearValue &value);
         vk::CommandBuffer get_command_buffer();
@@ -83,5 +97,8 @@ namespace Match {
         std::vector<vk::Semaphore> image_available_semaphores;
         std::vector<vk::Semaphore> render_finished_semaphores;
         std::vector<vk::Fence> in_flight_fences;
+    private:
+        std::shared_ptr<GraphicsShaderProgram> current_graphics_shader_program;
+        std::shared_ptr<RayTracingShaderProgram> current_ray_tracing_shader_program;
     };
 }

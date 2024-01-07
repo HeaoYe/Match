@@ -49,6 +49,8 @@ namespace Match {
     }
 
     Renderer::~Renderer() {
+        current_graphics_shader_program.reset();
+        current_ray_tracing_shader_program.reset();
         wait_for_destroy();
         callbacks.clear();
         for (uint32_t i = 0; i < setting.max_in_flight_frame; i ++) {
@@ -158,17 +160,18 @@ namespace Match {
         layers[layers_map.at(name)]->end_render();
     }
 
-    void Renderer::bind_shader_program(std::shared_ptr<ShaderProgram> shader_program) {
-        current_buffer.bindPipeline(shader_program->bind_point, shader_program->pipeline);
+    void Renderer::inner_bind_shader_program(vk::PipelineBindPoint bind_point, std::shared_ptr<ShaderProgram> shader_program) {
+        current_buffer.bindPipeline(bind_point, shader_program->pipeline);
         if (!shader_program->descriptor_sets.empty()) {
             std::vector<vk::DescriptorSet> sets;
             for (auto &descriptor_set : shader_program->descriptor_sets) {
                 sets.push_back(descriptor_set.value()->descriptor_sets[current_in_flight]);
             }
-            current_buffer.bindDescriptorSets(shader_program->bind_point, shader_program->layout, 0, sets, {});
+            current_buffer.bindDescriptorSets(bind_point, shader_program->layout, 0, sets, {});
         }
-        for (const auto &[stage, offset_size] : shader_program->constant_offset_size_map) {
-            current_buffer.pushConstants(shader_program->layout, stage, offset_size.first, offset_size.second, shader_program->constants.data() + offset_size.first);
+        if (shader_program->push_constants.has_value()) {
+            auto push_constants = shader_program->push_constants.value();
+            current_buffer.pushConstants(shader_program->layout, push_constants->range.stageFlags, 0, push_constants->constants_size, push_constants->constants.data());
         }
     }
 
@@ -228,6 +231,16 @@ namespace Match {
 
     void Renderer::draw_model(std::shared_ptr<const Model> model, uint32_t instance_count, uint32_t first_instance) {
         current_buffer.drawIndexed(model->index_count, instance_count, model->position.index_buffer_offset, model->position.vertex_buffer_offset, first_instance);
+    }
+
+    void Renderer::trace_rays(uint32_t width, uint32_t height, uint32_t depth) {
+        if (width == uint32_t(-1)) {
+            width = runtime_setting->window_size.width;
+        }
+        if (height == uint32_t(-1)) {
+            height = runtime_setting->window_size.height;
+        }
+        current_buffer.traceRaysKHR(current_ray_tracing_shader_program->raygen_region, current_ray_tracing_shader_program->miss_region, current_ray_tracing_shader_program->hit_region, {}, width, height, depth, manager->dispatcher);
     }
 
     void Renderer::next_subpass() {

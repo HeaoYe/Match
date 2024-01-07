@@ -137,10 +137,15 @@ int main() {
 
         // 资源描述符的绑定由DescriptorSet完成，因为资源描述符与Shader文件有关并且能被ShaderProgram共用，与ShaderProgram无关
         // 不再从shader处添加描述符，descriptor_set应该是能被多个ShaderProgram共用的，所以分离出来
-        // 为vertex shader添加push constants描述
-        vert_shader->bind_push_constants({
-            { "pad", Match::ConstantType::eFloat },
-            { "t", Match::ConstantType::eFloat },
+
+        // 创建PushConstants
+        auto push_constants = factory->create_push_constants(
+            // 指定该Constants被使用的ShaderStage
+            Match::ShaderStage::eVertex,
+            // 配置Constants的内容
+            {
+                { "pad", Match::ConstantType::eFloat },
+                { "t", Match::ConstantType::eFloat },
         });
         
         // 为renderer创建shader_program
@@ -155,6 +160,8 @@ int main() {
         // 可自定义每个DescriptorSet绑定到第几个Set上，默认第0个
         // shader_program->attach_descriptor_set(descriptor_set, 2);
         // compile时会自动检查DescriptorSet有没有分配过，若没有，自动分配
+        // 绑定PushConstants，不同于DescriptorSet，一个ShaderProgram只能绑定一个PushConstants
+        shader_program->attach_push_constants(push_constants);
         shader_program->compile({
             .cull_mode = Match::CullMode::eNone,  // 取消面剔除
             .depth_test_enable = VK_TRUE,         // 启用深度测试
@@ -236,7 +243,8 @@ int main() {
             auto time = std::chrono::duration<float, std::chrono::seconds::period>(current_time-start_time).count();
 
             // 设置constants的值
-            shader_program->push_constants("t", time);
+            // 由PushConstants设置值，多个绑定着同一个PushConstants的ShaderProgram可以共享PushConstants的值
+            push_constants->push_constant("t", time);
 
             // 程序启动5秒后关闭垂直同步，关闭后帧率涨到3000FPS
             static bool flag = true;

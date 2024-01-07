@@ -14,7 +14,7 @@ namespace Match {
         case Match::ShaderStage::eFragment:
             kind = shaderc_glsl_fragment_shader;
             break;
-        case Match::ShaderStage::eRayGen:
+        case Match::ShaderStage::eRaygen:
             kind = shaderc_glsl_raygen_shader;
             break;
         case Match::ShaderStage::eMiss:
@@ -46,7 +46,6 @@ namespace Match {
     }
 
     void Shader::create(const uint32_t *data, uint32_t size) {
-        constants_size = 0;
         vk::ShaderModuleCreateInfo shader_module_create_info {};
         shader_module_create_info.setPCode(data)
             .setCodeSize(size);
@@ -58,33 +57,10 @@ namespace Match {
     }
 
     Shader::~Shader() {
-        constant_offset_map.clear();
         if (module.has_value()) {
             manager->device->device.destroyShaderModule(module.value());
             module.reset();
 
         }
-    }
-
-    Shader &Shader::bind_push_constants(const std::vector<ConstantInfo> &constant_infos) {
-        for (auto info : constant_infos) {
-            auto size = transform<uint32_t>(info.type);
-            uint32_t align = 4;
-            if (size > 8) {
-                align = 16;
-            } else if (size > 4) {
-                align = 8;
-            }
-            if (!first_align.has_value()) {
-                first_align = align;
-            }
-            if (constants_size % align != 0) {
-                constants_size += align - (constants_size % align);
-            }
-            constant_offset_map.insert(std::make_pair(info.name, constants_size));
-            constant_size_map.insert(std::make_pair(info.name, size));
-            constants_size += size;
-        }
-        return *this;
     }
 }

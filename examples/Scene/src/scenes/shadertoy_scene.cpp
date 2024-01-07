@@ -20,10 +20,15 @@ void ShaderToyScene::initialize() {
     });
 
     vert_shader = factory->compile_shader("shadertoy/ShaderToy.vert", Match::ShaderStage::eVertex);
-    vert_shader->bind_push_constants({
-        { "width", Match::ConstantType::eFloat },
-        { "height", Match::ConstantType::eFloat },
-    });
+    // 所有Shader共用一个PushConstants
+    shader_program_constants = factory->create_push_constants(
+        Match::ShaderStage::eVertex | Match::ShaderStage::eFragment,
+        {
+            { "width", Match::ConstantType::eFloat },
+            { "height", Match::ConstantType::eFloat },
+            { "time", Match::ConstantType::eFloat },
+            { "resolution", Match::ConstantType::eFloat2 },
+        });
     vas = factory->create_vertex_attribute_set({
         {
             0, Match::InputRate::ePerVertex, { Match::VertexType::eFloat2 },
@@ -51,10 +56,6 @@ void ShaderToyScene::updata_shader_program() {
     data.clear();
     frag_shader.reset();
     frag_shader = factory->compile_shader_from_string(head_file, Match::ShaderStage::eFragment);
-    frag_shader->bind_push_constants({
-        { "time", Match::ConstantType::eFloat },
-        { "resolution", Match::ConstantType::eFloat2 },
-    });
 
     if (!frag_shader->is_ready()) {
         return;
@@ -66,6 +67,7 @@ void ShaderToyScene::updata_shader_program() {
     shader_program->attach_fragment_shader(frag_shader, "main");
     shader_program->attach_vertex_attribute_set(vas);
     shader_program->attach_descriptor_set(shader_program_ds);
+    shader_program->attach_push_constants(shader_program_constants);
     shader_program->compile({
         .cull_mode = Match::CullMode::eNone,
         .depth_test_enable = VK_FALSE,
@@ -120,8 +122,8 @@ void ShaderToyScene::render() {
     auto size = Match::runtime_setting->get_window_size();
     float width = size.width;
     float height = size.height;
-    shader_program->push_constants("width", width);
-    shader_program->push_constants("height", height);
+    shader_program_constants->push_constant("width", width);
+    shader_program_constants->push_constant("height", height);
     shader_input->uniform->iResolution = glm::vec3(width, height, 1.0f);
     renderer->set_viewport(0, static_cast<float>(size.height), static_cast<float>(size.width), -static_cast<float>(size.height));
     renderer->set_scissor(0, 0, size.width, size.height);

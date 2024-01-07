@@ -9,8 +9,10 @@
 
 #if defined (MATCH_INNER_VISIBLE)
     #define INNER_VISIBLE public
+    #define INNER_PROTECT public
 #else
     #define INNER_VISIBLE private
+    #define INNER_PROTECT protected
 #endif
 
 namespace Match {

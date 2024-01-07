@@ -9,6 +9,7 @@ layout (binding = 1, set = 0, rgba32f) uniform image2D image;
 layout (binding = 0, set = 1) uniform G {
     vec2 window_size;
     vec3 clear_color;
+    int scale;
 } g;
 
 layout(binding = 1, set = 1) uniform CameraUniform {
@@ -20,26 +21,32 @@ layout(binding = 1, set = 1) uniform CameraUniform {
 layout(location = 0) rayPayloadEXT hitPayload prd;
 
 void main() {
-    vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
-    vec2 uv = center / gl_LaunchSizeEXT.xy;
-    uv = uv * 2 - 1;
-    vec3 view_direction = normalize(inverse(camera.view) * vec4((inverse(camera.project) * vec4(uv, -1, 1)).xyz, 0)).xyz;
+    vec2 stride = vec2(1.0f / (g.scale + 1.0f));
+    vec3 hit_value = vec3(0);
+    for (int i = 0; i < g.scale; i ++) {
+        vec2 center = vec2(gl_LaunchIDEXT.xy) + stride * (i + 1.0f);
+        vec2 uv = center / gl_LaunchSizeEXT.xy;
+        uv = uv * 2 - 1;
+        vec3 view_direction = normalize(inverse(camera.view) * vec4((inverse(camera.project) * vec4(uv, -1, 1)).xyz, 0)).xyz;
 
-    uint ray_flags = gl_RayFlagsOpaqueEXT;
-    prd.hit_value = g.clear_color;
+        uint ray_flags = gl_RayFlagsOpaqueEXT;
+        prd.hit_value = g.clear_color;
 
-    traceRayEXT(
-        tlas,
-        ray_flags,
-        0xff,
-        0, 0,
-        0,
-        camera.pos,
-        0.00001,
-        view_direction,
-        10000.0,
-        0
-    );
+        traceRayEXT(
+            tlas,
+            ray_flags,
+            0xff,
+            0, 0,
+            0,
+            camera.pos,
+            0.001,
+            view_direction,
+            10000.0,
+            0
+        );
+
+        hit_value += prd.hit_value;
+    }
     
-    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(prd.hit_value, 1.0));
+    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(hit_value / g.scale, 1.0));
 }

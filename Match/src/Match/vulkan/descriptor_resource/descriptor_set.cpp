@@ -222,7 +222,37 @@ namespace Match {
     }
  
     DescriptorSet &DescriptorSet::bind_storage_image(uint32_t binding, std::shared_ptr<StorageImage> storage_image) {
-        bind_storage_images(binding, { storage_image });
+        return bind_storage_images(binding, { storage_image });
+    }
+ 
+    DescriptorSet &DescriptorSet::bind_ray_tracing_instances(uint32_t binding, const std::vector<std::shared_ptr<RayTracingInstance>> &instances) {
+        auto layout_binding = get_layout_binding(binding);
+        if (layout_binding.descriptorType != vk::DescriptorType::eAccelerationStructureKHR) {
+            MCH_ERROR("Binding {} is not a acceleration struction descriptor", binding)
+            return *this;
+        }
+        assert(layout_binding.descriptorCount == instances.size());
+        for (uint32_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
+            std::vector<vk::AccelerationStructureKHR> acceleration_structures;
+            acceleration_structures.reserve(instances.size());
+            for (auto &instance : instances) {
+                acceleration_structures.push_back(instance->instance);
+            }
+            vk::WriteDescriptorSetAccelerationStructureKHR acceleration_structure_write {};
+            acceleration_structure_write.setAccelerationStructures(acceleration_structures);
+            vk::WriteDescriptorSet descriptor_write {};
+            descriptor_write.setDstSet(descriptor_sets[in_flight])
+                .setDstBinding(layout_binding.binding)
+                .setDstArrayElement(0)
+                .setDescriptorType(layout_binding.descriptorType)
+                .setDescriptorCount(acceleration_structure_write.accelerationStructureCount)
+                .setPNext(&acceleration_structure_write);
+            manager->device->device.updateDescriptorSets({ descriptor_write }, {});
+        }
         return *this;
+    }
+
+    DescriptorSet &DescriptorSet::bind_ray_tracing_instance(uint32_t binding, std::shared_ptr<RayTracingInstance> instance) {
+        return bind_ray_tracing_instances(binding, { instance });
     }
 }

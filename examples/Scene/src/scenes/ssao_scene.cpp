@@ -64,7 +64,7 @@ void SSAOScene::initialize() {
             }
         }
     });
-    Match::ShaderProgramCompileOptions deferred_option {
+    Match::GraphicsShaderProgramCompileOptions deferred_option {
         .cull_mode = Match::CullMode::eNone,
         .depth_test_enable = VK_FALSE,
     };
@@ -79,22 +79,26 @@ void SSAOScene::initialize() {
         { Match::ShaderStage::eFragment, 3, Match::DescriptorType::eTexture },
         { Match::ShaderStage::eFragment, 4, Match::DescriptorType::eUniform },
     });
-    ssao_frag_shader->bind_push_constants({
-        { "window_size", Match::ConstantType::eFloat2 },
-        { "a", Match::ConstantType::eInt32 },
-        { "sample_count", Match::ConstantType::eInt32 },
-        { "r", Match::ConstantType::eFloat },
-    });
+    ssao_shader_program_constants = factory->create_push_constants(
+        Match::ShaderStage::eFragment,
+        {
+            { "window_size", Match::ConstantType::eFloat2 },
+            { "a", Match::ConstantType::eInt32 },
+            { "sample_count", Match::ConstantType::eInt32 },
+            { "r", Match::ConstantType::eFloat },
+        });
     main_shader_program_ds->add_descriptors({
         { Match::ShaderStage::eFragment, 0, Match::DescriptorType::eInputAttachment },
         { Match::ShaderStage::eFragment, 1, Match::DescriptorType::eInputAttachment },
         { Match::ShaderStage::eFragment, 2, Match::DescriptorType::eTextureAttachment },
     });
-    main_frag_shader->bind_push_constants({
-        { "window_size", Match::ConstantType::eFloat2 },
-        { "ssao_enable", Match::ConstantType::eInt32 },
-        { "blur_kernel_size", Match::ConstantType::eInt32 },
-    });
+    main_shader_program_constants = factory->create_push_constants(
+        Match::ShaderStage::eFragment,
+        {
+            { "window_size", Match::ConstantType::eFloat2 },
+            { "ssao_enable", Match::ConstantType::eInt32 },
+            { "blur_kernel_size", Match::ConstantType::eInt32 },
+        });
 
     // entry默认为"main"
     prepare_shader_program->attach_vertex_shader(prepare_vert_shader);
@@ -110,11 +114,13 @@ void SSAOScene::initialize() {
     ssao_shader_program->attach_vertex_shader(deferred_vert_shader);
     ssao_shader_program->attach_fragment_shader(ssao_frag_shader);
     ssao_shader_program->attach_descriptor_set(ssao_shader_program_ds);
+    ssao_shader_program->attach_push_constants(ssao_shader_program_constants);
     ssao_shader_program->compile(deferred_option);
 
     main_shader_program->attach_vertex_shader(deferred_vert_shader);
     main_shader_program->attach_fragment_shader(main_frag_shader);
     main_shader_program->attach_descriptor_set(main_shader_program_ds);
+    main_shader_program->attach_push_constants(main_shader_program_constants);
     main_shader_program->compile(deferred_option);
 
     camera = std::make_unique<Camera>(*factory);
@@ -147,7 +153,7 @@ void SSAOScene::initialize() {
     // 随机旋转纹理的边长
     const int a = 4;
     std::vector<glm::vec4> ssao_random_vecs(a * a);
-    ssao_shader_program->push_constants("a", a);
+    ssao_shader_program_constants->push_constant("a", a);
 
     for (auto &sample : ssao_samples) {
         sample = glm::normalize(glm::vec4(
@@ -188,8 +194,8 @@ void SSAOScene::update(float dt) {
         static_cast<float>(usize.width),
         static_cast<float>(usize.height),
     };
-    ssao_shader_program->push_constants("window_size", &size);
-    main_shader_program->push_constants("window_size", &size);
+    ssao_shader_program_constants->push_constant("window_size", &size);
+    main_shader_program_constants->push_constant("window_size", &size);
 }
 
 void SSAOScene::render() {
@@ -213,21 +219,20 @@ void SSAOScene::render_imgui() {
 
     static int sample_count = 32;
     ImGui::SliderInt("Sample Count", &sample_count, 1, 64);
-    ssao_shader_program->push_constants("sample_count", sample_count);
+    ssao_shader_program_constants->push_constant("sample_count", sample_count);
 
     static float r = 0.4f;
     ImGui::SliderFloat("R", &r, 0.01, 10);
-    ssao_shader_program->push_constants("r", r);
+    ssao_shader_program_constants->push_constant("r", r);
 
     static int blur_kernel_size = 4;
     ImGui::SliderInt("Blur Kernel Size", &blur_kernel_size, 1, 16);
-    main_shader_program->push_constants("blur_kernel_size", blur_kernel_size);
+    main_shader_program_constants->push_constant("blur_kernel_size", blur_kernel_size);
 
     static bool ssao_enable = 0;
     ImGui::Checkbox("Enable SSAO", &ssao_enable);
-    main_shader_program->push_constants("ssao_enable", static_cast<int>(ssao_enable));
+    main_shader_program_constants->push_constant("ssao_enable", static_cast<int>(ssao_enable));
 }
 
 void SSAOScene::destroy() {
 }
-

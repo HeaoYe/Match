@@ -37,6 +37,5 @@ namespace Match {
     INNER_VISIBLE:
         std::vector<Attachment> attachments;
         std::vector<std::unique_ptr<FrameBuffer>> framebuffers;
-        std::vector<std::weak_ptr<ShaderProgram>> shader_programs;
     };
 }

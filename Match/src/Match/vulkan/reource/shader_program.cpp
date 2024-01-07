@@ -1,5 +1,6 @@
 #include <Match/vulkan/renderer.hpp>
 #include <Match/vulkan/resource/shader_program.hpp>
+#include <Match/vulkan/utils.hpp>
 #include <Match/core/setting.hpp>
 #include <Match/core/utils.hpp>
 #include "../inner.hpp"
@@ -7,49 +8,64 @@
 namespace Match {
     static vk::PipelineShaderStageCreateInfo create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits stage, vk::ShaderModule module, const std::string &entry) {
         vk::PipelineShaderStageCreateInfo create_info {};
-        create_info.pSpecializationInfo = nullptr;
-        create_info.stage = stage;
-        create_info.module = module;
-        create_info.pName = entry.c_str();
         create_info.setPSpecializationInfo(nullptr)
             .setStage(stage)
             .setModule(module)
             .setPName(entry.c_str());
         return create_info;
     }
-    
-    ShaderProgram::ShaderProgram(std::weak_ptr<Renderer> renderer, const std::string &subpass_name) : subpass_name(subpass_name), renderer(renderer) {}
 
-    ShaderProgram &ShaderProgram::attach_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set) {
+    ShaderProgram::~ShaderProgram() {
+        manager->device->device.destroyPipeline(pipeline);
+        manager->device->device.destroyPipelineLayout(layout);
+        descriptor_sets.clear();
+    }
+
+    void ShaderProgram::compile_pipeline_layout() {
+        std::vector<vk::DescriptorSetLayout> descriptor_layouts;
+        descriptor_layouts.reserve(descriptor_sets.size());
+        for (auto &descriptor_set : descriptor_sets) {
+            if (!descriptor_set.has_value()) {
+                MCH_ERROR("Miss descriptor set at index {}", descriptor_layouts.size());
+            } else if (!descriptor_set.value()->is_allocated()) {
+                MCH_DEBUG("Auto allocate descriptor set")
+                descriptor_set.value()->allocate();
+            }
+            descriptor_layouts.push_back(descriptor_set.value()->descriptor_layout);
+        }
+
+        vk::PipelineLayoutCreateInfo pipeline_layout_create_info {};
+        pipeline_layout_create_info.setSetLayouts(descriptor_layouts);
+        if (push_constants.has_value()) {
+            pipeline_layout_create_info.setPushConstantRanges(push_constants.value()->range);
+        }
+        layout = manager->device->device.createPipelineLayout(pipeline_layout_create_info);
+    }
+
+    GraphicsShaderProgram::GraphicsShaderProgram(std::weak_ptr<Renderer> renderer, const std::string &subpass_name) : renderer(renderer), subpass_name(subpass_name) {}
+
+    GraphicsShaderProgram &GraphicsShaderProgram::attach_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set) {
         vertex_attribute_set.reset();
         vertex_attribute_set = std::move(attribute_set);
         return *this;
     }
 
-    ShaderProgram &ShaderProgram::attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
-        vertex_shader = std::dynamic_pointer_cast<Shader>(shader);
-        vertex_shader_entry = entry;
+    GraphicsShaderProgram &GraphicsShaderProgram::attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
+        vertex_shader.shader = shader;
+        vertex_shader.entry = entry;
         return *this;
     }
 
-    ShaderProgram &ShaderProgram::attach_fragment_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
-        fragment_shader = std::dynamic_pointer_cast<Shader>(shader);
-        fragment_shader_entry = entry;
-        return *this;
-    }
-    
-    ShaderProgram &ShaderProgram::attach_descriptor_set(std::shared_ptr<DescriptorSet> descriptor_set, uint32_t set_index) {
-        if (set_index + 1 > descriptor_sets.size()) {
-            descriptor_sets.resize(set_index + 1);
-        }
-        descriptor_sets[set_index] = descriptor_set;
+    GraphicsShaderProgram &GraphicsShaderProgram::attach_fragment_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
+        fragment_shader.shader = shader;
+        fragment_shader.entry = entry;
         return *this;
     }
 
-    ShaderProgram &ShaderProgram::compile(const ShaderProgramCompileOptions &options) {
+    GraphicsShaderProgram &GraphicsShaderProgram::compile(const GraphicsShaderProgramCompileOptions &options) {
         std::vector<vk::PipelineShaderStageCreateInfo> stages = {
-            create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eVertex, vertex_shader->module.value(), vertex_shader_entry),
-            create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eFragment, fragment_shader->module.value(), fragment_shader_entry),
+            create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eVertex, vertex_shader.shader->module.value(), vertex_shader.entry),
+            create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eFragment, fragment_shader.shader->module.value(), fragment_shader.entry),
         };
 
         vk::PipelineVertexInputStateCreateInfo vertex_input_state {};
@@ -106,7 +122,6 @@ namespace Match {
         auto locked_renderer = renderer.lock();
         uint32_t subpass_idx = locked_renderer->render_pass_builder->get_subpass_index(subpass_name);
         auto &subpass = *locked_renderer->render_pass_builder->subpass_builders[subpass_idx];
-        bind_point = subpass.bind_point;
 
         vk::PipelineColorBlendStateCreateInfo color_blend_state {};
         color_blend_state.setLogicOpEnable(VK_FALSE)
@@ -115,47 +130,7 @@ namespace Match {
         vk::PipelineDynamicStateCreateInfo dynamic_state {};
         dynamic_state.setDynamicStates(options.dynamic_states);
 
-        std::vector<vk::PushConstantRange> constant_ranges;
-        uint32_t current_offset = 0;
-        constant_ranges.reserve(2);
-        if (vertex_shader->constants_size != 0) {
-            constant_offset_size_map.insert(std::make_pair(vk::ShaderStageFlagBits::eVertex, std::make_pair(current_offset, vertex_shader->constants_size)));
-            constant_ranges.push_back({
-                vk::ShaderStageFlagBits::eVertex,
-                current_offset,
-                vertex_shader->constants_size,
-            });
-            current_offset += vertex_shader->constants_size;
-        }
-        if (fragment_shader->constants_size != 0) {
-            if (current_offset % fragment_shader->first_align.value() != 0) {
-                current_offset += fragment_shader->first_align.value() - (current_offset % fragment_shader->first_align.value());
-            }
-            constant_offset_size_map.insert(std::make_pair(vk::ShaderStageFlagBits::eFragment, std::make_pair(current_offset, fragment_shader->constants_size)));
-            constant_ranges.push_back({
-                vk::ShaderStageFlagBits::eFragment,
-                current_offset,
-                fragment_shader->constants_size,
-            });
-            current_offset += fragment_shader->constants_size;
-        }
-        constants.resize(current_offset);
-
-        std::vector<vk::DescriptorSetLayout> descriptor_layouts;
-        descriptor_layouts.reserve(descriptor_sets.size());
-        for (auto &descriptor_set : descriptor_sets) {
-            if (!descriptor_set.has_value()) {
-                MCH_ERROR("Miss descriptor set at index {}", descriptor_layouts.size());
-            } else if (!descriptor_set.value()->is_allocated()) {
-                MCH_DEBUG("Auto allocate descriptor set")
-                descriptor_set.value()->allocate();
-            }
-            descriptor_layouts.push_back(descriptor_set.value()->descriptor_layout);
-        }
-        vk::PipelineLayoutCreateInfo pipeline_layout_create_info {};
-        pipeline_layout_create_info.setSetLayouts(descriptor_layouts)
-            .setPushConstantRanges(constant_ranges);
-        layout = manager->device->device.createPipelineLayout(pipeline_layout_create_info);
+        compile_pipeline_layout();
 
         vk::GraphicsPipelineCreateInfo create_info {};
         create_info.setStages(stages)
@@ -180,38 +155,115 @@ namespace Match {
         return *this;
     }
 
-    ShaderProgram &ShaderProgram::push_constants(const std::string &name, BasicConstantValue basic_value) {
-        push_constants(name, &basic_value);
-        return *this;
-    }
-
-    ShaderProgram &ShaderProgram::push_constants(const std::string &name, void *data) {
-        auto [offset, size] = find_offset_size_by_name(*fragment_shader, vk::ShaderStageFlagBits::eFragment, name);
-        if (offset == -1u) {
-            auto [offset_, size_] = find_offset_size_by_name(*vertex_shader, vk::ShaderStageFlagBits::eVertex, name);
-            if (offset_ == -1u) {
-                return *this;
-            }
-            offset = offset_;
-            size = size_;
-        }
-        memcpy(constants.data() + offset, data, size);
-        return *this;
-    }
-
-    std::pair<uint32_t, uint32_t> ShaderProgram::find_offset_size_by_name(Shader &shader, vk::ShaderStageFlags stage, const std::string &name) {
-        if (shader.constant_offset_map.find(name) != shader.constant_offset_map.end()) {
-            return std::make_pair(constant_offset_size_map.at(stage).first + shader.constant_offset_map.at(name), shader.constant_size_map.at(name));
-        }
-        return std::make_pair(-1u, -1u);
-    }
-
-    ShaderProgram::~ShaderProgram() {
-        manager->device->device.destroyPipeline(pipeline);
-        manager->device->device.destroyPipelineLayout(layout);
-        descriptor_sets.clear();
+    GraphicsShaderProgram::~GraphicsShaderProgram() {
         vertex_attribute_set.reset();
-        vertex_shader.reset();
-        fragment_shader.reset();
+        vertex_shader.shader.reset();
+        fragment_shader.shader.reset();
+    }
+
+    RayTracingShaderProgram::RayTracingShaderProgram() {}
+
+    RayTracingShaderProgram &RayTracingShaderProgram::attach_raygen_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
+        raygen_shader.shader = shader;
+        raygen_shader.entry = entry;
+        return *this;
+    }
+    
+    RayTracingShaderProgram &RayTracingShaderProgram::attach_miss_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
+        miss_shaders.push_back({
+            .shader = shader,
+            .entry = entry,
+        });
+        return *this;
+    }
+    
+    RayTracingShaderProgram &RayTracingShaderProgram::attach_closest_hit_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
+        closest_hit_shaders.push_back({
+            .shader = shader,
+            .entry = entry,
+        });
+        return *this;
+    }
+    
+    RayTracingShaderProgram &RayTracingShaderProgram::compile(const RayTracingShaderProgramCompileOptions &options) {
+        uint32_t shader_count = 1 + miss_shaders.size() + closest_hit_shaders.size();
+        std::vector<vk::RayTracingShaderGroupCreateInfoKHR> shader_groups;
+        std::vector<vk::PipelineShaderStageCreateInfo> stages;
+        shader_groups.reserve(shader_count);
+        stages.reserve(shader_count);
+
+        shader_groups.emplace_back()
+            .setType(vk::RayTracingShaderGroupTypeKHR::eGeneral)
+            .setGeneralShader(stages.size());
+        stages.push_back(create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eRaygenKHR, raygen_shader.shader->module.value(), raygen_shader.entry));
+        for (auto miss_shader : miss_shaders) {
+            shader_groups.emplace_back()
+                .setType(vk::RayTracingShaderGroupTypeKHR::eGeneral)
+                .setGeneralShader(stages.size());
+            stages.push_back(create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eMissKHR, miss_shader.shader->module.value(), miss_shader.entry));
+        }
+        for (auto closest_hit_shader : closest_hit_shaders) {
+            shader_groups.emplace_back()
+                .setType(vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup)
+                .setClosestHitShader(stages.size());
+            stages.push_back(create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eClosestHitKHR, closest_hit_shader.shader->module.value(), closest_hit_shader.entry));
+        }
+
+        compile_pipeline_layout();
+
+        vk::RayTracingPipelineCreateInfoKHR ray_traceing_pipeline_create_info {};
+        ray_traceing_pipeline_create_info.setStages(stages)
+            .setGroups(shader_groups)
+            .setMaxPipelineRayRecursionDepth(options.max_ray_recursion_depth)
+            .setLayout(layout);
+        pipeline = manager->device->device.createRayTracingPipelineKHR({}, {}, ray_traceing_pipeline_create_info, nullptr, manager->dispatcher).value;
+
+        vk::PhysicalDeviceProperties2 properties {};
+        vk::PhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_pipeline_properties {};
+        properties.pNext = &ray_tracing_pipeline_properties;
+        manager->device->physical_device.getProperties2(&properties);
+
+        auto align_address = [](uint32_t size, uint32_t align) {
+            return (size + (align - 1)) & ~(align - 1);
+        };
+        uint32_t handle_size = ray_tracing_pipeline_properties.shaderGroupHandleSize;
+        uint32_t handle_stride = align_address(handle_size, ray_tracing_pipeline_properties.shaderGroupHandleAlignment);
+        
+        raygen_region.setStride(align_address(handle_stride, ray_tracing_pipeline_properties.shaderGroupBaseAlignment))
+            .setSize(raygen_region.stride);
+        miss_region.setStride(handle_stride)
+            .setSize(align_address(miss_shaders.size() * handle_stride, ray_tracing_pipeline_properties.shaderGroupBaseAlignment));
+        hit_region.setStride(handle_stride)
+            .setSize(align_address(closest_hit_shaders.size() * handle_stride, ray_tracing_pipeline_properties.shaderGroupBaseAlignment));
+
+        std::vector<uint8_t> handles_data(handle_size * shader_count);
+        vk_assert(manager->device->device.getRayTracingShaderGroupHandlesKHR(pipeline, 0, shader_count, handle_size * shader_count, handles_data.data(), manager->dispatcher));
+        uint32_t shader_binding_table_size = raygen_region.size + miss_region.size + hit_region.size;
+        shader_binding_table_buffer = std::make_unique<Match::Buffer>(shader_binding_table_size, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eShaderBindingTableKHR, VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+        auto shader_binding_table_buffer_addr = get_buffer_address(shader_binding_table_buffer->buffer);
+        raygen_region.setDeviceAddress(shader_binding_table_buffer_addr);
+        miss_region.setDeviceAddress(shader_binding_table_buffer_addr + raygen_region.size);
+        hit_region.setDeviceAddress(shader_binding_table_buffer_addr + raygen_region.size + miss_region.size);
+
+        auto *ptr = static_cast<uint8_t *>(shader_binding_table_buffer->map());
+
+        memcpy(ptr, handles_data.data(), handle_size);
+        ptr += raygen_region.size;
+        for (uint32_t i = 0; i < miss_shaders.size(); i ++) {
+            memcpy(ptr + i * handle_stride, handles_data.data() + (i + 1) * handle_size, handle_size);
+        }
+        ptr += miss_region.size;
+        for (uint32_t i = 0; i < closest_hit_shaders.size(); i ++) {
+            memcpy(ptr + i * handle_stride, handles_data.data() + (i + 1 + miss_shaders.size()) * handle_size, handle_size);
+        }
+        shader_binding_table_buffer->unmap();
+
+        return *this;
+    }
+    
+    RayTracingShaderProgram::~RayTracingShaderProgram() {
+        raygen_shader.shader.reset();
+        miss_shaders.clear();
+        closest_hit_shaders.clear();
     }
 }
