@@ -5,15 +5,21 @@
 #include "scenes/ssao_scene.hpp"
 #include "scenes/raymarching_scene.hpp"
 #include "scenes/model_viewer_scene.hpp"
+#include "scenes/ray_tracing_scene.hpp"
 
 int main() {
     // 窗口大小的配置移动到main.cpp中
     Match::setting.window_size = { 1920, 1080 };
     // 关闭debug_moed和MSAA可以提高一点性能
     Match::setting.debug_mode = true;
+    // 开启Match的光追功能
+    Match::setting.enable_ray_tracing = true;
+
     Application app;
     // 第一个注册的Scene为默认加载的Scene
 
+    // 简易光线追踪场景
+    app.register_scene<RayTracingScene>("简易光线追踪");
     // 模型加载器场景
     app.register_scene<ModelViewerScene>("模型加载器");
     // 光线步进场景

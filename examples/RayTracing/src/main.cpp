@@ -53,7 +53,7 @@ public:
 
         ds = factory->create_descriptor_set(renderer);
         ds->add_descriptors({
-            { Match::ShaderStage::eRaygen | Match::ShaderStage::eClosestHit, 0, Match::DescriptorType::eAccelerationStructure },
+            { Match::ShaderStage::eRaygen | Match::ShaderStage::eClosestHit, 0, Match::DescriptorType::eRayTracingInstance },
             { Match::ShaderStage::eRaygen, 1, Match::DescriptorType::eStorageImage },
             { Match::ShaderStage::eClosestHit, 2, Match::DescriptorType::eStorageBuffer },
         }).allocate();

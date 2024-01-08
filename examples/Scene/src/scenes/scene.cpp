@@ -18,7 +18,14 @@ void SceneManager::render() {
     if (current_scene.get() == nullptr) {
         return;
     }
-    current_scene->renderer->begin_render();
+    // begin_render() 会干两件事
+    // 1. acquire_next_image();  获取下一帧的图像用于渲染
+    // 2. begin_render_pass();   开启RenderPass
+    // 对于光追场景,需要在current_scene->render()中手动开启RenderPass
+    current_scene->renderer->acquire_next_image();
+    if (!current_scene->is_ray_tracing_scene) {
+        current_scene->renderer->begin_render_pass();
+    }
     current_scene->render();
 
     current_scene->renderer->begin_layer_render("imgui layer");

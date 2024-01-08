@@ -1,0 +1,67 @@
+#version 460
+
+#extension GL_EXT_ray_tracing : require
+
+layout (binding = 0, rgba32f) uniform image2D ray_tracing_result_image;
+layout (binding = 1) uniform accelerationStructureEXT instance;
+layout (binding = 2) uniform CameraUniform {
+    vec3 pos;
+    mat4 view;
+    mat4 project;
+} camera;
+
+layout (push_constant) uniform Constants {
+    vec3 sky_color;
+    vec3 pos;
+    vec3 color;
+    float intensity;
+    int sample_count;
+} constant;
+
+layout (location = 0) rayPayloadEXT vec3 ray_color;
+
+void main() {
+    vec3 final_ray_color = vec3(0);
+    for (int sample_index = 0; sample_index < constant.sample_count; sample_index ++) {
+        // 计算光线方向
+        // 最简单的斜线采样点
+        // sample_count个采样点在像素中以对角线的形式排开
+        vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2((sample_index + 1) / (constant.sample_count + 1));
+        center /= vec2(gl_LaunchSizeEXT.xy);
+        center.y = 1 - center.y;
+        center = center * 2 - 1;
+        vec3 view_direction = (inverse(camera.view) * vec4((inverse(camera.project) * vec4(center, -1, 1)).xyz, 0)).xyz;
+
+        // 不透明
+        uint ray_flags = gl_RayFlagsOpaqueEXT;
+        ray_color = vec3(0.3, 0.7, 0.5);
+        // 发射一条光线
+        // 从camera.pos向(0, -1, 0)方向发射光线
+        // 命中为绿色,为命中为灰色
+        // 使用WS键移动相机,可以看到颜色变化
+        traceRayEXT(
+            // 模型信息
+            instance,
+            // 光线信息
+            ray_flags,
+            0xff,
+            0, 0,
+            // 未命中着色器索引,与被attach的顺序有关
+            0,
+            // 光线起点
+            camera.pos,
+            // 最小距离
+            0.001,
+            // 光线方向
+            view_direction,
+            // 最大距离
+            10000.0,
+            // rayPayload location = 0
+            // 不同的光追着色器使用rayPayload传递数据
+            0
+        );
+        final_ray_color += ray_color;
+    }
+    
+    imageStore(ray_tracing_result_image, ivec2(gl_LaunchIDEXT.xy), vec4(final_ray_color / float(constant.sample_count), 1));
+}

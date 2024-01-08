@@ -320,7 +320,7 @@ namespace Match {
         eInputAttachment,
         eStorageBuffer,
         eStorageImage,
-        eAccelerationStructure,
+        eRayTracingInstance,
     };
 
     enum class SampleCount {

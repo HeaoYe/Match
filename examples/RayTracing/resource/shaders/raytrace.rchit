@@ -60,7 +60,5 @@ void main() {
 
     if (is_shadow) {
         prd.hit_value *= 0.3;
-    }
-    
-    prd.hit_value = (v0.normal + v1.normal + v2.normal) / 3 * 0.5 + 0.5;
+    }    
 }

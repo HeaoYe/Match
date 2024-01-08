@@ -32,6 +32,7 @@ protected:
     // 模型加载功能也集成了
     std::shared_ptr<Match::ResourceFactory> factory;
     std::shared_ptr<Match::Renderer> renderer;
+    bool is_ray_tracing_scene = false;
 };
 
 class SceneManager {

@@ -10,10 +10,6 @@ namespace Match {
                 auto contents = new std::string(
 "#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable\n"
 "\n"
-"struct hitPayload {\n"
-"    vec3 hit_value;\n"
-"};\n"
-"\n"
 "struct InstanceAddressInfo {\n"
 "    uint64_t vertex_buffer_address;\n"
 "    uint64_t index_buffer_address;\n"
