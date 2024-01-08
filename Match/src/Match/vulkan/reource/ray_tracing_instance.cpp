@@ -34,13 +34,14 @@ namespace Match {
             .setPrimitiveOffset(0)
             .setFirstVertex(0)
             .setTransformOffset(0);
-        TwoStageBuffer model_infos_buffer (instance_infos.size() * sizeof(vk::AccelerationStructureInstanceKHR), vk::BufferUsageFlags {}, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR);
+        model_infos_buffer = std::make_unique<TwoStageBuffer>(instance_infos.size() * sizeof(vk::AccelerationStructureInstanceKHR), vk::BufferUsageFlags {}, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR);
+        model_infos_buffer->map();
         instance_addresses = std::make_shared<TwoStageBuffer>(instance_address_infos.size() * sizeof(InstanceAddress), vk::BufferUsageFlagBits::eStorageBuffer);
-        model_infos_buffer.upload_data_from_vector(instance_infos);
+        model_infos_buffer->upload_data_from_vector(instance_infos);
         instance_addresses->upload_data_from_vector(instance_address_infos);
 
         vk::AccelerationStructureGeometryInstancesDataKHR instances {};
-        instances.setData(get_buffer_address(model_infos_buffer.buffer->buffer));
+        instances.setData(get_buffer_address(model_infos_buffer->buffer->buffer));
         vk::AccelerationStructureGeometryKHR geometry {};
         geometry.setGeometry(instances)
             .setGeometryType(vk::GeometryTypeKHR::eInstances);
@@ -52,8 +53,8 @@ namespace Match {
             .setGeometries(geometry);
         
         auto size_info = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, build, model_infos.size(), manager->dispatcher);
-        instance_buffer = std::make_shared<Match::Buffer>(size_info.accelerationStructureSize, vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
-        Match::Buffer scratch_buffer(size_info.buildScratchSize, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+        instance_buffer = std::make_shared<Buffer>(size_info.accelerationStructureSize, vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+        scratch_buffer = std::make_unique<Buffer>(size_info.buildScratchSize, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
         
         vk::AccelerationStructureCreateInfoKHR instance_create_info {};
         instance_create_info.setType(vk::AccelerationStructureTypeKHR::eTopLevel)
@@ -63,28 +64,45 @@ namespace Match {
 
         auto command_buffer = manager->command_pool->allocate_single_use();
         build.setDstAccelerationStructure(instance)
-            .setScratchData(get_buffer_address(scratch_buffer.buffer));
+            .setScratchData(get_buffer_address(scratch_buffer->buffer));
         command_buffer.buildAccelerationStructuresKHR(build, &range, manager->dispatcher);
         manager->command_pool->free_single_use(command_buffer);
         return *this;
     }
 
     RayTracingInstance &RayTracingInstance::update(update_func func) {
-        auto current_instance_info = instance_infos.begin();
-        interface_update_transform_func interface_update_transform = [&] (const glm::mat4 &transform_) {
-            current_instance_info->setTransform(transform<vk::TransformMatrixKHR, const glm::mat4 &>(transform_));
+        auto update = [&](uint32_t begin, uint32_t end) {
+            auto current_instance_info = instance_infos.begin();
+            for (uint32_t i = 0; i < begin; i ++) {
+                current_instance_info ++;
+            }
+            interface_update_transform_func interface_update_transform = [&] (const glm::mat4 &transform_) {
+                current_instance_info->setTransform(transform<vk::TransformMatrixKHR, const glm::mat4 &>(transform_));
+            };
+            while (begin < end) {
+                func(begin, interface_update_transform);
+                current_instance_info += 1;
+                begin += 1;
+            }
         };
-        uint32_t idx = 0;
-        while (current_instance_info != instance_infos.end()) {
-            func(idx, interface_update_transform);
-            current_instance_info += 1;
-            idx += 1;
+        uint32_t size = instance_infos.size();
+        uint32_t current = 0;
+        std::vector<std::thread> thread_pool;
+        while (current < size) {
+            uint32_t end = std::min(current + 1000, size);
+            thread_pool.push_back(std::move(std::thread ([&]() {
+                update(current, end);
+            })));
+            current = end;
         }
-        TwoStageBuffer model_infos_buffer (instance_infos.size() * sizeof(vk::AccelerationStructureInstanceKHR), vk::BufferUsageFlags {}, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR);
-        model_infos_buffer.upload_data_from_vector(instance_infos);
+        for (auto &thread : thread_pool) {
+            thread.join();
+        }
+        
+        model_infos_buffer->upload_data_from_vector(instance_infos);
 
         vk::AccelerationStructureGeometryInstancesDataKHR instances {};
-        instances.setData(get_buffer_address(model_infos_buffer.buffer->buffer));
+        instances.setData(get_buffer_address(model_infos_buffer->buffer->buffer));
         vk::AccelerationStructureGeometryKHR geometry {};
         geometry.setGeometry(instances)
             .setGeometryType(vk::GeometryTypeKHR::eInstances);
@@ -96,12 +114,15 @@ namespace Match {
             .setGeometries(geometry);
         
         auto size_info = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, build, model_infos.size(), manager->dispatcher);
-        Match::Buffer scratch_buffer(size_info.buildScratchSize, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+        if (size_info.buildScratchSize > scratch_buffer->size) {
+            scratch_buffer.reset();
+            scratch_buffer = std::make_unique<Buffer>(size_info.buildScratchSize, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+        }
         
         auto command_buffer = manager->command_pool->allocate_single_use();
         build.setSrcAccelerationStructure(instance)
             .setDstAccelerationStructure(instance)
-            .setScratchData(get_buffer_address(scratch_buffer.buffer));
+            .setScratchData(get_buffer_address(scratch_buffer->buffer));
         vk::AccelerationStructureBuildRangeInfoKHR range {};
         range.setPrimitiveCount(instance_infos.size())
             .setPrimitiveOffset(0)
@@ -115,6 +136,8 @@ namespace Match {
     RayTracingInstance::~RayTracingInstance() {
         manager->device->device.destroyAccelerationStructureKHR(instance, nullptr, manager->dispatcher);
         instance_buffer.reset();
+        scratch_buffer.reset();
         instance_addresses.reset();
+        model_infos_buffer.reset();
     }
 }

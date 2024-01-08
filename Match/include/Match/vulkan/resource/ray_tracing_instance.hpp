@@ -25,6 +25,8 @@ namespace Match {
         ~RayTracingInstance();
     INNER_VISIBLE:
         vk::AccelerationStructureKHR instance;
+        std::unique_ptr<TwoStageBuffer> model_infos_buffer;
+        std::unique_ptr<Buffer> scratch_buffer;
         std::shared_ptr<Buffer> instance_buffer;
         std::shared_ptr<TwoStageBuffer> instance_addresses;
         std::vector<std::pair<std::shared_ptr<Model>, glm::mat4>> model_infos;
