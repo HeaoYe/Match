@@ -37,7 +37,7 @@ namespace Match {
         std::shared_ptr<Texture> create_texture(const uint8_t *data, uint32_t width, uint32_t height, uint32_t mip_levels = 0);
         std::shared_ptr<Model> load_model(const std::string &filename);
         std::shared_ptr<AccelerationStructureBuilder> create_acceleration_structure_builder();
-        std::shared_ptr<RayTracingInstance> create_ray_tracing_instance(const std::vector<std::shared_ptr<Model>> &models);
+        std::shared_ptr<RayTracingInstance> create_ray_tracing_instance();
         std::shared_ptr<RayTracingShaderProgram> create_ray_tracing_shader_program();
     INNER_VISIBLE:
         std::string root;

@@ -229,4 +229,12 @@ namespace Match {
     vk::ShaderStageFlags transform<vk::ShaderStageFlags>(ShaderStages stages) {
         return vk::ShaderStageFlags (static_cast<uint32_t>(stages));
     }
+
+    template <>
+    vk::TransformMatrixKHR transform<vk::TransformMatrixKHR>(const glm::mat4 &matrix) {
+        vk::TransformMatrixKHR result;
+        auto matrix_t = glm::transpose(matrix);
+        memcpy(&result, &matrix_t, sizeof(vk::TransformMatrixKHR));
+        return result;
+    }
 }

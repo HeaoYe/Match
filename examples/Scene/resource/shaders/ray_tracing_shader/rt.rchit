@@ -40,13 +40,20 @@ void main() {
     
     // 获取命中点的信息(位置,法向量)
     vec3 W = vec3(1 - attribs.x - attribs.y, attribs.x, attribs.y);
+    // 获取模型坐标系下的位置
     vec3 pos = W.x * v0.pos + W.y * v1.pos + W.z * v2.pos;
+    // 转换到世界坐标系
+    pos = (gl_ObjectToWorldEXT * vec4(pos, 1)).xyz;
+    // 获取模型坐标系下的法向量
     vec3 normal = W.x * v0.normal + W.y * v1.normal + W.z * v2.normal;
+    // 转换到世界坐标系
+    normal = (gl_ObjectToWorldEXT * vec4(normal, 0)).xyz;
 
     // 计算光照颜色
     vec3 L = normalize(constant.pos - pos);
     float D = length(constant.pos - pos);
-    ray_color = constant.color * max(dot(L, normal), 0) * constant.intensity / (D * D);
+    // 舍弃了一点光照的正确,换来一点亮度
+    ray_color = vec3(0.9, 0.3, 0.2) * 0.3 + constant.color * max(dot(L, normal), 0) * constant.intensity / (D);
 
     // 计算阴影
     is_in_shadow = true;

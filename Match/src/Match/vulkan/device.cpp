@@ -72,7 +72,8 @@ namespace Match {
         vk::DeviceCreateInfo device_create_info {};
 
         std::map<std::string, bool> required_extensions = {
-            { VK_KHR_SWAPCHAIN_EXTENSION_NAME, false }
+            { VK_KHR_SWAPCHAIN_EXTENSION_NAME, false },
+            { VK_KHR_BIND_MEMORY_2_EXTENSION_NAME, false }
         };
         if (setting.enable_ray_tracing) {
             required_extensions.insert(std::make_pair(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, false));

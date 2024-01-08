@@ -1,5 +1,6 @@
 #include "ray_tracing_scene.hpp"
 #include <glm/gtx/rotate_vector.hpp>
+#include <random>
 
 void RayTracingScene::initialize() {
     this->is_ray_tracing_scene = true;
@@ -28,10 +29,31 @@ void RayTracingScene::initialize() {
     builder.reset();
 
     // 使用光追实例管理渲染的模型
-    instance = factory->create_ray_tracing_instance({
-        model1,
-        model2,
-    });
+    // 不再在创建光追实例时传入模型信息
+    instance = factory->create_ray_tracing_instance();
+    // 使用add_model添加模型
+    instance->add_model(model1);  // index = 0
+    // 实例化渲染5000条中国龙
+    // 很明显的渲染错误
+    std::random_device device;
+    std::mt19937 generator(device());
+    std::normal_distribution<float> distribution(0, 1);
+    std::normal_distribution<float> scale_distribution(0.3, 0.2);
+    for (uint32_t index = 0; index < 5000; index ++) {
+        auto pos = glm::vec3(distribution(generator) * 3, distribution(generator) * 3, distribution(generator) * 3);
+        auto rotate_vector = glm::vec3(distribution(generator), distribution(generator), distribution(generator));
+        auto start_angle = distribution(generator) * 3.1415926535f;
+        auto scale = scale_distribution(generator);
+        instance_transform_infos.push_back({
+            pos, rotate_vector, start_angle, scale,
+        });
+        auto transform_mat = glm::translate(pos) * glm::rotate(start_angle, rotate_vector) * glm::scale(glm::mat4(1), glm::vec3(scale));
+        instance->add_model(model2, transform_mat);
+    }
+    // 使用build构建光追实例的加速结构
+    instance->build();
+    // build之后无法继续添加模型,但可以使用update更新实例信息
+    // instance->update(...);
 
     // 简易光追资源初始化
     auto [width, height] = Match::runtime_setting->get_window_size();
@@ -117,6 +139,23 @@ void RayTracingScene::update(float dt) {
     time += dt;
     glm::vec3 light_pos = glm::rotateY(glm::vec3(2, 2, 2), time);
     ray_tracing_shader_program_constants->push_constant("light_pos", &light_pos);
+
+    instance->update([&](uint32_t index, auto set_transform) {
+        if (index == 0) {
+            return;
+        }
+        auto [pos, rotate_vector, start_angle, scale] = instance_transform_infos.at(index - 1);
+        start_angle += time;
+        scale *= (cos(time * 1.8 + start_angle) + 3) / 3;
+        // 在天体运动中, 一个天体绕中心天体运动的角速度的平方与该天体到中心天体距离的立方成反比
+        auto distance3 = glm::pow(glm::length(pos), 3.0f);
+        auto k = 2.0f / distance3;
+        // 计算角速度
+        auto w = glm::sqrt(k);
+        pos = glm::rotate(w * time, rotate_vector) * glm::vec4(pos.x, pos.y, pos.z, 1);
+        auto transform_mat = glm::translate(pos) * glm::rotate(start_angle, rotate_vector) * glm::scale(glm::mat4(1), glm::vec3(scale));
+        set_transform(transform_mat);
+    });
 }
 
 void RayTracingScene::render() {

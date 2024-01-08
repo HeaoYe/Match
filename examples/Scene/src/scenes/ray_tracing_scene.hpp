@@ -12,6 +12,8 @@ private:
     std::shared_ptr<Match::Model> model2;
 
     // 光追资源
+    //                        pos   rotate_vector start_angle scale
+    std::vector<std::tuple<glm::vec3, glm::vec3,     float,   float>> instance_transform_infos;
     std::shared_ptr<Match::RayTracingInstance> instance;
     std::shared_ptr<Match::StorageImage> ray_tracing_result_image;
     std::shared_ptr<Match::DescriptorSet> ray_tracing_shader_program_ds;

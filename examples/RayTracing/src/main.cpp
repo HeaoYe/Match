@@ -188,7 +188,9 @@ public:
         // 创建光线追踪Instance，也就是TopLevelAccelerationStructure，该实例包含两个模型
         // instance = factory->create_ray_tracing_instance({ model, model2 });
         // 只包含一个模型
-        instance = factory->create_ray_tracing_instance({ model });
+        instance = factory->create_ray_tracing_instance();
+        instance->add_model(model)
+            .build();
 
         // 上传模型顶点数据到缓存，光栅化渲染用
         model2->upload_data(vertex_buffer, index_buffer, model->upload_data(vertex_buffer, index_buffer));
