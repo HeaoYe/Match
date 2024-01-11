@@ -94,10 +94,6 @@ namespace Match {
         return std::make_shared<AccelerationStructureBuilder>();
     }
 
-    std::shared_ptr<RayTracingInstance> ResourceFactory::create_ray_tracing_instance() {
-        return std::make_shared<RayTracingInstance>();
-    }
- 
     std::shared_ptr<RayTracingShaderProgram> ResourceFactory::create_ray_tracing_shader_program() {
         return std::make_shared<RayTracingShaderProgram>();
     }

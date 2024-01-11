@@ -6,7 +6,7 @@
 #include <Match/vulkan/descriptor_resource/texture.hpp>
 #include <Match/vulkan/descriptor_resource/storage_buffer.hpp>
 #include <Match/vulkan/descriptor_resource/storage_image.hpp>
-#include <Match/vulkan/resource/ray_tracing_instance.hpp>
+#include <Match/vulkan/resource/ray_tracing_instance_collect.hpp>
 #include <optional>
 
 namespace Match {
@@ -41,8 +41,8 @@ namespace Match {
         DescriptorSet &bind_storage_buffer(uint32_t binding, std::shared_ptr<StorageBuffer> storage_buffer);
         DescriptorSet &bind_storage_images(uint32_t binding, const std::vector<std::shared_ptr<StorageImage>> &storage_images);
         DescriptorSet &bind_storage_image(uint32_t binding, std::shared_ptr<StorageImage> storage_image);
-        DescriptorSet &bind_ray_tracing_instances(uint32_t binding, const std::vector<std::shared_ptr<RayTracingInstance>> &instances);
-        DescriptorSet &bind_ray_tracing_instance(uint32_t binding, std::shared_ptr<RayTracingInstance> instance);
+        DescriptorSet &bind_ray_tracing_instance_collects(uint32_t binding, const std::vector<std::shared_ptr<RayTracingInstanceCollectBase>> &collects);
+        DescriptorSet &bind_ray_tracing_instance_collect(uint32_t binding, std::shared_ptr<RayTracingInstanceCollectBase> collect);
         ~DescriptorSet();
         bool is_allocated() const { return allocated; }
     INNER_VISIBLE:

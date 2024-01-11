@@ -5,12 +5,22 @@
 #extension GL_EXT_buffer_reference : require
 
 // Match内置的类型头文件
+// Match内置的类型统一改为以Match开头
 #include <MatchTypes>
 
+struct MyCustomData {
+    vec3 color;
+};
+
+struct InstanceInfo {
+    MatchInstanceAddressInfo address_info;
+    MyCustomData my_data;
+};
+
 layout (binding = 1) uniform accelerationStructureEXT instance;
-layout (binding = 3, scalar) buffer InstanceAddressInfo_ { InstanceAddressInfo addresses[]; } info_;
-layout (buffer_reference, scalar) buffer VertexBuffer { Vertex vertices[]; };
-layout (buffer_reference, scalar) buffer IndexBuffer { Index indices[]; };
+layout (binding = 3, scalar) buffer InstanceInfo_ { InstanceInfo infos[]; } info_;
+layout (buffer_reference, scalar) buffer VertexBuffer { MatchVertex vertices[]; };
+layout (buffer_reference, scalar) buffer IndexBuffer { MatchIndex indices[]; };
 
 layout (push_constant) uniform Constants {
     vec3 sky_color;
@@ -28,15 +38,15 @@ hitAttributeEXT vec3 attribs;
 
 void main() {
     // 获取命中的模型的信息
-    InstanceAddressInfo address_info = info_.addresses[gl_InstanceCustomIndexEXT];
-    VertexBuffer vertex_bufer = VertexBuffer(address_info.vertex_buffer_address);
-    IndexBuffer index_buffer = IndexBuffer(address_info.index_buffer_address);
+    InstanceInfo instance_info = info_.infos[gl_InstanceCustomIndexEXT];
+    VertexBuffer vertex_bufer = VertexBuffer(instance_info.address_info.vertex_buffer_address);
+    IndexBuffer index_buffer = IndexBuffer(instance_info.address_info.index_buffer_address);
     
     // 获取命中的三角形的顶点信息
-    Index idx = index_buffer.indices[gl_PrimitiveID];
-    Vertex v0 = vertex_bufer.vertices[idx.i0];
-    Vertex v1 = vertex_bufer.vertices[idx.i1];
-    Vertex v2 = vertex_bufer.vertices[idx.i2];
+    MatchIndex idx = index_buffer.indices[gl_PrimitiveID];
+    MatchVertex v0 = vertex_bufer.vertices[idx.i0];
+    MatchVertex v1 = vertex_bufer.vertices[idx.i1];
+    MatchVertex v2 = vertex_bufer.vertices[idx.i2];
     
     // 获取命中点的信息(位置,法向量)
     vec3 W = vec3(1 - attribs.x - attribs.y, attribs.x, attribs.y);
@@ -53,7 +63,7 @@ void main() {
     vec3 L = normalize(constant.pos - pos);
     float D = length(constant.pos - pos);
     // 舍弃了一点光照的正确,换来一点亮度
-    ray_color = vec3(0.9, 0.3, 0.2) * 0.3 + constant.color * max(dot(L, normal), 0) * constant.intensity / (D);
+    ray_color = vec3(instance_info.my_data.color) * 0.3 + constant.color * max(dot(L, normal), 0) * constant.intensity / (D);
 
     // 计算阴影
     is_in_shadow = true;

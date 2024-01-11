@@ -225,18 +225,18 @@ namespace Match {
         return bind_storage_images(binding, { storage_image });
     }
  
-    DescriptorSet &DescriptorSet::bind_ray_tracing_instances(uint32_t binding, const std::vector<std::shared_ptr<RayTracingInstance>> &instances) {
+    DescriptorSet &DescriptorSet::bind_ray_tracing_instance_collects(uint32_t binding, const std::vector<std::shared_ptr<RayTracingInstanceCollectBase>> &instance_collects) {
         auto layout_binding = get_layout_binding(binding);
         if (layout_binding.descriptorType != vk::DescriptorType::eAccelerationStructureKHR) {
             MCH_ERROR("Binding {} is not a acceleration struction descriptor", binding)
             return *this;
         }
-        assert(layout_binding.descriptorCount == instances.size());
+        assert(layout_binding.descriptorCount == instance_collects.size());
         for (uint32_t in_flight = 0; in_flight < setting.max_in_flight_frame; in_flight ++) {
             std::vector<vk::AccelerationStructureKHR> acceleration_structures;
-            acceleration_structures.reserve(instances.size());
-            for (auto &instance : instances) {
-                acceleration_structures.push_back(instance->instance);
+            acceleration_structures.reserve(instance_collects.size());
+            for (auto &instance_collect : instance_collects) {
+                acceleration_structures.push_back(instance_collect->instance_collect);
             }
             vk::WriteDescriptorSetAccelerationStructureKHR acceleration_structure_write {};
             acceleration_structure_write.setAccelerationStructures(acceleration_structures);
@@ -252,7 +252,7 @@ namespace Match {
         return *this;
     }
 
-    DescriptorSet &DescriptorSet::bind_ray_tracing_instance(uint32_t binding, std::shared_ptr<RayTracingInstance> instance) {
-        return bind_ray_tracing_instances(binding, { instance });
+    DescriptorSet &DescriptorSet::bind_ray_tracing_instance_collect(uint32_t binding, std::shared_ptr<RayTracingInstanceCollectBase> instance_collect) {
+        return bind_ray_tracing_instance_collects(binding, { instance_collect });
     }
 }

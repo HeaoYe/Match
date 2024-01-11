@@ -68,7 +68,7 @@ public:
         auto [width, height] = Match::runtime_setting->get_window_size();
         image = factory->create_storage_image(width, height, vk::Format::eR32G32B32A32Sfloat);
         ds->bind_storage_image(1, image);
-        ds->bind_storage_buffer(2, instance->get_instance_addresses_bufer());
+        ds->bind_storage_buffer(2, instance_collect->get_instance_infos_bufer());
         callback_id = renderer->register_resource_recreate_callback([this]() {
             image.reset();
             auto [width, height] = Match::runtime_setting->get_window_size();
@@ -80,7 +80,7 @@ public:
             camera->upload_data();
         });
 
-        ds->bind_ray_tracing_instance(0, instance);
+        ds->bind_ray_tracing_instance_collect(0, instance_collect);
 
         rtp = factory->create_ray_tracing_shader_program();
         rtp->attach_raygen_shader(rg)
@@ -154,7 +154,7 @@ public:
         renderer->wait_for_destroy();
         model.reset();
         model2.reset();
-        instance.reset();
+        instance_collect.reset();
         camera.reset();
         renderer->remove_resource_recreate_callback(callback_id);
         image.reset();
@@ -188,8 +188,8 @@ public:
         // 创建光线追踪Instance，也就是TopLevelAccelerationStructure，该实例包含两个模型
         // instance = factory->create_ray_tracing_instance({ model, model2 });
         // 只包含一个模型
-        instance = factory->create_ray_tracing_instance();
-        instance->add_model(model)
+        instance_collect = factory->create_ray_tracing_instance_collect();
+        instance_collect->add_instance(0, model)
             .build();
 
         // 上传模型顶点数据到缓存，光栅化渲染用
@@ -253,7 +253,7 @@ public:
 private:
     std::shared_ptr<Match::Model> model;
     std::shared_ptr<Match::Model> model2;
-    std::shared_ptr<Match::RayTracingInstance> instance;
+    std::shared_ptr<Match::RayTracingInstanceCollect> instance_collect;
     std::shared_ptr<Match::RayTracingShaderProgram> rtp;
 
     std::shared_ptr<Match::ResourceFactory> scene_factory;
