@@ -8,17 +8,18 @@
 // Match内置的类型统一改为以Match开头
 #include <MatchTypes>
 
-struct MyCustomData {
+struct MyCustomData1 {
     vec3 color;
 };
 
-struct InstanceInfo {
-    MatchInstanceAddressInfo address_info;
-    MyCustomData my_data;
+struct MyCustomData2 {
+    float color_scale;
 };
 
 layout (binding = 1) uniform accelerationStructureEXT instance;
-layout (binding = 3, scalar) buffer InstanceInfo_ { InstanceInfo infos[]; } info_;
+layout (binding = 3, scalar) buffer MatchInstanceAddressInfo_ { MatchInstanceAddressInfo infos[]; } addr_info_;
+layout (binding = 4, scalar) buffer MyCustomData1_ { MyCustomData1 datas[]; } data1_info_;
+layout (binding = 5, scalar) buffer MyCustomData2_ { MyCustomData2 datas[]; } data2_info_;
 layout (buffer_reference, scalar) buffer VertexBuffer { MatchVertex vertices[]; };
 layout (buffer_reference, scalar) buffer IndexBuffer { MatchIndex indices[]; };
 
@@ -38,9 +39,12 @@ hitAttributeEXT vec3 attribs;
 
 void main() {
     // 获取命中的模型的信息
-    InstanceInfo instance_info = info_.infos[gl_InstanceCustomIndexEXT];
-    VertexBuffer vertex_bufer = VertexBuffer(instance_info.address_info.vertex_buffer_address);
-    IndexBuffer index_buffer = IndexBuffer(instance_info.address_info.index_buffer_address);
+    MatchInstanceAddressInfo address_info = addr_info_.infos[gl_InstanceCustomIndexEXT];
+    MyCustomData1 data1 = data1_info_.datas[gl_InstanceCustomIndexEXT];
+    MyCustomData2 data2 = data2_info_.datas[gl_InstanceCustomIndexEXT];
+
+    VertexBuffer vertex_bufer = VertexBuffer(address_info.vertex_buffer_address);
+    IndexBuffer index_buffer = IndexBuffer(address_info.index_buffer_address);
     
     // 获取命中的三角形的顶点信息
     MatchIndex idx = index_buffer.indices[gl_PrimitiveID];
@@ -63,7 +67,7 @@ void main() {
     vec3 L = normalize(constant.pos - pos);
     float D = length(constant.pos - pos);
     // 舍弃了一点光照的正确,换来一点亮度
-    ray_color = vec3(instance_info.my_data.color) * 0.3 + constant.color * max(dot(L, normal), 0) * constant.intensity / (D);
+    ray_color = vec3(data1.color) * data2.color_scale + (1 - data2.color_scale) * constant.color * max(dot(L, normal), 0) * constant.intensity / (D);
 
     // 计算阴影
     is_in_shadow = true;

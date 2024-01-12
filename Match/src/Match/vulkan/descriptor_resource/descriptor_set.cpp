@@ -225,7 +225,7 @@ namespace Match {
         return bind_storage_images(binding, { storage_image });
     }
  
-    DescriptorSet &DescriptorSet::bind_ray_tracing_instance_collects(uint32_t binding, const std::vector<std::shared_ptr<RayTracingInstanceCollectBase>> &instance_collects) {
+    DescriptorSet &DescriptorSet::bind_ray_tracing_instance_collects(uint32_t binding, const std::vector<std::shared_ptr<RayTracingInstanceCollect>> &instance_collects) {
         auto layout_binding = get_layout_binding(binding);
         if (layout_binding.descriptorType != vk::DescriptorType::eAccelerationStructureKHR) {
             MCH_ERROR("Binding {} is not a acceleration struction descriptor", binding)
@@ -252,7 +252,7 @@ namespace Match {
         return *this;
     }
 
-    DescriptorSet &DescriptorSet::bind_ray_tracing_instance_collect(uint32_t binding, std::shared_ptr<RayTracingInstanceCollectBase> instance_collect) {
+    DescriptorSet &DescriptorSet::bind_ray_tracing_instance_collect(uint32_t binding, std::shared_ptr<RayTracingInstanceCollect> instance_collect) {
         return bind_ray_tracing_instance_collects(binding, { instance_collect });
     }
 }

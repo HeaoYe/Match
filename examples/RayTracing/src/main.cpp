@@ -68,7 +68,7 @@ public:
         auto [width, height] = Match::runtime_setting->get_window_size();
         image = factory->create_storage_image(width, height, vk::Format::eR32G32B32A32Sfloat);
         ds->bind_storage_image(1, image);
-        ds->bind_storage_buffer(2, instance_collect->get_instance_infos_bufer());
+        ds->bind_storage_buffer(2, instance_collect->get_instance_address_info_buffer());
         callback_id = renderer->register_resource_recreate_callback([this]() {
             image.reset();
             auto [width, height] = Match::runtime_setting->get_window_size();
@@ -189,7 +189,7 @@ public:
         // instance = factory->create_ray_tracing_instance({ model, model2 });
         // 只包含一个模型
         instance_collect = factory->create_ray_tracing_instance_collect();
-        instance_collect->add_instance(0, model)
+        instance_collect->add_instance(0, model, glm::mat4(1))
             .build();
 
         // 上传模型顶点数据到缓存，光栅化渲染用

@@ -41,8 +41,8 @@ namespace Match {
         DescriptorSet &bind_storage_buffer(uint32_t binding, std::shared_ptr<StorageBuffer> storage_buffer);
         DescriptorSet &bind_storage_images(uint32_t binding, const std::vector<std::shared_ptr<StorageImage>> &storage_images);
         DescriptorSet &bind_storage_image(uint32_t binding, std::shared_ptr<StorageImage> storage_image);
-        DescriptorSet &bind_ray_tracing_instance_collects(uint32_t binding, const std::vector<std::shared_ptr<RayTracingInstanceCollectBase>> &collects);
-        DescriptorSet &bind_ray_tracing_instance_collect(uint32_t binding, std::shared_ptr<RayTracingInstanceCollectBase> collect);
+        DescriptorSet &bind_ray_tracing_instance_collects(uint32_t binding, const std::vector<std::shared_ptr<RayTracingInstanceCollect>> &collects);
+        DescriptorSet &bind_ray_tracing_instance_collect(uint32_t binding, std::shared_ptr<RayTracingInstanceCollect> collect);
         ~DescriptorSet();
         bool is_allocated() const { return allocated; }
     INNER_VISIBLE:

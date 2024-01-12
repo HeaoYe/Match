@@ -30,10 +30,15 @@ void RayTracingScene::initialize() {
 
     // 使用光追实例管理渲染的模型
     // 不再在创建光追实例时传入模型信息
-    // 创建携带MyCustomData的实例集合
-    instance_collect = factory->create_ray_tracing_instance_collect<MyCustomData>();
-    // 使用add_instance添加模型,添加时要指定添加到的组,以及CustomInstanceInfo(如果有的话)
-    instance_collect->add_instance(0, model1, MyCustomData { .color = glm::vec3(1, 1, 1) });  // index = 0
+    // 创建实例集合
+    instance_collect = factory->create_ray_tracing_instance_collect();
+    // 为实例集合注册自定义数据
+    // 可以注册多个
+    instance_collect->register_custom_instance_info<MyCustomData1>();
+    instance_collect->register_custom_instance_info<MyCustomData2>();
+    // 使用add_instance添加模型,添加时要指定添加到的组,以及模型变换到世界空间的矩阵
+    // 使用add_instance添加模型,在参数列表的最后添加自定义数据,不指定的话会调用默认构造添加自定义数据
+    instance_collect->add_instance(0, model1, glm::mat4(1), MyCustomData2 { .color_scale = 0.3f });  // index = 0
     // 实例化渲染500条中国龙
     // 很明显的渲染错误
     std::random_device device;
@@ -50,14 +55,14 @@ void RayTracingScene::initialize() {
             pos, rotate_vector, start_angle, scale,
         });
         auto transform_mat = glm::translate(pos) * glm::rotate(start_angle, rotate_vector) * glm::scale(glm::mat4(1), glm::vec3(scale));
-        auto my_data = MyCustomData {
+        auto my_data = MyCustomData1 {
             .color = {
                 color_distribution(generator),
                 color_distribution(generator),
                 color_distribution(generator),
             }
         };
-        instance_collect->add_instance(1, model2, my_data, transform_mat);
+        instance_collect->add_instance(1, model2, transform_mat, my_data, MyCustomData2 { .color_scale = 0.5f });
     }
     // 使用build构建光追实例的加速结构
     instance_collect->build();
@@ -84,6 +89,9 @@ void RayTracingScene::initialize() {
         { Match::ShaderStage::eRaygen, 2, Match::DescriptorType::eUniform },
         // 模型的VertexBuffer和IndexBuffer的地址信息
         { Match::ShaderStage::eClosestHit, 3, Match::DescriptorType::eStorageBuffer },
+        // 模型的自定义数据信息,每种自定义数据都需要用单独的一个StorageBuffer传入着色器
+        { Match::ShaderStage::eClosestHit, 4, Match::DescriptorType::eStorageBuffer },  // MyCustomData1
+        { Match::ShaderStage::eClosestHit, 5, Match::DescriptorType::eStorageBuffer },  // MyCustomData2
     });
 
     ray_tracing_shader_program_constants = factory->create_push_constants(
@@ -117,10 +125,11 @@ void RayTracingScene::initialize() {
     // 将需要渲染的模型传入光线发射器
     ray_tracing_shader_program_ds->bind_ray_tracing_instance_collect(1, instance_collect);
     ray_tracing_shader_program_ds->bind_uniform(2, camera->uniform);
-    // get_instance_addresses_bufer改名为get_instance_infos_bufer
     // 默认实例的数据是该实例对应模型的VertexBuffer和IndexBuffer的地址
-    // 可以自定义实例的数据,并通过instance_infos_buffer传递给着色器
-    ray_tracing_shader_program_ds->bind_storage_buffer(3, instance_collect->get_instance_infos_bufer());
+    ray_tracing_shader_program_ds->bind_storage_buffer(3, instance_collect->get_instance_address_info_buffer());
+    // 绑定自定义数据的缓存
+    ray_tracing_shader_program_ds->bind_storage_buffer(4, instance_collect->get_custom_data_buffer<MyCustomData1>());
+    ray_tracing_shader_program_ds->bind_storage_buffer(5, instance_collect->get_custom_data_buffer<MyCustomData2>());
 
     // 基础光栅化资源初始化
     auto vert_shader = factory->compile_shader("ray_tracing_shader/shader.vert", Match::ShaderStage::eVertex);
@@ -154,12 +163,17 @@ void RayTracingScene::update(float dt) {
 
     // 以组为单位更新
     // 更新自定义实例数据
-    instance_collect->update_custom_infos(0, [&](uint32_t index, auto &my_data) {
+    // 借用了ecs的思想,每个实例是 实体(E) 每种自定义实例数据都是组件(C) instance_collect是更新所有实体的某一组件的系统(S)
+    // 每种自定义实例数据都有自己的缓存,更新时以组为单位,更新该组某个类型的自定义实例数据
+    instance_collect->update<MyCustomData1>(0, [&](uint32_t index, MyCustomData1 &my_data) {
         my_data.color = {
             (std::cos(time + 2 * 3.1415926535f * 1 / 3) + 1) / 2,
             (std::cos(time + 2 * 3.1415926535f * 2 / 3) + 1) / 2,
             (std::cos(time + 2 * 3.1415926535f * 3 / 3) + 1) / 2,
         };
+    });
+    instance_collect->update<MyCustomData2>(1, [&](uint32_t index, auto &my_data) {
+        my_data.color_scale = (std::cos(time) + 1) / 2;
     });
     instance_collect->update(1, [&](uint32_t index, auto set_transform) {
         auto [pos, rotate_vector, start_angle, scale] = instance_transform_infos.at(index);
