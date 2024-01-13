@@ -85,19 +85,16 @@ namespace Match {
     }
 
     RayTracingInstanceCollect &RayTracingInstanceCollect::update(uint32_t group, UpdateCallback update_callback) {
-        multithread_update(group, [&](uint32_t batch_begin, uint32_t batch_end) {
-            auto *acceleration_struction_instance_infos_ptr = static_cast<vk::AccelerationStructureInstanceKHR *>(acceleration_struction_instance_infos_buffer->map());
-            for (uint32_t i = 0; i < batch_begin; i ++) {
-                acceleration_struction_instance_infos_ptr ++;
-            }
+        multithread_update(group, [&](uint32_t in_group_index, uint32_t batch_begin, uint32_t batch_end) {
+            auto *acceleration_struction_instance_infos_ptr = static_cast<vk::AccelerationStructureInstanceKHR *>(acceleration_struction_instance_infos_buffer->data_ptr);
+            acceleration_struction_instance_infos_ptr += batch_begin;
             InterfaceSetTransform interface_set_transform = [&](const glm::mat4 &transform_matrix) {
                 acceleration_struction_instance_infos_ptr->setTransform(transform<vk::TransformMatrixKHR, const glm::mat4 &>(transform_matrix));
             };
-            uint32_t index = 0;
             while (batch_begin < batch_end) {
-                update_callback(index, interface_set_transform);
+                update_callback(in_group_index, interface_set_transform);
                 acceleration_struction_instance_infos_ptr ++;
-                index ++;
+                in_group_index ++;
                 batch_begin ++;
             }
         });
@@ -166,11 +163,13 @@ namespace Match {
         uint32_t end = begin + group_info.instance_count;
 
         std::vector<std::thread> thread_pool;
+        uint32_t in_group_index = 0;
         while (begin < end) {
             uint32_t batch_end = std::min(begin + 500, end);
             thread_pool.emplace_back([&]() {
-                update_batch_callback(begin, batch_end);
+                update_batch_callback(in_group_index, begin, batch_end);
             });
+            in_group_index += 500;
             begin = batch_end;
         }
         for (auto &thread : thread_pool) {

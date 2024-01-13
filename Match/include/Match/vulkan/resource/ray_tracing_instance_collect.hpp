@@ -28,7 +28,7 @@ namespace Match {
             uint32_t instance_count;
             std::vector<std::pair<std::shared_ptr<Model>, glm::mat4>> instance_create_infos;
         };
-        using UpdateBatchCallback = std::function<void(uint32_t, uint32_t)>;
+        using UpdateBatchCallback = std::function<void(uint32_t, uint32_t, uint32_t)>;
         using InterfaceSetTransform = std::function<void(const glm::mat4 &)>;
         using UpdateCallback = std::function<void(uint32_t, InterfaceSetTransform)>;
         template <class CustomInstanceInfo>
@@ -149,14 +149,13 @@ namespace Match {
 
     template <class CustomInstanceInfo>
     RayTracingInstanceCollect &RayTracingInstanceCollect::update(uint32_t group, UpdateCustomInfoCallback<CustomInstanceInfo> update_callback) {
-        multithread_update(group, [&](uint32_t batch_begin, uint32_t batch_end) {
+        multithread_update(group, [&](uint32_t in_group_index, uint32_t batch_begin, uint32_t batch_end) {
             auto *custom_info_ptr = static_cast<std::remove_reference_t<CustomInstanceInfo> *>(instance_infos_buffer_map[get_class_hash_code<CustomInstanceInfo>()].buffer->map());
-            for (uint32_t i = 0; i < batch_begin; i ++) {
-                custom_info_ptr ++;
-            }
+            custom_info_ptr += batch_begin;
             while (batch_begin < batch_end) {
-                update_callback(batch_begin, *custom_info_ptr);
+                update_callback(in_group_index, *custom_info_ptr);
                 custom_info_ptr ++;
+                in_group_index ++;
                 batch_begin ++;
             }
         });
