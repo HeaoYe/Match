@@ -168,6 +168,9 @@ namespace Match {
         _case(vk::DescriptorType, eCombinedImageSampler, DescriptorType, eTexture)
         _case(vk::DescriptorType, eCombinedImageSampler, DescriptorType, eTextureAttachment)
         _case(vk::DescriptorType, eInputAttachment, DescriptorType, eInputAttachment)
+        _case(vk::DescriptorType, eStorageBuffer, DescriptorType, eStorageBuffer)
+        _case(vk::DescriptorType, eStorageImage, DescriptorType, eStorageImage)
+        _case(vk::DescriptorType, eAccelerationStructureKHR, DescriptorType, eRayTracingInstance)
         }
     }
 
@@ -220,5 +223,18 @@ namespace Match {
         _case(vk::SampleCountFlagBits, e32, SampleCount, e32)
         _case(vk::SampleCountFlagBits, e64, SampleCount, e64)
         }
+    }
+ 
+    template <>
+    vk::ShaderStageFlags transform<vk::ShaderStageFlags>(ShaderStages stages) {
+        return vk::ShaderStageFlags (static_cast<uint32_t>(stages));
+    }
+
+    template <>
+    vk::TransformMatrixKHR transform<vk::TransformMatrixKHR>(const glm::mat4 &matrix) {
+        vk::TransformMatrixKHR result;
+        auto matrix_t = glm::transpose(matrix);
+        memcpy(&result, &matrix_t, sizeof(vk::TransformMatrixKHR));
+        return result;
     }
 }

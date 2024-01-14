@@ -5,8 +5,13 @@ Camera::Camera(Match::ResourceFactory &factory) {
     uniform = factory.create_uniform_buffer(sizeof(CameraUniform));
     yaw = 0;
     pitch = 0;
-    data.project = glm::perspective(glm::radians(60.0f), (float) Match::setting.window_size[0] / (float) Match::setting.window_size[1], 0.1f, 100.0f);
+    update_aspect();
     upload_data();
+}
+
+void Camera::update_aspect() {
+    auto [width, height] = Match::runtime_setting->get_window_size();
+    data.project = glm::perspective(glm::radians(60.0f), (float) width / (float) height, 0.1f, 100.0f);
 }
 
 void Camera::upload_data() {

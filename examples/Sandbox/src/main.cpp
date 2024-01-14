@@ -62,8 +62,12 @@ int main() {
         // auto vert_shader = factory->load_shader("vert.spv");
         // auto frag_shader = factory->load_shader("frag.spv");
         // 动态编译Shader文件
-        auto vert_shader = factory->load_shader("shader.vert", Match::ShaderType::eVertexShaderNeedCompile);
-        auto frag_shader = factory->load_shader("shader.frag", Match::ShaderType::eFragmentShaderNeedCompile);
+        // 加载预编译的Shader
+        // factory->load_shader("xxx.spv");
+        // 编译Shader文件
+        // factory->compile_shader("xxx.vert", ShaderStage)
+        auto vert_shader = factory->compile_shader("shader.vert", Match::ShaderStage::eVertex);
+        auto frag_shader = factory->compile_shader("shader.frag", Match::ShaderStage::eFragment);
         
         // 创建顶点数据结构体
         struct Vertex {
@@ -120,31 +124,44 @@ int main() {
             }
         });
 
-        // 资源描述符的绑定由Shader完成，因为资源描述符与Shader文件有关，与ShaderProgram无关
-        // 为vertex shader添加Uniform描述符
-        vert_shader->bind_descriptors({
-            // { binding, descriptor type, (descriptor count) }
-            // 不再需要UniformSize作为参数，因为描述符与资源无关
-            // 可以指定Descriptor的数量
-            { 0, Match::DescriptorType::eUniform },
-            { 1, Match::DescriptorType::eUniform },
-        });
-        // 为vertex shader添加push constants描述
-        vert_shader->bind_push_constants({
-            { "pad", Match::ConstantType::eFloat },
-            { "t", Match::ConstantType::eFloat },
-        });
-        // 为fragment shader添加Texture描述符
-        frag_shader->bind_descriptors({
-            { 2, Match::DescriptorType::eTexture }
+        // 创建DescriptorSet
+        auto descriptor_set = factory->create_descriptor_set(renderer);
+        // 添加所有Shader的描述符
+        descriptor_set->add_descriptors({
+            { Match::ShaderStage::eVertex, 0, Match::DescriptorType::eUniform },
+            { Match::ShaderStage::eVertex, 1, Match::DescriptorType::eUniform },
+            // 可以设置Descriptor的数量，默认为1
+            { Match::ShaderStage::eFragment, 2, Match::DescriptorType::eTexture, 1 }
+        }).allocate();
+        // 分配DescriptorSet，如果不显式分配的话，ShaderProgram在调用compile方法时会自动分配，只有分配过的DescriptorSet才能绑定资源到描述符
+
+        // 资源描述符的绑定由DescriptorSet完成，因为资源描述符与Shader文件有关并且能被ShaderProgram共用，与ShaderProgram无关
+        // 不再从shader处添加描述符，descriptor_set应该是能被多个ShaderProgram共用的，所以分离出来
+
+        // 创建PushConstants
+        auto push_constants = factory->create_push_constants(
+            // 指定该Constants被使用的ShaderStage
+            Match::ShaderStage::eVertex,
+            // 配置Constants的内容
+            {
+                { "pad", Match::ConstantType::eFloat },
+                { "t", Match::ConstantType::eFloat },
         });
         
         // 为renderer创建shader_program
         auto shader_program = factory->create_shader_program(renderer, "MainSubpass");
         // 绑定顶点数据描述符
-        shader_program->bind_vertex_attribute_set(vertex_attr);
+        // ShaderProgram在compile前的配置方法统一用attach前缀
+        shader_program->attach_vertex_attribute_set(vertex_attr);
         shader_program->attach_vertex_shader(vert_shader, "main");
         shader_program->attach_fragment_shader(frag_shader, "main");
+        // 添加DescriptorSet
+        shader_program->attach_descriptor_set(descriptor_set);
+        // 可自定义每个DescriptorSet绑定到第几个Set上，默认第0个
+        // shader_program->attach_descriptor_set(descriptor_set, 2);
+        // compile时会自动检查DescriptorSet有没有分配过，若没有，自动分配
+        // 绑定PushConstants，不同于DescriptorSet，一个ShaderProgram只能绑定一个PushConstants
+        shader_program->attach_push_constants(push_constants);
         shader_program->compile({
             .cull_mode = Match::CullMode::eNone,  // 取消面剔除
             .depth_test_enable = VK_TRUE,         // 启用深度测试
@@ -200,9 +217,15 @@ int main() {
         });
 
         // 将创建的资源绑定到对应的binding
-        shader_program->bind_uniforms(0, { pos_uniform });
-        shader_program->bind_uniforms(1, { color_uniform });
-        shader_program->bind_textures(2, { texture }, { sampler });
+        // 已分配的DescriptorSet才能绑定资源
+        // 可以在一个binding上绑定到多个数量的descriptor
+        // 对一默认的1个descriptor也有简化的方法
+        descriptor_set->bind_uniform(0, pos_uniform);
+        // descriptor_set->bind_uniforms(0, { pos_uniform });
+        descriptor_set->bind_uniform(1, color_uniform);
+        // descriptor_set->bind_uniforms(1, { color_uniform });
+        descriptor_set->bind_texture(2, texture, sampler);
+        // descriptor_set->bind_textures(2, { { texture, sampler } });
 
         // 或者改变深度缓存默认的深度
         // Vulkan支持的最大深度值在0到1之间，所以行不通
@@ -220,7 +243,8 @@ int main() {
             auto time = std::chrono::duration<float, std::chrono::seconds::period>(current_time-start_time).count();
 
             // 设置constants的值
-            shader_program->push_constants("t", time);
+            // 由PushConstants设置值，多个绑定着同一个PushConstants的ShaderProgram可以共享PushConstants的值
+            push_constants->push_constant("t", time);
 
             // 程序启动5秒后关闭垂直同步，关闭后帧率涨到3000FPS
             static bool flag = true;

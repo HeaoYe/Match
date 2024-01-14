@@ -34,24 +34,19 @@ void DragonScene::initialize() {
 
     renderer->set_clear_value(Match::SWAPCHAIN_IMAGE_ATTACHMENT, { { 0.3f, 0.5f, 0.7f, 1.0f } });
 
-    auto vert_shader = factory->load_shader("dragon_shader/main_subpass.vert", Match::ShaderType::eVertexShaderNeedCompile);
-    vert_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eUniform },  // Camera
+    auto vert_shader = factory->compile_shader("dragon_shader/main_subpass.vert", Match::ShaderStage::eVertex);
+    auto frag_shader = factory->compile_shader("dragon_shader/main_subpass.frag", Match::ShaderStage::eFragment);
+    auto shader_program_ds = factory->create_descriptor_set(renderer);
+    shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eVertex, 0, Match::DescriptorType::eUniform }
     });
-    auto frag_shader = factory->load_shader("dragon_shader/main_subpass.frag", Match::ShaderType::eFragmentShaderNeedCompile);
     shader_program = factory->create_shader_program(renderer, "main");
     shader_program->attach_vertex_shader(vert_shader, "main");
     shader_program->attach_fragment_shader(frag_shader, "main");
+    shader_program->attach_descriptor_set(shader_program_ds);
+    // 集成了模型的顶点输入格式
     auto vas = factory->create_vertex_attribute_set({
-        {
-            .binding = 0,
-            .rate = Match::InputRate::ePerVertex,
-            .attributes = {
-                Match::VertexType::eFloat3,  // in_pos
-                Match::VertexType::eFloat3,  // in_normal
-                Match::VertexType::eFloat3,  // in_color
-            }
-        },
+        Match::Vertex::generate_input_binding(0),
         {
             .binding = 1,
             .rate = Match::InputRate::ePerInstance,
@@ -60,43 +55,49 @@ void DragonScene::initialize() {
             },
         }
     });
-    shader_program->bind_vertex_attribute_set(vas);
+    shader_program->attach_vertex_attribute_set(vas);
     shader_program->compile({
         .cull_mode = Match::CullMode::eBack,
         .front_face = Match::FrontFace::eCounterClockwise,
         .depth_test_enable = VK_TRUE,
     });
 
-    auto post_vert_shader = factory->load_shader("dragon_shader/post_subpass.vert", Match::ShaderType::eVertexShaderNeedCompile);
-    auto post_frag_shader = factory->load_shader("dragon_shader/post_subpass.frag", Match::ShaderType::eFragmentShaderNeedCompile);
-    post_frag_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eInputAttachment, 3 },
-        { 1, Match::DescriptorType::eUniform },
-        { 2, Match::DescriptorType::eUniform },
+    auto post_vert_shader = factory->compile_shader("dragon_shader/post_subpass.vert", Match::ShaderStage::eVertex);
+    auto post_frag_shader = factory->compile_shader("dragon_shader/post_subpass.frag", Match::ShaderStage::eFragment);
+    auto post_shader_program_ds = factory->create_descriptor_set(renderer);
+    post_shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eFragment, 0, Match::DescriptorType::eInputAttachment, 3 },
+        { Match::ShaderStage::eFragment, 1, Match::DescriptorType::eUniform },
+        { Match::ShaderStage::eFragment, 2, Match::DescriptorType::eUniform },
     });
     post_shader_program = factory->create_shader_program(renderer, "post");
     post_shader_program->attach_vertex_shader(post_vert_shader, "main");
     post_shader_program->attach_fragment_shader(post_frag_shader, "main");
+    post_shader_program->attach_descriptor_set(post_shader_program_ds);
     post_shader_program->compile({
         .cull_mode = Match::CullMode::eNone,
         .depth_test_enable = VK_FALSE,
     });
     auto sampler = factory->create_sampler();
-    post_shader_program->bind_input_attachments(
+    // 在一个binding上绑定到多个descriptor
+    post_shader_program_ds->bind_input_attachments(
         0,
-        { "PosBuffer", "NormalBuffer", "ColorBuffer" },
-        { sampler, sampler, sampler }
+        {
+            { "PosBuffer", sampler },
+            { "NormalBuffer", sampler },
+            { "ColorBuffer", sampler }
+        }
     );
 
     camera = std::make_unique<Camera>(*factory);
-    shader_program->bind_uniforms(0, { camera->uniform });
-    post_shader_program->bind_uniforms(1, { camera->uniform });
+    shader_program_ds->bind_uniform(0, camera->uniform);
+    post_shader_program_ds->bind_uniform(1, camera->uniform);
 
     light = std::make_unique<LightController>(factory);
     light->data->lights[0].pos = { 1, 1, 1 };
     light->data->lights[0].color = { 1, 1, 1 };
     light->data->num = 1;
-    post_shader_program->bind_uniforms(2, { light->uniform });
+    post_shader_program_ds->bind_uniform(2, light->uniform);
 
     int n = 8, n2 = n / 2;
     offsets.reserve(n * n * n);
@@ -107,13 +108,12 @@ void DragonScene::initialize() {
     camera->data.pos = { 0, 0, -n - 5 };
     camera->upload_data();
 
-    load_model("dragon.obj");
-    vertex_buffer = factory->create_vertex_buffer(sizeof(Vertex), vertices.size());
-    vertex_buffer->upload_data_from_vector(vertices);
+    model = factory->load_model("dragon.obj");
+    vertex_buffer = factory->create_vertex_buffer(sizeof(Match::Vertex), model->get_index_count());
+    index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, model->get_index_count());
+    model->upload_data(vertex_buffer, index_buffer);
     offset_buffer = factory->create_vertex_buffer(sizeof(glm::vec3), offsets.size());
     offset_buffer->upload_data_from_vector(offsets);
-    index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, indices.size());
-    index_buffer->upload_data_from_vector(indices);
 }
 
 void DragonScene::update(float delta) {
@@ -128,19 +128,19 @@ void DragonScene::render() {
     renderer->bind_shader_program(shader_program);
     renderer->bind_vertex_buffers({ vertex_buffer, offset_buffer });
     renderer->bind_index_buffer(index_buffer);
-    renderer->draw_indexed(indices.size(), offsets.size(), 0, 0, 0);
+    renderer->draw_model(model, offsets.size(), 0);
     renderer->next_subpass();
     renderer->bind_shader_program(post_shader_program);
     renderer->draw_indexed(3, 2, 0, 0, 0);
 }
 
 void DragonScene::render_imgui() {
-    ImGui::Text("Vertex Count: %d", (int) vertices.size());
-    ImGui::Text("Index Count: %d", (int) indices.size());
+    ImGui::Text("Vertex Count: %d", (int) model->get_vertex_count());
+    ImGui::Text("Index Count: %d", (int) model->get_index_count());
     // 每一个龙有87w个三角形
-    ImGui::Text("Triangle Count: %d", (int) (indices.size() / 3));
+    ImGui::Text("Triangle Count: %d", (int) (model->get_index_count() / 3));
     // 512个龙共有4.4亿个三角形
-    ImGui::Text("All Triangle Count: %d", (int) ((indices.size() / 3) * offsets.size()));
+    ImGui::Text("All Triangle Count: %d", (int) ((model->get_index_count() / 3) * offsets.size()));
     ImGui::Text("Current FPS: %f", ImGui::GetIO().Framerate);
 
     ImGui::Separator();

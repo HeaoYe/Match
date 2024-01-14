@@ -11,6 +11,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 file(GLOB_RECURSE source CONFIGURE_DEPENDS src/Match/*.cpp)
 add_library(Match SHARED ${source})
 
+# Link tinyobjloader
+target_link_libraries(Match PRIVATE tinyobjloader)
+
+# Link glm
+target_link_libraries(Match PUBLIC glm::glm)
+
 # Link KTX-Software
 target_link_libraries(Match PRIVATE ktx)
 
@@ -26,7 +32,9 @@ target_include_directories(Match PUBLIC include)
 
 # Link Render API
 target_link_libraries(Match PUBLIC Vulkan::Vulkan)
-target_link_libraries(Match PUBLIC shaderc)
 target_link_libraries(Match PUBLIC VulkanMemoryAllocator)
+
+# Link Shaderc
+target_link_libraries(Match PRIVATE shaderc_shared)
 
 target_compile_definitions(Match PRIVATE MATCH_INNER_VISIBLE)

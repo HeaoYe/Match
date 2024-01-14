@@ -5,11 +5,14 @@
 #include <set>  // IWYU pragma: export
 #include <memory>  // IWYU pragma: export
 #include <string>  // IWYU pragma: export
+#include <glm/glm.hpp>  // IWYU pragma: export
 
 #if defined (MATCH_INNER_VISIBLE)
     #define INNER_VISIBLE public
+    #define INNER_PROTECT public
 #else
     #define INNER_VISIBLE private
+    #define INNER_PROTECT protected
 #endif
 
 namespace Match {

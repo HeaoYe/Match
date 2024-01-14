@@ -41,15 +41,18 @@ void SSAOScene::initialize() {
     // 设置NormalBuffer的ClearValue，将最后一个Float清零
     renderer->set_clear_value("NormalBuffer", { { 0.0f, 0.0f, 0.0f, 0.0f } });
 
+    auto prepare_shader_program_ds = factory->create_descriptor_set(renderer);
+    auto ssao_shader_program_ds = factory->create_descriptor_set(renderer);
+    auto main_shader_program_ds = factory->create_descriptor_set(renderer);
     prepare_shader_program = factory->create_shader_program(renderer, "prepare");
     ssao_shader_program = factory->create_shader_program(renderer, "ssao");
     main_shader_program = factory->create_shader_program(renderer, "main");
 
-    auto prepare_vert_shader = factory->load_shader("ssao_shader/prepare.vert", Match::ShaderType::eVertexShaderNeedCompile);
-    auto prepare_frag_shader = factory->load_shader("ssao_shader/prepare.frag", Match::ShaderType::eFragmentShaderNeedCompile);
-    auto deferred_vert_shader = factory->load_shader("ssao_shader/deferred.vert", Match::ShaderType::eVertexShaderNeedCompile);
-    auto ssao_frag_shader = factory->load_shader("ssao_shader/ssao.frag", Match::ShaderType::eFragmentShaderNeedCompile);
-    auto main_frag_shader = factory->load_shader("ssao_shader/main.frag", Match::ShaderType::eFragmentShaderNeedCompile);
+    auto prepare_vert_shader = factory->compile_shader("ssao_shader/prepare.vert", Match::ShaderStage::eVertex);
+    auto prepare_frag_shader = factory->compile_shader("ssao_shader/prepare.frag", Match::ShaderStage::eFragment);
+    auto deferred_vert_shader = factory->compile_shader("ssao_shader/deferred.vert", Match::ShaderStage::eVertex);
+    auto ssao_frag_shader = factory->compile_shader("ssao_shader/ssao.frag", Match::ShaderStage::eFragment);
+    auto main_frag_shader = factory->compile_shader("ssao_shader/main.frag", Match::ShaderStage::eFragment);
     auto vas = factory->create_vertex_attribute_set({
         {
             .binding = 0,
@@ -61,42 +64,47 @@ void SSAOScene::initialize() {
             }
         }
     });
-    Match::ShaderProgramCompileOptions deferred_option {
+    Match::GraphicsShaderProgramCompileOptions deferred_option {
         .cull_mode = Match::CullMode::eNone,
         .depth_test_enable = VK_FALSE,
     };
 
-    prepare_vert_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eUniform },
+    prepare_shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eVertex, 0, Match::DescriptorType::eUniform },
     });
-    ssao_frag_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eTextureAttachment },
-        { 1, Match::DescriptorType::eInputAttachment },
-        { 2, Match::DescriptorType::eUniform },
-        { 3, Match::DescriptorType::eTexture },
-        { 4, Match::DescriptorType::eUniform },
+    ssao_shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eFragment, 0, Match::DescriptorType::eTextureAttachment },
+        { Match::ShaderStage::eFragment, 1, Match::DescriptorType::eInputAttachment },
+        { Match::ShaderStage::eFragment, 2, Match::DescriptorType::eUniform },
+        { Match::ShaderStage::eFragment, 3, Match::DescriptorType::eTexture },
+        { Match::ShaderStage::eFragment, 4, Match::DescriptorType::eUniform },
     });
-    ssao_frag_shader->bind_push_constants({
-        { "window_size", Match::ConstantType::eFloat2 },
-        { "a", Match::ConstantType::eInt32 },
-        { "sample_count", Match::ConstantType::eInt32 },
-        { "r", Match::ConstantType::eFloat },
+    ssao_shader_program_constants = factory->create_push_constants(
+        Match::ShaderStage::eFragment,
+        {
+            { "window_size", Match::ConstantType::eFloat2 },
+            { "a", Match::ConstantType::eInt32 },
+            { "sample_count", Match::ConstantType::eInt32 },
+            { "r", Match::ConstantType::eFloat },
+        });
+    main_shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eFragment, 0, Match::DescriptorType::eInputAttachment },
+        { Match::ShaderStage::eFragment, 1, Match::DescriptorType::eInputAttachment },
+        { Match::ShaderStage::eFragment, 2, Match::DescriptorType::eTextureAttachment },
     });
-    main_frag_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eInputAttachment },
-        { 1, Match::DescriptorType::eInputAttachment },
-        { 2, Match::DescriptorType::eTextureAttachment },
-    });
-    main_frag_shader->bind_push_constants({
-        { "window_size", Match::ConstantType::eFloat2 },
-        { "ssao_enable", Match::ConstantType::eInt32 },
-        { "blur_kernel_size", Match::ConstantType::eInt32 },
-    });
+    main_shader_program_constants = factory->create_push_constants(
+        Match::ShaderStage::eFragment,
+        {
+            { "window_size", Match::ConstantType::eFloat2 },
+            { "ssao_enable", Match::ConstantType::eInt32 },
+            { "blur_kernel_size", Match::ConstantType::eInt32 },
+        });
 
     // entry默认为"main"
     prepare_shader_program->attach_vertex_shader(prepare_vert_shader);
     prepare_shader_program->attach_fragment_shader(prepare_frag_shader);
-    prepare_shader_program->bind_vertex_attribute_set(vas);
+    prepare_shader_program->attach_vertex_attribute_set(vas);
+    prepare_shader_program->attach_descriptor_set(prepare_shader_program_ds);
     prepare_shader_program->compile({
         .cull_mode = Match::CullMode::eBack,
         .front_face = Match::FrontFace::eCounterClockwise,
@@ -105,33 +113,39 @@ void SSAOScene::initialize() {
 
     ssao_shader_program->attach_vertex_shader(deferred_vert_shader);
     ssao_shader_program->attach_fragment_shader(ssao_frag_shader);
+    ssao_shader_program->attach_descriptor_set(ssao_shader_program_ds);
+    ssao_shader_program->attach_push_constants(ssao_shader_program_constants);
     ssao_shader_program->compile(deferred_option);
 
     main_shader_program->attach_vertex_shader(deferred_vert_shader);
     main_shader_program->attach_fragment_shader(main_frag_shader);
+    main_shader_program->attach_descriptor_set(main_shader_program_ds);
+    main_shader_program->attach_push_constants(main_shader_program_constants);
     main_shader_program->compile(deferred_option);
 
     camera = std::make_unique<Camera>(*factory);
     camera->data.pos = { 0, 0, -3 };
     camera->upload_data();
-    prepare_shader_program->bind_uniforms(0, { camera->uniform });
+    prepare_shader_program_ds->bind_uniform(0, camera->uniform);
 
     auto sampler = factory->create_sampler({
         .address_mode_u = Match::SamplerAddressMode::eRepeat,
         .address_mode_v = Match::SamplerAddressMode::eRepeat,
     });
-    ssao_shader_program->bind_input_attachments(0, { "PosBuffer" }, { sampler });
-    ssao_shader_program->bind_input_attachments(1, { "NormalBuffer" }, { sampler });
-    main_shader_program->bind_input_attachments(0, { "PosBuffer" }, { sampler });
-    main_shader_program->bind_input_attachments(1, { "NormalBuffer" }, { sampler });
-    main_shader_program->bind_input_attachments(2, { "SSAOBuffer" }, { sampler });
+    ssao_shader_program_ds->bind_input_attachment(0, "PosBuffer", sampler);
+    ssao_shader_program_ds->bind_input_attachment(1, "NormalBuffer", sampler);
+    main_shader_program_ds->bind_input_attachment(0, "PosBuffer", sampler);
+    main_shader_program_ds->bind_input_attachment(1, "NormalBuffer", sampler);
+    main_shader_program_ds->bind_input_attachment(2, "SSAOBuffer", sampler);
 
-    // load_model("dragon.obj");
-    load_model("mori_knob.obj");
-    vertex_buffer = factory->create_vertex_buffer(sizeof(Vertex), vertices.size());
-    vertex_buffer->upload_data_from_vector(vertices);
-    index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, indices.size());
-    index_buffer->upload_data_from_vector(indices);
+    // 加载模型
+    // model = factory->load_model("dragon.obj");
+    model = factory->load_model("mori_knob.obj");
+    // 创建buffer
+    vertex_buffer = factory->create_vertex_buffer(sizeof(Match::Vertex), model->get_vertex_count());
+    index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, model->get_index_count());
+    // 上传数据
+    model->upload_data(vertex_buffer, index_buffer);
 
     std::uniform_real_distribution<float> float_distribution(0, 1);
     std::default_random_engine engine;
@@ -139,7 +153,7 @@ void SSAOScene::initialize() {
     // 随机旋转纹理的边长
     const int a = 4;
     std::vector<glm::vec4> ssao_random_vecs(a * a);
-    ssao_shader_program->push_constants("a", a);
+    ssao_shader_program_constants->push_constant("a", a);
 
     for (auto &sample : ssao_samples) {
         sample = glm::normalize(glm::vec4(
@@ -167,10 +181,10 @@ void SSAOScene::initialize() {
     memcpy(ssao_samples_uniform_buffer->get_uniform_ptr(), ssao_samples.data(), sizeof(glm::vec4) * ssao_samples.size());
     ssao_random_vecs_texture = factory->create_texture(reinterpret_cast<uint8_t *>(ssao_random_vecs.data()), a, a);
 
-    ssao_shader_program->bind_uniforms(2, { ssao_samples_uniform_buffer });
+    ssao_shader_program_ds->bind_uniform(2, ssao_samples_uniform_buffer);
     // ssao_random_vecs_texture的sampler的address_mode_uv需要设置为Repeat
-    ssao_shader_program->bind_textures(3, { ssao_random_vecs_texture }, { sampler });
-    ssao_shader_program->bind_uniforms(4, { camera->uniform });
+    ssao_shader_program_ds->bind_texture(3, ssao_random_vecs_texture, sampler);
+    ssao_shader_program_ds->bind_uniform(4, camera->uniform);
 }
 
 void SSAOScene::update(float dt) {
@@ -180,15 +194,16 @@ void SSAOScene::update(float dt) {
         static_cast<float>(usize.width),
         static_cast<float>(usize.height),
     };
-    ssao_shader_program->push_constants("window_size", &size);
-    main_shader_program->push_constants("window_size", &size);
+    ssao_shader_program_constants->push_constant("window_size", &size);
+    main_shader_program_constants->push_constant("window_size", &size);
 }
 
 void SSAOScene::render() {
     renderer->bind_shader_program(prepare_shader_program);
     renderer->bind_vertex_buffer(vertex_buffer);
     renderer->bind_index_buffer(index_buffer);
-    renderer->draw_indexed(indices.size(), 1, 0, 0, 0);
+    // 绘制模型
+    renderer->draw_model(model, 1, 0);
 
     renderer->next_subpass();
     renderer->bind_shader_program(ssao_shader_program);
@@ -204,21 +219,20 @@ void SSAOScene::render_imgui() {
 
     static int sample_count = 32;
     ImGui::SliderInt("Sample Count", &sample_count, 1, 64);
-    ssao_shader_program->push_constants("sample_count", sample_count);
+    ssao_shader_program_constants->push_constant("sample_count", sample_count);
 
     static float r = 0.4f;
     ImGui::SliderFloat("R", &r, 0.01, 10);
-    ssao_shader_program->push_constants("r", r);
+    ssao_shader_program_constants->push_constant("r", r);
 
     static int blur_kernel_size = 4;
     ImGui::SliderInt("Blur Kernel Size", &blur_kernel_size, 1, 16);
-    main_shader_program->push_constants("blur_kernel_size", blur_kernel_size);
+    main_shader_program_constants->push_constant("blur_kernel_size", blur_kernel_size);
 
     static bool ssao_enable = 0;
     ImGui::Checkbox("Enable SSAO", &ssao_enable);
-    main_shader_program->push_constants("ssao_enable", static_cast<int>(ssao_enable));
+    main_shader_program_constants->push_constant("ssao_enable", static_cast<int>(ssao_enable));
 }
 
 void SSAOScene::destroy() {
 }
-

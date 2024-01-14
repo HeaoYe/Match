@@ -8,15 +8,17 @@ void RayMarchingScene::initialize() {
     renderer = factory->create_renderer(builder);
     renderer->attach_render_layer<Match::ImGuiLayer>("imgui layer");
     
-    auto vert_shader = factory->load_shader("raymarching_shader/shader.vert", Match::ShaderType::eVertexShaderNeedCompile);
-    auto frag_shader = factory->load_shader("raymarching_shader/shader.frag", Match::ShaderType::eFragmentShaderNeedCompile);
-    frag_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eUniform },
-        { 1, Match::DescriptorType::eUniform },
+    auto vert_shader = factory->compile_shader("raymarching_shader/shader.vert", Match::ShaderStage::eVertex);
+    auto frag_shader = factory->compile_shader("raymarching_shader/shader.frag", Match::ShaderStage::eFragment);
+    auto shader_program_ds = factory->create_descriptor_set(renderer);
+    shader_program_ds->add_descriptors({
+        { Match::ShaderStage::eFragment, 0, Match::DescriptorType::eUniform },
+        { Match::ShaderStage::eFragment, 1, Match::DescriptorType::eUniform },
     });
     shader_program = factory->create_shader_program(renderer, "main");
     shader_program->attach_vertex_shader(vert_shader);
     shader_program->attach_fragment_shader(frag_shader);
+    shader_program->attach_descriptor_set(shader_program_ds);
     shader_program->compile({
         .cull_mode = Match::CullMode::eNone,
         .depth_test_enable = VK_FALSE,
@@ -25,10 +27,10 @@ void RayMarchingScene::initialize() {
     camera = std::make_unique<Camera>(*factory);
     camera->data.pos = { 0, 1, 0 };
     camera->upload_data();
-    shader_program->bind_uniforms(0, { camera->uniform });
+    shader_program_ds->bind_uniform(0, camera->uniform);
     uniform_buffer = factory->create_uniform_buffer(sizeof(RayMarchingUniform));
     data = static_cast<RayMarchingUniform *>(uniform_buffer->get_uniform_ptr());
-    shader_program->bind_uniforms(1, { uniform_buffer });
+    shader_program_ds->bind_uniform(1, uniform_buffer);
     data->max_steps = 100;
     data->max_dist = 100.0f;
     data->epsillon_dist = 0.00001f;

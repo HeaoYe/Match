@@ -13,8 +13,6 @@ namespace Match {
     private:
         bool check_device_suitable(vk::PhysicalDevice device);
     INNER_VISIBLE:
-        vk::Device *operator->() { return &device; }
-    INNER_VISIBLE:
         vk::PhysicalDevice physical_device;
         vk::Device device;
         vk::Queue graphics_queue;

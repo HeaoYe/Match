@@ -20,4 +20,8 @@ namespace Match {
     bool has_stencil_component(vk::Format format);
 
     SampleCount get_max_usable_sample_count();
+
+    vk::DeviceAddress get_buffer_address(vk::Buffer buffer);
+
+    vk::DeviceAddress get_acceleration_structure_address(vk::AccelerationStructureKHR acceleration_structure);
 }

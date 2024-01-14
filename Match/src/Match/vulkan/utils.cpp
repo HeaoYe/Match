@@ -84,4 +84,16 @@ namespace Match {
 
         return SampleCount::e1;
     }
+
+    vk::DeviceAddress get_buffer_address(vk::Buffer buffer) {
+        vk::BufferDeviceAddressInfo info {};
+        info.setBuffer(buffer);
+        return manager->device->device.getBufferAddress(info);
+    }
+
+    vk::DeviceAddress get_acceleration_structure_address(vk::AccelerationStructureKHR acceleration_structure) {
+        vk::AccelerationStructureDeviceAddressInfoKHR info {};
+        info.setAccelerationStructure(acceleration_structure);
+        return manager->device->device.getAccelerationStructureAddressKHR(info, manager->dispatcher);
+    }
 }

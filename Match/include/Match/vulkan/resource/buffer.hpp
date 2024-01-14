@@ -1,29 +1,32 @@
 #pragma once
 
 #include <Match/vulkan/commons.hpp>
+#include <Match/vulkan/descriptor_resource/storage_buffer.hpp>
 
 namespace Match {
-    class Buffer {
+    class Buffer : public StorageBuffer {
         no_copy_construction(Buffer);
     public:
-        Buffer(uint32_t size, vk::BufferUsageFlags buffer_usage, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags);
+        Buffer(uint64_t size, vk::BufferUsageFlags buffer_usage, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags);
         Buffer(Buffer &&rhs);
         void *map();
         bool is_mapped();
         void unmap();
         ~Buffer();
+        vk::Buffer get_buffer(uint32_t in_flight_num) override { return buffer; }
+        uint64_t get_size() override { return size; }
     INNER_VISIBLE:
-        uint32_t size;
+        uint64_t size;
         bool mapped;
         void *data_ptr;
         vk::Buffer buffer;
         VmaAllocation buffer_allocation;
     };
 
-    class TwoStageBuffer {
+    class TwoStageBuffer : public StorageBuffer {
         no_copy_move_construction(TwoStageBuffer)
     public:
-        TwoStageBuffer(uint32_t size, vk::BufferUsageFlags usage);
+        TwoStageBuffer(uint64_t size, vk::BufferUsageFlags usage, vk::BufferUsageFlags additional_usage = vk::BufferUsageFlags {});
         void *map();
         void flush();
         void unmap();
@@ -36,9 +39,11 @@ namespace Match {
             if (!mapped) {
                 staging->unmap();
             }
-            return data.size();
+            return offset_count + data.size();
         }
         ~TwoStageBuffer();
+        vk::Buffer get_buffer(uint32_t in_flight_num) override { return buffer->get_buffer(in_flight_num); }
+        uint64_t get_size() override { return buffer->get_size(); }
     INNER_VISIBLE:
         std::unique_ptr<Buffer> staging;
         std::unique_ptr<Buffer> buffer;
@@ -47,13 +52,13 @@ namespace Match {
     class VertexBuffer : public TwoStageBuffer {
         no_copy_move_construction(VertexBuffer)
     public:
-        VertexBuffer(uint32_t vertex_size, uint32_t count);
+        VertexBuffer(uint32_t vertex_size, uint32_t count, vk::BufferUsageFlags additional_usage);
     };
     
     class IndexBuffer : public TwoStageBuffer {
         no_copy_move_construction(IndexBuffer)
     public:
-        IndexBuffer(IndexType type, uint32_t count);
+        IndexBuffer(IndexType type, uint32_t count, vk::BufferUsageFlags additional_usage);
     INNER_VISIBLE:
         vk::IndexType type;
     };

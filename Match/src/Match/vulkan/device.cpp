@@ -68,12 +68,75 @@ namespace Match {
         features.samplerAnisotropy = VK_TRUE;
         features.depthClamp = VK_TRUE;
         features.sampleRateShading = VK_TRUE;
-
+        features.shaderInt64 = VK_TRUE;
         vk::DeviceCreateInfo device_create_info {};
-        const char *extensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
+        std::map<std::string, bool> required_extensions = {
+            { VK_KHR_SWAPCHAIN_EXTENSION_NAME, false },
+            { VK_KHR_BIND_MEMORY_2_EXTENSION_NAME, false }
+        };
+        if (setting.enable_ray_tracing) {
+            required_extensions.insert(std::make_pair(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, false));
+            required_extensions.insert(std::make_pair(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, false));
+            required_extensions.insert(std::make_pair(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, false));
+            required_extensions.insert(std::make_pair(VK_KHR_RAY_QUERY_EXTENSION_NAME, false));
+
+            vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address_features {};
+            buffer_device_address_features.setBufferDeviceAddress(VK_TRUE);
+
+            vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features {};
+            acceleration_structure_features.setAccelerationStructure(VK_TRUE)
+                .setAccelerationStructureCaptureReplay(VK_TRUE)
+                .setAccelerationStructureIndirectBuild(VK_FALSE)
+                .setAccelerationStructureHostCommands(VK_FALSE)
+                .setDescriptorBindingAccelerationStructureUpdateAfterBind(VK_TRUE);
+            vk::PhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_pipeline_features {};
+            ray_tracing_pipeline_features.setRayTracingPipeline(VK_TRUE)
+                .setRayTracingPipelineShaderGroupHandleCaptureReplay(VK_FALSE)
+                .setRayTracingPipelineShaderGroupHandleCaptureReplayMixed(VK_FALSE)
+                .setRayTracingPipelineTraceRaysIndirect(VK_TRUE)
+                .setRayTraversalPrimitiveCulling(VK_TRUE);
+            vk::PhysicalDeviceRayQueryFeaturesKHR ray_query_features {};
+            ray_query_features.setRayQuery(VK_TRUE);
+
+            device_create_info.setPNext(
+                &buffer_device_address_features.setPNext(
+                    &acceleration_structure_features.setPNext(
+                        &ray_tracing_pipeline_features.setPNext(
+                            &ray_query_features
+                        )
+                    )
+                )
+            );
+        }
+
+        for (const auto &extension : setting.device_extensions) {
+            required_extensions.insert(std::make_pair(extension, false));
+        }
+
+        std::vector<const char *> enabled_extensions;
+        auto extensions = physical_device.enumerateDeviceExtensionProperties();
+        bool found = false;
+        for (auto &extension : extensions) {
+            for (auto &required_extension : required_extensions) {
+                if (required_extension.first == extension.extensionName) {
+                    required_extension.second = true;
+                    enabled_extensions.push_back(required_extension.first.c_str());
+                    break;
+                }
+            }
+            MCH_TRACE("PHY EXT: {}-{}", extension.extensionName, extension.specVersion)
+        }
+
+        for (auto &required_extension : required_extensions) {
+            if (!required_extension.second) {
+                MCH_ERROR("Faild find required vulkan physical device extension: {}", required_extension.first)
+            }
+        }
+
         const char *layers[] = { "VK_LAYER_KHRONOS_validation" };
         device_create_info.setQueueCreateInfos(queue_create_infos)
-            .setPEnabledExtensionNames(extensions)
+            .setPEnabledExtensionNames(enabled_extensions)
             .setPEnabledFeatures(&features);
         if (setting.debug_mode) {
             device_create_info.setPEnabledLayerNames(layers);
@@ -84,6 +147,16 @@ namespace Match {
         present_queue = device.getQueue(present_family_index, 0);
         transfer_queue = device.getQueue(transfer_family_index, 0);
         compute_queue = device.getQueue(compute_family_index, 0);
+
+        if (setting.enable_ray_tracing) {
+            vk::PhysicalDeviceProperties2 properties {};
+            vk::PhysicalDeviceAccelerationStructurePropertiesKHR acceleration_structure_properties {};
+            vk::PhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_pipeline_properties {};
+            properties.pNext = &acceleration_structure_properties;
+            acceleration_structure_properties.pNext = &ray_tracing_pipeline_properties;
+            physical_device.getProperties2(&properties);
+            MCH_TRACE("Max Ray Recursion Depth: {}", ray_tracing_pipeline_properties.maxRayRecursionDepth);
+        }
     }
 
     Device::~Device() {
@@ -107,6 +180,10 @@ namespace Match {
         if (!features.sampleRateShading) {
             MCH_DEBUG("{} does not support sampler rate shading -- skipping", properties.deviceName)
             return false;
+        }
+
+        if (!features.shaderInt64) {
+            MCH_DEBUG("{} does not support type int 64 -- warning", properties.deviceName)
         }
 
         auto queue_families_properties = device.getQueueFamilyProperties();

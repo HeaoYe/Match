@@ -16,5 +16,5 @@ class RayMarchingScene : public Scene {
 private:
     std::unique_ptr<Camera> camera;
     std::shared_ptr<Match::UniformBuffer> uniform_buffer;
-    std::shared_ptr<Match::ShaderProgram> shader_program;
+    std::shared_ptr<Match::GraphicsShaderProgram> shader_program;
 };

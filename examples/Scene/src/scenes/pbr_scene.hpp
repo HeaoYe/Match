@@ -39,7 +39,8 @@ private:
     std::unique_ptr<Camera> camera;
     std::unique_ptr<PBRMaterial> material;
     std::unique_ptr<Lights> lights;
-    std::shared_ptr<Match::ShaderProgram> shader_program;
+    std::shared_ptr<Match::GraphicsShaderProgram> shader_program;
+    std::shared_ptr<Match::Model> model;
     std::shared_ptr<Match::VertexBuffer> vertex_buffer;
     std::shared_ptr<Match::IndexBuffer> index_buffer;
 };

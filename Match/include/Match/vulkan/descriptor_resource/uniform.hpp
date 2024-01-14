@@ -1,18 +1,20 @@
 #pragma once
 
 #include <Match/vulkan/resource/buffer.hpp>
+#include <Match/vulkan/descriptor_resource/storage_buffer.hpp>
 
 namespace Match {
-    class UniformBuffer {
+    class UniformBuffer : public StorageBuffer {
         no_copy_move_construction(UniformBuffer);
     public:
-        UniformBuffer(uint32_t size, bool create_for_each_frame_in_flight);
+        UniformBuffer(uint64_t size, bool create_for_each_frame_in_flight);
         void *get_uniform_ptr();
         ~UniformBuffer();
+        vk::Buffer get_buffer(uint32_t in_flight_num) override { return get_match_buffer(in_flight_num).get_buffer(in_flight_num); }
+        uint64_t get_size() override { return size; }
     INNER_VISIBLE:
-        Buffer &get_buffer(int in_flight_index);
-    INNER_VISIBLE:
-        uint32_t size;
+        Buffer &get_match_buffer(uint32_t in_flight_num);
+        uint64_t size;
         std::vector<Buffer> buffers;
     };
 }

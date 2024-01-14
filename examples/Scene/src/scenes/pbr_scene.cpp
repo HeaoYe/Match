@@ -10,16 +10,15 @@ void PBRScene::initialize() {
     renderer = factory->create_renderer(builder);
     renderer->attach_render_layer<Match::ImGuiLayer>("imgui layer");
 
-    auto vert_shader = factory->load_shader("pbr_shader/shader.vert", Match::ShaderType::eVertexShaderNeedCompile);
-    auto frag_shader = factory->load_shader("pbr_shader/shader.frag", Match::ShaderType::eFragmentShaderNeedCompile);
+    auto vert_shader = factory->compile_shader("pbr_shader/shader.vert", Match::ShaderStage::eVertex);
+    auto frag_shader = factory->compile_shader("pbr_shader/shader.frag", Match::ShaderStage::eFragment);
 
-    vert_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eUniform },  // Camera Uniform
-    });
-    frag_shader->bind_descriptors({
-        { 0, Match::DescriptorType::eUniform },  // Camera Uniform
-        { 1, Match::DescriptorType::eUniform },  // PBR Material
-        { 2, Match::DescriptorType::eUniform },  // Light Uniform
+    auto shader_program_ds = factory->create_descriptor_set(renderer);
+    shader_program_ds->add_descriptors({
+        // CameraUniform会被VertexShader和FragmentShader共用，所以将两个ShaderStage | 在一起
+        { Match::ShaderStage::eVertex | Match::ShaderStage::eFragment, 0, Match::DescriptorType::eUniform },  // Camera Uniform
+        { Match::ShaderStage::eFragment, 1, Match::DescriptorType::eUniform },  // PBR Material
+        { Match::ShaderStage::eFragment, 2, Match::DescriptorType::eUniform },  // Light Uniform
     });
     auto vas = factory->create_vertex_attribute_set({
         {
@@ -34,7 +33,8 @@ void PBRScene::initialize() {
     shader_program = factory->create_shader_program(renderer, "main");
     shader_program->attach_vertex_shader(vert_shader, "main");
     shader_program->attach_fragment_shader(frag_shader, "main");
-    shader_program->bind_vertex_attribute_set(vas);
+    shader_program->attach_vertex_attribute_set(vas);
+    shader_program->attach_descriptor_set(shader_program_ds);
     shader_program->compile({
         .cull_mode = Match::CullMode::eBack,
         .front_face = Match::FrontFace::eCounterClockwise,
@@ -44,25 +44,24 @@ void PBRScene::initialize() {
     camera = std::make_unique<Camera>(*factory);
     camera->data.pos = { 0, 0, -5 };
     camera->upload_data();
-    shader_program->bind_uniforms(0, { camera->uniform });
+    shader_program_ds->bind_uniform(0, camera->uniform);
 
     material = std::make_unique<PBRMaterial>(*factory);
     material->data->color = glm::vec3(0.5);
     material->data->roughness = 0.5f;
     material->data->metallic = 0.7f;
     material->data->reflectance = 0.7f;
-    shader_program->bind_uniforms(1, { material->uniform_buffer });
+    shader_program_ds->bind_uniform(1, material->uniform_buffer);
 
     lights = std::make_unique<Lights>(*factory);
     lights->data->color = glm::vec3(1, 1, 1);
     lights->data->direction = glm::normalize(glm::vec3(0, -1, 0));
-    shader_program->bind_uniforms(2, { lights->uniform_buffer });
+    shader_program_ds->bind_uniform(2, lights->uniform_buffer);
 
-    load_model("mori_knob.obj");
-    vertex_buffer = factory->create_vertex_buffer(sizeof(Vertex), vertices.size());
-    vertex_buffer->upload_data_from_vector(vertices);
-    index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, indices.size());
-    index_buffer->upload_data_from_vector(indices);
+    model = factory->load_model("mori_knob.obj");
+    vertex_buffer = factory->create_vertex_buffer(sizeof(Match::Vertex), model->get_vertex_count());
+    index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, model->get_index_count());
+    model->upload_data(vertex_buffer, index_buffer);
 }
 
 void PBRScene::update(float delta) {
@@ -80,7 +79,7 @@ void PBRScene::render() {
     renderer->bind_shader_program(shader_program);
     renderer->bind_vertex_buffer(vertex_buffer);
     renderer->bind_index_buffer(index_buffer);
-    renderer->draw_indexed(indices.size(), 1, 0, 0, 0);
+    renderer->draw_model(model, 1, 0);
 }
 
 void PBRScene::render_imgui() {
