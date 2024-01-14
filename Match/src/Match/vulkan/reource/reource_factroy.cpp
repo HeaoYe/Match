@@ -22,6 +22,10 @@ namespace Match {
 
     std::shared_ptr<Shader> ResourceFactory::compile_shader(const std::string &filename, ShaderStage stage) {
         auto code = read_binary_file(root + "/shaders/" + filename);
+        if (code.empty()) {
+            MCH_ERROR("Faild compile shader {}", filename)
+            return nullptr;
+        }
         return std::make_shared<Shader>(filename, std::string(code.data(), code.size()), stage);
     }
 

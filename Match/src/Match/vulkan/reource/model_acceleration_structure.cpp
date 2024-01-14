@@ -137,7 +137,9 @@ namespace Match {
                 copy_command_buffer.copyBuffer(staging->buffer, model->acceleration_structure.value()->index_buffer->buffer, copy);
                 manager->command_pool->free_single_use(copy_command_buffer);
             }
-            staging->unmap();
+            if (staging.get() != nullptr) {
+                staging->unmap();
+            }
         }
         
         vk::QueryPoolCreateInfo query_pool_create_info {};

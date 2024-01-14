@@ -6,6 +6,7 @@
 #include "scenes/raymarching_scene.hpp"
 #include "scenes/model_viewer_scene.hpp"
 #include "scenes/ray_tracing_scene.hpp"
+#include "scenes/ray_tracing_v2_scene.hpp"
 
 int main() {
     // 窗口大小的配置移动到main.cpp中
@@ -18,6 +19,8 @@ int main() {
     Application app;
     // 第一个注册的Scene为默认加载的Scene
 
+    // 简易光线追踪2.0场景
+    app.register_scene<RayTracingV2Scene>("简易光线追踪2.0");
     // 简易光线追踪场景
     app.register_scene<RayTracingScene>("简易光线追踪");
     // 模型加载器场景

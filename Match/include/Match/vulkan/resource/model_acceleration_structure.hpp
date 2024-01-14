@@ -34,7 +34,7 @@ namespace Match {
         };
     public:
         void add_model(std::shared_ptr<RayTracingModel> model);
-        void build(bool allow_update) { build_update(false, allow_update); }
+        void build(bool allow_update = false) { build_update(false, allow_update); }
         void update() { build_update(true, true); }
         ~AccelerationStructureBuilder();
     INNER_VISIBLE:

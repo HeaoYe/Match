@@ -27,7 +27,7 @@ namespace Match {
         for (auto &descriptor_set : descriptor_sets) {
             if (!descriptor_set.has_value()) {
                 MCH_ERROR("Miss descriptor set at index {}", descriptor_layouts.size());
-            } else if (!descriptor_set.value()->is_allocated()) {
+            } else if (!descriptor_set.value()->allocated) {
                 MCH_DEBUG("Auto allocate descriptor set")
                 descriptor_set.value()->allocate();
             }

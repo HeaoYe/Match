@@ -69,6 +69,8 @@ namespace Match {
         void draw_model_mesh(std::shared_ptr<const Model> model, const std::string &name, uint32_t instance_count, uint32_t first_instance);
         void draw_model(std::shared_ptr<const Model> model, uint32_t instance_count, uint32_t first_instance);
         void trace_rays(uint32_t width = uint32_t(-1), uint32_t height = uint32_t(-1), uint32_t depth = 1);
+        uint32_t register_resource_recreate_callback(const ResourceRecreateCallback &callback);
+        void remove_resource_recreate_callback(uint32_t id);
     private:
         void inner_bind_shader_program(vk::PipelineBindPoint bind_point, std::shared_ptr<ShaderProgram> shader_program);
     public:
@@ -79,8 +81,6 @@ namespace Match {
         void update_resources();
     INNER_VISIBLE:
         void update_renderpass();
-        uint32_t register_resource_recreate_callback(const ResourceRecreateCallback &callback);
-        void remove_resource_recreate_callback(uint32_t id);
     INNER_VISIBLE:
         std::shared_ptr<RenderPassBuilder> render_pass_builder;
         std::unique_ptr<RenderPass> render_pass;

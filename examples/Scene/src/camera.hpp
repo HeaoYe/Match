@@ -7,6 +7,7 @@ class Camera {
 public:
     Camera(Match::ResourceFactory &factory);
     void update(float dt);
+    void update_aspect();
     void upload_data();
 public:
     struct CameraUniform {

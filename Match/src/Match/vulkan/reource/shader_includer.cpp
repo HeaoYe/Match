@@ -34,7 +34,7 @@ namespace Match {
                     "    float radius;\n"
                     "};\n"
                 );
-            } else if (strcmp(requested_source, "MatchRandom")) {
+            } else if (strcmp(requested_source, "MatchRandom") == 0) {
                 result->source_name = "MatchRandom";
                 contents = new std::string(""
                     "uint tea(uint val0, uint val1) {\n"
