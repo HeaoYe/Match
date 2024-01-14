@@ -1,4 +1,5 @@
 #include "ray_tracing_v2_scene.hpp"
+#include <glm/gtx/transform.hpp>
 #include <random>
 
 void RayTracingV2Scene::initialize() {
@@ -14,7 +15,7 @@ void RayTracingV2Scene::initialize() {
     camera->upload_data();
 
     sphere_collect = factory->create_sphere_collect();
-    sphere_collect->register_custom_sphere_data<SphereMaterial>();
+    sphere_collect->register_custom_sphere_data<Material>();
 
     std::random_device device;
     std::mt19937 generator(device());
@@ -33,7 +34,7 @@ void RayTracingV2Scene::initialize() {
             0, 
             { distribution(generator) * 5, r, distribution(generator) * 5 }, 
             r,
-            SphereMaterial {
+            Material {
                 .albedo = color,
                 .roughness = color_distribution(generator) * color_distribution(generator),
                 .light_color = color,
@@ -42,18 +43,29 @@ void RayTracingV2Scene::initialize() {
         );
     }
 
-    sphere_collect->add_sphere(0, { -2, 1, 0 }, 0.4, SphereMaterial { .albedo = { 1, 0.4, 0.4 }, .roughness = 1 });
-    sphere_collect->add_sphere(0, { 0, 1, 0 }, 0.7, SphereMaterial { .albedo = { 0.4, 1, 0.4 }, .roughness = 0.5 });
-    sphere_collect->add_sphere(0, { 2, 1, 0 }, 1, SphereMaterial { .albedo = { 0.4, 0.4, 1 } });
-    sphere_collect->add_sphere(0, {0, -500, 0 }, 500, SphereMaterial { .albedo = { 0.8, 0.5, 0.25 }, .roughness = 0, .light_intensity = 0 });
+    sphere_collect->add_sphere(0, { -2, 1, 0 }, 0.4, Material { .albedo = { 1, 0.4, 0.4 }, .roughness = 1 });
+    // 非金属反射
+    sphere_collect->add_sphere(0, { 0, 1, 0 }, 0.7, Material { .albedo = { 0.4, 0.4, 1 }, .roughness = 1, .spec_prob = 0.2 });
+    // 金属反射
+    sphere_collect->add_sphere(0, { 2, 1, 0 }, 1, Material { .albedo = { 0.4, 0.4, 1 }, .roughness = 0, .spec_prob = 0 });
+    sphere_collect->add_sphere(0, {0, -500, 0 }, 500, Material { .albedo = { 0.8, 0.5, 0.25 }, .roughness = 0, .light_intensity = 0 });
+
+    model = factory->load_model("dragon.obj");
 
     auto builder = factory->create_acceleration_structure_builder();
     builder->add_model(sphere_collect);
+    builder->add_model(model);
     builder->build();
     builder.reset();
 
     instance_collect = factory->create_ray_tracing_instance_collect();
+    instance_collect->register_custom_instance_data<Material>();
     instance_collect->add_instance(0, sphere_collect, glm::mat4(1), 0);
+    dragon_material = {
+        .albedo = { 0.8, 0.5, 0.25 },
+        .roughness = 0.6,
+    };
+    instance_collect->add_instance(1, model, glm::translate(glm::vec3(-1, 0.5, 0)), 1, dragon_material);
     instance_collect->build();
 
     auto [width, height] = Match::runtime_setting->get_window_size();
@@ -70,8 +82,9 @@ void RayTracingV2Scene::initialize() {
 
     auto raygen_shader = factory->compile_shader("ray_tracing_v2_shader/rt.rgen", Match::ShaderStage::eRaygen);
     auto miss_shader = factory->compile_shader("ray_tracing_v2_shader/rt.rmiss", Match::ShaderStage::eMiss);
-    auto closest_hit_shader = factory->compile_shader("ray_tracing_v2_shader/rt.rchit", Match::ShaderStage::eClosestHit);
-    auto intersection_shader = factory->compile_shader("ray_tracing_v2_shader/rt.rint", Match::ShaderStage::eIntersection);
+    auto closest_hit_shader = factory->compile_shader("ray_tracing_v2_shader/sphere.rchit", Match::ShaderStage::eClosestHit);
+    auto intersection_shader = factory->compile_shader("ray_tracing_v2_shader/sphere.rint", Match::ShaderStage::eIntersection);
+    auto triangle_closest_hit_shader = factory->compile_shader("ray_tracing_v2_shader/triangle.rchit", Match::ShaderStage::eClosestHit);
 
     ray_tracing_shader_program_constants = factory->create_push_constants(
         Match::ShaderStage::eRaygen, 
@@ -79,6 +92,8 @@ void RayTracingV2Scene::initialize() {
             { "time", Match::ConstantType::eFloat },
             { "sample_count", Match::ConstantType::eInt32 },
             { "frame_count", Match::ConstantType::eInt32 },
+            { "view_depth", Match::ConstantType::eFloat },
+            { "view_depth_strength", Match::ConstantType::eFloat },
         }
     );
 
@@ -89,18 +104,23 @@ void RayTracingV2Scene::initialize() {
         { Match::ShaderStage::eRaygen, 2, Match::DescriptorType::eUniform },
         { Match::ShaderStage::eIntersection | Match::ShaderStage::eClosestHit, 3, Match::DescriptorType::eStorageBuffer },
         { Match::ShaderStage::eClosestHit, 4, Match::DescriptorType::eStorageBuffer },
+        { Match::ShaderStage::eClosestHit, 5, Match::DescriptorType::eStorageBuffer },
+        { Match::ShaderStage::eClosestHit, 6, Match::DescriptorType::eStorageBuffer },
     })
         .allocate()
         .bind_storage_image(0, ray_tracing_result_image)
         .bind_ray_tracing_instance_collect(1, instance_collect)
         .bind_uniform(2, camera->uniform)
         .bind_storage_buffer(3, sphere_collect->get_spheres_buffer())
-        .bind_storage_buffer(4, sphere_collect->get_custom_data_buffer<SphereMaterial>());
+        .bind_storage_buffer(4, sphere_collect->get_custom_data_buffer<Material>())
+        .bind_storage_buffer(5, instance_collect->get_instance_address_data_buffer())
+        .bind_storage_buffer(6, instance_collect->get_custom_instance_data_buffer<Material>());
     
     ray_tracing_shader_program = factory->create_ray_tracing_shader_program();
     ray_tracing_shader_program->attach_raygen_shader(raygen_shader)
         .attach_miss_shader(miss_shader)
         .attach_hit_group(closest_hit_shader, intersection_shader)
+        .attach_hit_group(triangle_closest_hit_shader)
         .attach_descriptor_set(ray_tracing_shader_program_ds)
         .attach_push_constants(ray_tracing_shader_program_constants)
         .compile({
@@ -140,12 +160,15 @@ void RayTracingV2Scene::update(float dt) {
     time += dt;
     ray_tracing_shader_program_constants->push_constant("time", time);
 
-    static int frame_count = 0;
     if (camera->is_capture_cursor) {
         frame_count = 0;
     }
     ray_tracing_shader_program_constants->push_constant("frame_count", frame_count);
     frame_count ++;
+
+    instance_collect->update<Material>(1, [this](uint32_t index, auto &material) {
+        material = dragon_material;
+    });
 }
 
 void RayTracingV2Scene::render() {
@@ -163,9 +186,31 @@ void RayTracingV2Scene::render() {
 void RayTracingV2Scene::render_imgui() {
     ImGui::Text("Framerate: %f", ImGui::GetIO().Framerate);
 
+    bool changed = false;
+
     static int sample_count = 1;
-    ImGui::SliderInt("Sample Count", &sample_count, 1, 16);
+    changed |= ImGui::SliderInt("Sample Count", &sample_count, 1, 16);
     ray_tracing_shader_program_constants->push_constant("sample_count", sample_count);
+
+    static float view_depth = 1;
+    changed |= ImGui::SliderFloat("View Depth", &view_depth, 0.01, 5);
+    changed |= ImGui::SliderFloat("View Depth High", &view_depth, 5, 100);
+    ray_tracing_shader_program_constants->push_constant("view_depth", view_depth);
+
+    static float view_depth_strength = 0.01;
+    changed |= ImGui::SliderFloat("View Depth Strength", &view_depth_strength, 0.01, 0.5);
+    ray_tracing_shader_program_constants->push_constant("view_depth_strength", view_depth_strength);
+
+    changed |= ImGui::ColorEdit3("albedo", &dragon_material.albedo.r);
+    changed |= ImGui::SliderFloat("roughness", &dragon_material.roughness, 0, 1);
+    changed |= ImGui::ColorEdit3("spec_albedo", &dragon_material.spec_albedo.r);
+    changed |= ImGui::SliderFloat("spec_prob", &dragon_material.spec_prob, 0, 1);
+    changed |= ImGui::ColorEdit3("light_color", &dragon_material.light_color.r);
+    changed |= ImGui::SliderFloat("light_intensity", &dragon_material.light_intensity, 0, 1);
+
+    if (changed) {
+        frame_count = 0;
+    }
 }
 
 void RayTracingV2Scene::destroy() {
