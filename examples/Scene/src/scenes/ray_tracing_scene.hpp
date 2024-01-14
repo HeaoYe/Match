@@ -18,6 +18,10 @@ private:
     // 模型
     std::shared_ptr<Match::Model> model1;
     std::shared_ptr<Match::Model> model2;
+    // 由多个球体组成的模型
+    std::shared_ptr<Match::SphereCollect> sphere_collect;
+    //                        sphere        rotate_vector
+    std::vector<std::pair<Match::SphereData, glm::vec3>> sphere_datas;
 
     // 光追资源
     //                        pos   rotate_vector start_angle scale

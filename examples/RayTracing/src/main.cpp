@@ -68,7 +68,7 @@ public:
         auto [width, height] = Match::runtime_setting->get_window_size();
         image = factory->create_storage_image(width, height, vk::Format::eR32G32B32A32Sfloat);
         ds->bind_storage_image(1, image);
-        ds->bind_storage_buffer(2, instance_collect->get_instance_address_info_buffer());
+        ds->bind_storage_buffer(2, instance_collect->get_instance_address_data_buffer());
         callback_id = renderer->register_resource_recreate_callback([this]() {
             image.reset();
             auto [width, height] = Match::runtime_setting->get_window_size();
@@ -86,7 +86,7 @@ public:
         rtp->attach_raygen_shader(rg)
             .attach_miss_shader(miss)
             .attach_miss_shader(miss_shadow)
-            .attach_closest_hit_shader(closest)
+            .attach_hit_group(closest)
             .attach_descriptor_set(ds, 0)
             .attach_descriptor_set(shared_ds, 1)
             .compile({
@@ -183,13 +183,13 @@ public:
         builder->add_model(model);
         builder->add_model(model2);
         // 批量构建加速结构，以256MB为一批构建加速结构，此前添加的模型会完成加速结构的构建并清空builder的模型缓存
-        builder->build();
+        builder->build(false);
 
         // 创建光线追踪Instance，也就是TopLevelAccelerationStructure，该实例包含两个模型
         // instance = factory->create_ray_tracing_instance({ model, model2 });
         // 只包含一个模型
         instance_collect = factory->create_ray_tracing_instance_collect();
-        instance_collect->add_instance(0, model, glm::mat4(1))
+        instance_collect->add_instance(0, model, glm::mat4(1), 0)
             .build();
 
         // 上传模型顶点数据到缓存，光栅化渲染用

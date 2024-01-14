@@ -29,6 +29,13 @@ namespace Match {
         indices.clear();
     }
 
+    RayTracingModel::~RayTracingModel() {
+        if (acceleration_structure.has_value()) {
+            acceleration_structure.value().reset();
+            acceleration_structure->reset();
+        }
+    }
+
     Model::Model() {
         vertex_count = 0;
         index_count = 0;
@@ -111,5 +118,62 @@ namespace Match {
             result.push_back(name);
         }
         return result;
+    }
+
+    SphereCollect::SphereCollect() {
+        registrar = std::make_unique<CustomDataRegistrar<uint8_t>>();
+        registrar->register_custom_data<SphereData>();
+        builder = std::make_unique<AccelerationStructureBuilder>();
+    }
+
+    SphereCollect &SphereCollect::build() {
+        uint32_t count = registrar->build_groups();
+        if (count == 0) {
+            MCH_ERROR("Can't build an empty sphere collect")
+            return *this;
+        }
+
+        aabbs.reserve(count);
+        auto *ptr = static_cast<SphereData *>(get_spheres_buffer()->map());
+        for (uint32_t i = 0; i < count; i ++) {
+            aabbs.push_back({
+                .minium = ptr->center - ptr->radius,
+                .maxium = ptr->center + ptr->radius,
+            });
+            ptr ++;
+        }
+        get_spheres_buffer()->unmap();
+
+        aabbs_buffer = std::make_shared<Buffer>(aabbs.size() * sizeof(SphereAaBbData), vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+        memcpy(aabbs_buffer->map(), aabbs.data(), aabbs_buffer->size);
+        aabbs_buffer->unmap();
+
+        return *this;
+    }
+
+    SphereCollect &SphereCollect::update(uint32_t group_id, UpdateCustomDataCallback<SphereData> update_callback) {
+        registrar->multithread_update(group_id, [=](uint32_t in_group_index, uint32_t batch_begin, uint32_t batch_end) {
+            auto *sphere_data_ptr = static_cast<SphereData *>(registrar->get_custom_data_buffer<SphereData>()->map());
+            auto *aabb_data_ptr = static_cast<SphereAaBbData *>(aabbs_buffer->map());
+            aabb_data_ptr += batch_begin;
+            sphere_data_ptr += batch_begin;
+            while (batch_begin < batch_end) {
+                update_callback(in_group_index, *sphere_data_ptr);
+                aabb_data_ptr->minium = sphere_data_ptr->center - sphere_data_ptr->radius;
+                aabb_data_ptr->maxium = sphere_data_ptr->center + sphere_data_ptr->radius;
+                sphere_data_ptr ++;
+                aabb_data_ptr ++;
+                in_group_index ++;
+                batch_begin ++;
+            }
+        });
+        std::shared_ptr<SphereCollect> sphere_collect(this, [](auto) {});
+        builder->add_model(sphere_collect);
+        builder->update();
+        return *this;
+    }
+
+    SphereCollect::~SphereCollect() {
+        registrar.reset();
     }
 }

@@ -44,8 +44,11 @@ namespace Match {
     template <class SubClass, typename OptionType>
     class ShaderProgramTemplate : public ShaderProgram {
         default_no_copy_move_construction(ShaderProgramTemplate)
-    protected:
+    INNER_PROTECT:
         struct ShaderStageInfo {
+            ShaderStageInfo() : shader(nullptr), entry() {}
+            ShaderStageInfo(std::shared_ptr<Shader> shader) : shader(shader), entry("main") {}
+            ShaderStageInfo(std::shared_ptr<Shader> shader, const std::string &entry) : shader(shader), entry(entry) {}
             std::shared_ptr<Shader> shader;
             std::string entry;
         };
@@ -97,17 +100,23 @@ namespace Match {
 
     class RayTracingShaderProgram : public ShaderProgramTemplate<RayTracingShaderProgram, RayTracingShaderProgramCompileOptions> {
         no_copy_move_construction(RayTracingShaderProgram)
+    INNER_VISIBLE:
+        struct HitGroup {
+            ShaderStageInfo closest_hit_shader;
+            std::optional<ShaderStageInfo> intersection_shader;
+        };
     public:
         RayTracingShaderProgram();
         RayTracingShaderProgram &attach_raygen_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
         RayTracingShaderProgram &attach_miss_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
-        RayTracingShaderProgram &attach_closest_hit_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
+        RayTracingShaderProgram &attach_hit_group(const ShaderStageInfo &closest_hit_shader, const std::optional<ShaderStageInfo> &intersection_shader = {});
         RayTracingShaderProgram &compile(const RayTracingShaderProgramCompileOptions &options = {}) override;
         ~RayTracingShaderProgram() override;
     INNER_VISIBLE:
         ShaderStageInfo raygen_shader {};
         std::vector<ShaderStageInfo> miss_shaders;
-        std::vector<ShaderStageInfo> closest_hit_shaders;
+        std::vector<HitGroup> hit_groups;
+        uint32_t hit_shader_count;
 
         std::unique_ptr<Buffer> shader_binding_table_buffer;
         vk::StridedDeviceAddressRegionKHR raygen_region {};

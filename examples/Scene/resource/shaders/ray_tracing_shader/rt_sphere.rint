@@ -1,0 +1,27 @@
+#version 460
+
+#extension GL_EXT_ray_tracing : require
+#extension GL_EXT_scalar_block_layout : require
+
+#include <MatchTypes>
+
+layout (binding = 6, scalar) buffer Sphere_ { MatchSphere spheres[]; } sphere_;
+
+void main() {
+    MatchSphere sphere = sphere_.spheres[gl_PrimitiveID];
+
+    // 变换到世界坐标系
+    vec3 center = (gl_ObjectToWorldEXT * vec4(sphere.center, 1)).xyz;
+    
+    // 计算相交
+    vec3 CO = gl_WorldRayOriginEXT - center;
+    float a = dot(gl_WorldRayDirectionEXT, gl_WorldRayDirectionEXT);
+    float b = 2 * dot(gl_WorldRayDirectionEXT, CO);
+    float c = dot(CO, CO) - sphere.radius * sphere.radius;
+    float delta = b * b - 4 * a * c;
+
+    // 返回交点到光线发射点的距离
+    if (delta >= 0) {
+        reportIntersectionEXT((-b - sqrt(delta)) / (2 * a), 0);
+    }
+}

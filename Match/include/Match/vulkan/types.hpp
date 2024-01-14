@@ -299,6 +299,7 @@ namespace Match {
         eRaygen = static_cast<uint32_t>(vk::ShaderStageFlagBits::eRaygenKHR),
         eMiss = static_cast<uint32_t>(vk::ShaderStageFlagBits::eMissKHR),
         eClosestHit = static_cast<uint32_t>(vk::ShaderStageFlagBits::eClosestHitKHR),
+        eIntersection = static_cast<uint32_t>(vk::ShaderStageFlagBits::eIntersectionKHR),
     };
     
     using ShaderStages = Flags<ShaderStage>;

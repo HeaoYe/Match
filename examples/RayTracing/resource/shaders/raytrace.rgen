@@ -18,6 +18,10 @@ layout(binding = 1, set = 1) uniform CameraUniform {
     mat4 project;
 } camera;
 
+struct hitPayload {
+    vec3 hit_value;
+};
+
 layout(location = 0) rayPayloadEXT hitPayload prd;
 
 void main() {

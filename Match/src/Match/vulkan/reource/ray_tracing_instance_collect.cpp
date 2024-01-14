@@ -3,36 +3,32 @@
 #include "../inner.hpp"
 
 namespace Match {
-    RayTracingInstanceCollect::RayTracingInstanceCollect(bool allow_update) : allow_update(allow_update) {
-        register_custom_instance_info<InstanceAddressInfo>();
+    RayTracingInstanceCollect::RayTracingInstanceCollect(bool allow_update) : allow_update(allow_update), instance_count(0) {
+        registrar = std::make_unique<CustomDataRegistrar<InstanceCreateInfo>>();
+        registrar->register_custom_data<InstanceAddressData>();
     }
 
     RayTracingInstanceCollect &RayTracingInstanceCollect::build() {
-        auto &instance_address_infos = *static_cast<std::vector<InstanceAddressInfo> *>(instance_infos_buffer_map[get_class_hash_code<InstanceAddressInfo>()].stage_vector_address);
-        auto instance_count = instance_address_infos.size();
+        instance_count = registrar->build_groups();
+
         acceleration_struction_instance_infos_buffer = std::make_unique<Buffer>(instance_count * sizeof(vk::AccelerationStructureInstanceKHR), vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR, VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
         auto *acceleration_struction_instance_infos_ptr = static_cast<vk::AccelerationStructureInstanceKHR *>(acceleration_struction_instance_infos_buffer->map());
 
-        uint32_t instance_index = 0;
-        for (auto &[group_id, group_info] : groups) {
-            group_info.instance_offset = instance_index;
-            group_info.instance_count = group_info.instance_create_infos.size();
-            for (auto &[model, transform_matrix] : group_info.instance_create_infos) {
-                acceleration_struction_instance_infos_ptr
+        for (auto &[group_id, group_info] : registrar->groups) {
+            uint32_t instance_index = group_info.offset;
+            auto *current_acceleration_struction_instance_infos_ptr = acceleration_struction_instance_infos_ptr + instance_index;
+            for (auto &[model, transform_matrix, hit_group] : group_info.custom_create_infos) {
+                current_acceleration_struction_instance_infos_ptr
                     ->setInstanceCustomIndex(instance_index)
                     .setAccelerationStructureReference(get_acceleration_structure_address(model->acceleration_structure.value()->bottom_level_acceleration_structure))
-                    .setInstanceShaderBindingTableRecordOffset(0)
+                    .setInstanceShaderBindingTableRecordOffset(hit_group)
                     .setFlags(vk::GeometryInstanceFlagBitsKHR::eTriangleFacingCullDisable)
                     .setMask(0xff)
                     .setTransform(transform<vk::TransformMatrixKHR, const glm::mat4 &>(transform_matrix));
-                acceleration_struction_instance_infos_ptr ++;
+                current_acceleration_struction_instance_infos_ptr ++;
                 instance_index ++;
             }
-            group_info.instance_create_infos.clear();
-        }
-
-        for (auto &[hash_code, buffer] : instance_infos_buffer_map) {
-            buffer.create_buffer_callback();
+            group_info.custom_create_infos.clear();
         }
 
         vk::AccelerationStructureBuildRangeInfoKHR range {};
@@ -40,10 +36,6 @@ namespace Match {
             .setPrimitiveOffset(0)
             .setFirstVertex(0)
             .setTransformOffset(0);
-
-        if (allow_update) {
-            acceleration_struction_instance_infos_buffer->map();
-        }
 
         vk::AccelerationStructureGeometryInstancesDataKHR instances {};
         instances.setData(get_buffer_address(acceleration_struction_instance_infos_buffer->buffer));
@@ -84,22 +76,30 @@ namespace Match {
         return *this;
     }
 
-    RayTracingInstanceCollect &RayTracingInstanceCollect::update(uint32_t group, UpdateCallback update_callback) {
-        multithread_update(group, [&](uint32_t in_group_index, uint32_t batch_begin, uint32_t batch_end) {
+    RayTracingInstanceCollect &RayTracingInstanceCollect::update(uint32_t group_id, UpdateCallback update_callback) {
+        if (!allow_update) {
+            MCH_WARN("This RayTracingInstanceCollect doesn't allow update")
+            return *this;
+        }
+
+        registrar->multithread_update(group_id, [=](uint32_t in_group_index, uint32_t batch_begin, uint32_t batch_end) {
             auto *acceleration_struction_instance_infos_ptr = static_cast<vk::AccelerationStructureInstanceKHR *>(acceleration_struction_instance_infos_buffer->data_ptr);
             acceleration_struction_instance_infos_ptr += batch_begin;
             InterfaceSetTransform interface_set_transform = [&](const glm::mat4 &transform_matrix) {
                 acceleration_struction_instance_infos_ptr->setTransform(transform<vk::TransformMatrixKHR, const glm::mat4 &>(transform_matrix));
             };
+            InterfaceUpdataAccelerationStructure interface_update_acceleration_structure = [&](std::shared_ptr<RayTracingModel> model) {
+                acceleration_struction_instance_infos_ptr->setAccelerationStructureReference(get_acceleration_structure_address(model->acceleration_structure.value()->bottom_level_acceleration_structure));
+            };
             while (batch_begin < batch_end) {
-                update_callback(in_group_index, interface_set_transform);
+                update_callback(in_group_index, interface_set_transform, interface_update_acceleration_structure);
                 acceleration_struction_instance_infos_ptr ++;
                 in_group_index ++;
                 batch_begin ++;
             }
         });
 
-        auto &group_info = groups.at(group);
+        auto &group_info = registrar->groups.at(group_id);
 
         vk::AccelerationStructureGeometryInstancesDataKHR instances {};
         instances.setData(get_buffer_address(acceleration_struction_instance_infos_buffer->buffer));
@@ -113,13 +113,19 @@ namespace Match {
             .setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace | vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate)
             .setGeometries(geometry);
         
+        auto size_info = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, build, instance_count, manager->dispatcher);
+        if (scratch_buffer->size < size_info.updateScratchSize) {
+            scratch_buffer.reset();
+            scratch_buffer = std::make_unique<Buffer>(size_info.updateScratchSize, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+        }
+        
         auto command_buffer = manager->command_pool->allocate_single_use();
         build.setSrcAccelerationStructure(instance_collect)
             .setDstAccelerationStructure(instance_collect)
             .setScratchData(get_buffer_address(scratch_buffer->buffer));
         vk::AccelerationStructureBuildRangeInfoKHR range {};
-        range.setPrimitiveCount(group_info.instance_count)
-            .setPrimitiveOffset(group_info.instance_offset)
+        range.setPrimitiveCount(instance_count)
+            .setPrimitiveOffset(0)
             .setFirstVertex(0)
             .setTransformOffset(0);
         command_buffer.buildAccelerationStructuresKHR(build, &range, manager->dispatcher);
@@ -129,22 +135,29 @@ namespace Match {
     }
 
     RayTracingInstanceCollect::~RayTracingInstanceCollect() {
-        for (auto &[class_hash_code, buffer] : instance_infos_buffer_map) {
-            buffer.release_callback();
-            buffer.stage_vector_address = nullptr;
-            buffer.buffer.reset();
+        manager->device->device.destroyAccelerationStructureKHR(instance_collect, nullptr, manager->dispatcher);
+        instance_collect_buffer.reset();
+        scratch_buffer.reset();
+        acceleration_struction_instance_infos_buffer.reset();
+        registrar.reset();
+    }
+
+    RayTracingInstanceCollect::InstanceAddressData RayTracingInstanceCollect::create_instance_address_data(RayTracingModel &model) {
+        switch (model.get_ray_tracing_mode_type()) {
+        case RayTracingModel::RayTracingModelType::eTriangles:
+            return {
+                .vertex_buffer_address = get_buffer_address(model.acceleration_structure.value()->vertex_buffer->buffer),
+                .index_buffer_address = get_buffer_address(model.acceleration_structure.value()->index_buffer->buffer),
+            };
+        case RayTracingModel::RayTracingModelType::eSpheres:
+            return {
+                .vertex_buffer_address = 0,
+                .index_buffer_address = 0,
+            };
         }
-        instance_infos_buffer_map.clear();
     }
 
-    uint32_t RayTracingInstanceCollect::add_instance_address_info(Model &model) {
-        return add_instance_custom_info(InstanceAddressInfo {
-            .vertex_buffer_address = get_buffer_address(model.acceleration_structure.value()->vertex_buffer->buffer),
-            .index_buffer_address = get_buffer_address(model.acceleration_structure.value()->index_buffer->buffer),
-        });
-    }
-
-    bool RayTracingInstanceCollect::check_model_suitable(Model &model) {
+    bool RayTracingInstanceCollect::check_model_suitable(RayTracingModel &model) {
         if (model.acceleration_structure.has_value()) {
             return true;
         }
@@ -152,28 +165,4 @@ namespace Match {
         return false;
     }
     
-    void RayTracingInstanceCollect::multithread_update(uint32_t group, UpdateBatchCallback update_batch_callback) {
-        if (!allow_update) {
-            MCH_WARN("This RayTracingInstanceCollect doesn't allow update")
-            return ;
-        }
-
-        auto &group_info = groups.at(group);
-        uint32_t begin = group_info.instance_offset;
-        uint32_t end = begin + group_info.instance_count;
-
-        std::vector<std::thread> thread_pool;
-        uint32_t in_group_index = 0;
-        while (begin < end) {
-            uint32_t batch_end = std::min(begin + 500, end);
-            thread_pool.emplace_back([&]() {
-                update_batch_callback(in_group_index, begin, batch_end);
-            });
-            in_group_index += 500;
-            begin = batch_end;
-        }
-        for (auto &thread : thread_pool) {
-            thread.join();
-        }
-    }
 }

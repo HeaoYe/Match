@@ -28,6 +28,11 @@ namespace Match {
                     "    uint i1; \n"
                     "    uint i2; \n"
                     "};\n"
+                    "\n"
+                    "struct MatchSphere {\n"
+                    "    vec3 center;\n"
+                    "    float radius;\n"
+                    "};\n"
                 );
             } else if (strcmp(requested_source, "MatchRandom")) {
                 result->source_name = "MatchRandom";

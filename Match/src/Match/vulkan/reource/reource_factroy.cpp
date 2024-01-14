@@ -90,6 +90,10 @@ namespace Match {
         return std::make_shared<Model>(root + "/models/" + filename);
     }
 
+    std::shared_ptr<SphereCollect> ResourceFactory::create_sphere_collect() {
+        return std::make_shared<SphereCollect>();
+    }
+
     std::shared_ptr<AccelerationStructureBuilder> ResourceFactory::create_acceleration_structure_builder() {
         return std::make_shared<AccelerationStructureBuilder>();
     }

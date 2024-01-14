@@ -23,8 +23,8 @@ namespace Match {
         case Match::ShaderStage::eClosestHit:
             kind = shaderc_glsl_closesthit_shader;
             break;
-        default:
-            throw std::runtime_error("");
+        case Match::ShaderStage::eIntersection:
+            kind = shaderc_glsl_intersection_shader;
         }
         shaderc::Compiler compiler {};
         shaderc::CompileOptions options {};

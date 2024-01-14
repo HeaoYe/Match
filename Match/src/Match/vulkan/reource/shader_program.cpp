@@ -161,7 +161,7 @@ namespace Match {
         fragment_shader.shader.reset();
     }
 
-    RayTracingShaderProgram::RayTracingShaderProgram() {}
+    RayTracingShaderProgram::RayTracingShaderProgram() : hit_shader_count(0) {}
 
     RayTracingShaderProgram &RayTracingShaderProgram::attach_raygen_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
         raygen_shader.shader = shader;
@@ -170,43 +170,49 @@ namespace Match {
     }
     
     RayTracingShaderProgram &RayTracingShaderProgram::attach_miss_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
-        miss_shaders.push_back({
-            .shader = shader,
-            .entry = entry,
-        });
+        miss_shaders.emplace_back(shader, entry);
         return *this;
     }
     
-    RayTracingShaderProgram &RayTracingShaderProgram::attach_closest_hit_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
-        closest_hit_shaders.push_back({
-            .shader = shader,
-            .entry = entry,
+    RayTracingShaderProgram &RayTracingShaderProgram::attach_hit_group(const ShaderStageInfo &closest_hit_shader, const std::optional<ShaderStageInfo> &intersection_shader) {
+        hit_groups.push_back({
+            .closest_hit_shader = closest_hit_shader,
+            .intersection_shader = intersection_shader,
         });
+        hit_shader_count ++;
+        if (intersection_shader.has_value()) {
+            hit_shader_count ++;
+        }
         return *this;
     }
     
     RayTracingShaderProgram &RayTracingShaderProgram::compile(const RayTracingShaderProgramCompileOptions &options) {
-        uint32_t shader_count = 1 + miss_shaders.size() + closest_hit_shaders.size();
         std::vector<vk::RayTracingShaderGroupCreateInfoKHR> shader_groups;
         std::vector<vk::PipelineShaderStageCreateInfo> stages;
-        shader_groups.reserve(shader_count);
-        stages.reserve(shader_count);
+        shader_groups.reserve(1 + miss_shaders.size() + hit_groups.size());
+        stages.reserve(1 + miss_shaders.size() + hit_shader_count);
 
         shader_groups.emplace_back()
             .setType(vk::RayTracingShaderGroupTypeKHR::eGeneral)
             .setGeneralShader(stages.size());
         stages.push_back(create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eRaygenKHR, raygen_shader.shader->module.value(), raygen_shader.entry));
-        for (auto miss_shader : miss_shaders) {
+        for (auto &miss_shader : miss_shaders) {
             shader_groups.emplace_back()
                 .setType(vk::RayTracingShaderGroupTypeKHR::eGeneral)
                 .setGeneralShader(stages.size());
             stages.push_back(create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eMissKHR, miss_shader.shader->module.value(), miss_shader.entry));
         }
-        for (auto closest_hit_shader : closest_hit_shaders) {
-            shader_groups.emplace_back()
-                .setType(vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup)
+        for (auto &hit_group : hit_groups) {
+            auto &shader_group = shader_groups.emplace_back()
                 .setClosestHitShader(stages.size());
-            stages.push_back(create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eClosestHitKHR, closest_hit_shader.shader->module.value(), closest_hit_shader.entry));
+            stages.push_back(create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eClosestHitKHR, hit_group.closest_hit_shader.shader->module.value(), hit_group.closest_hit_shader.entry));
+            if (hit_group.intersection_shader.has_value()) {
+                shader_group.setIntersectionShader(stages.size())
+                    .setType(vk::RayTracingShaderGroupTypeKHR::eProceduralHitGroup);
+                stages.push_back(create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eIntersectionKHR, hit_group.intersection_shader.value().shader->module.value(), hit_group.intersection_shader.value().entry));
+            } else {
+                shader_group.setType(vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup);
+            }
         }
 
         compile_pipeline_layout();
@@ -234,10 +240,10 @@ namespace Match {
         miss_region.setStride(handle_stride)
             .setSize(align_address(miss_shaders.size() * handle_stride, ray_tracing_pipeline_properties.shaderGroupBaseAlignment));
         hit_region.setStride(handle_stride)
-            .setSize(align_address(closest_hit_shaders.size() * handle_stride, ray_tracing_pipeline_properties.shaderGroupBaseAlignment));
+            .setSize(align_address(hit_groups.size() * handle_stride, ray_tracing_pipeline_properties.shaderGroupBaseAlignment));
 
-        std::vector<uint8_t> handles_data(handle_size * shader_count);
-        vk_assert(manager->device->device.getRayTracingShaderGroupHandlesKHR(pipeline, 0, shader_count, handle_size * shader_count, handles_data.data(), manager->dispatcher));
+        std::vector<uint8_t> handles_data(handle_size * shader_groups.size());
+        vk_assert(manager->device->device.getRayTracingShaderGroupHandlesKHR(pipeline, 0, shader_groups.size(), handles_data.size(), handles_data.data(), manager->dispatcher));
         uint32_t shader_binding_table_size = raygen_region.size + miss_region.size + hit_region.size;
         shader_binding_table_buffer = std::make_unique<Match::Buffer>(shader_binding_table_size, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eShaderBindingTableKHR, VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
         auto shader_binding_table_buffer_addr = get_buffer_address(shader_binding_table_buffer->buffer);
@@ -253,7 +259,7 @@ namespace Match {
             memcpy(ptr + i * handle_stride, handles_data.data() + (i + 1) * handle_size, handle_size);
         }
         ptr += miss_region.size;
-        for (uint32_t i = 0; i < closest_hit_shaders.size(); i ++) {
+        for (uint32_t i = 0; i < hit_groups.size(); i ++) {
             memcpy(ptr + i * handle_stride, handles_data.data() + (i + 1 + miss_shaders.size()) * handle_size, handle_size);
         }
         shader_binding_table_buffer->unmap();
@@ -264,6 +270,7 @@ namespace Match {
     RayTracingShaderProgram::~RayTracingShaderProgram() {
         raygen_shader.shader.reset();
         miss_shaders.clear();
-        closest_hit_shaders.clear();
+        hit_groups.clear();
+        hit_shader_count = 0;
     }
 }
