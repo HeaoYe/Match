@@ -1,5 +1,6 @@
 #include <Match/vulkan/resource/model_acceleration_structure.hpp>
 #include <Match/vulkan/resource/model.hpp>
+#include <Match/vulkan/resource/gltf_scene.hpp>
 #include <Match/vulkan/utils.hpp>
 #include "../inner.hpp"
 
@@ -19,12 +20,14 @@ namespace Match {
         case RayTracingModel::RayTracingModelType::eSpheres:
             sphere_collects.push_back(std::dynamic_pointer_cast<SphereCollect>(model));
             break;
+        case RayTracingModel::RayTracingModelType::eGLTFScene:
+            gltf_scenes.push_back(std::dynamic_pointer_cast<GLTFScene>(model));
         }
     }
 
     void AccelerationStructureBuilder::build_update(bool is_update, bool allow_update) {
         std::vector<BuildInfo> build_infos;
-        build_infos.reserve(models.size() + sphere_collects.size());
+        build_infos.reserve(models.size() + sphere_collects.size() + gltf_scenes.size());
         uint64_t max_staging_size = current_staging_size, max_scratch_size = current_scratch_size;
         auto flags = vk::BuildAccelerationStructureFlagBitsKHR::eAllowCompaction | vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace;
         if (allow_update) {
@@ -45,24 +48,27 @@ namespace Match {
             auto primitive_count = model->index_count / 3;
             auto &info = build_infos.emplace_back(*model->acceleration_structure.value());
 
-            info.geometry_data = vk::AccelerationStructureGeometryTrianglesDataKHR {}
+            info.geometry_datas.emplace_back().triangles
                 .setVertexFormat(vk::Format::eR32G32B32Sfloat)
                 .setVertexStride(sizeof(Match::Vertex))
                 .setVertexData(get_buffer_address(model->acceleration_structure.value()->vertex_buffer->buffer))
                 .setMaxVertex(model->vertex_count - 1)
                 .setIndexType(vk::IndexType::eUint32)
-                .setIndexData(get_buffer_address(model->acceleration_structure.value()->index_buffer->buffer));
-            info.geometry.setGeometry(info.geometry_data)
+                .setIndexData(get_buffer_address(model->acceleration_structure.value()->index_buffer->buffer))
+                .sType = vk::StructureType::eAccelerationStructureGeometryTrianglesDataKHR;
+            info.geometries.emplace_back()
+                .setGeometry(info.geometry_datas[0])
                 .setGeometryType(vk::GeometryTypeKHR::eTriangles)
                 .setFlags(vk::GeometryFlagBitsKHR::eOpaque);
-            info.range.setFirstVertex(0)
+            info.ranges.emplace_back()
+                .setFirstVertex(0)
                 .setPrimitiveOffset(0)
                 .setPrimitiveCount(primitive_count)
                 .setTransformOffset(0);
             info.build.setType(vk::AccelerationStructureTypeKHR::eBottomLevel)
                 .setMode(mode)
                 .setFlags(flags)
-                .setGeometries(info.geometry);
+                .setGeometries(info.geometries);
             
             info.size = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, info.build, primitive_count, manager->dispatcher);
             max_scratch_size = std::max(max_scratch_size, is_update ? info.size.updateScratchSize : info.size.buildScratchSize);
@@ -80,22 +86,67 @@ namespace Match {
             auto primitive_count = sphere_collect->aabbs.size();
             auto &info = build_infos.emplace_back(*sphere_collect->acceleration_structure.value());
             
-            info.geometry_data = vk::AccelerationStructureGeometryAabbsDataKHR {}
+            info.geometry_datas.emplace_back().aabbs
                 .setData(get_buffer_address(sphere_collect->aabbs_buffer->buffer))
-                .setStride(sizeof(SphereCollect::SphereAaBbData));
-            info.geometry.setGeometry(info.geometry_data)
+                .setStride(sizeof(SphereCollect::SphereAaBbData))
+                .sType = vk::StructureType::eAccelerationStructureGeometryAabbsDataKHR;
+            info.geometries.emplace_back()
+                .setGeometry(info.geometry_datas[0])
                 .setGeometryType(vk::GeometryTypeKHR::eAabbs)
                 .setFlags(vk::GeometryFlagBitsKHR::eOpaque);
-            info.range.setFirstVertex(0)
+            info.ranges.emplace_back()
+                .setFirstVertex(0)
                 .setPrimitiveOffset(0)
                 .setPrimitiveCount(primitive_count)
                 .setTransformOffset(0);
             info.build.setType(vk::AccelerationStructureTypeKHR::eBottomLevel)
                 .setMode(mode)
                 .setFlags(flags)
-                .setGeometries(info.geometry);
+                .setGeometries(info.geometries);
             
             info.size = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, info.build, primitive_count, manager->dispatcher);
+            max_scratch_size = std::max(max_scratch_size, is_update ? info.size.updateScratchSize : info.size.buildScratchSize);
+        }
+        for (auto &gltf_scene : gltf_scenes) {
+            if (!is_update) {
+                auto model_acceleration_structure = std::make_unique<ModelAccelerationStructure>();
+                auto vertices_size = gltf_scene->positions.size() * sizeof(glm::vec3);
+                auto indices_size = gltf_scene->indices.size() * sizeof(uint32_t);
+                model_acceleration_structure->vertex_buffer = std::make_unique<Buffer>(vertices_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+                model_acceleration_structure->index_buffer = std::make_unique<Buffer>(indices_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+                max_staging_size = std::max(max_staging_size, vertices_size);
+                max_staging_size = std::max(max_staging_size, indices_size);
+                gltf_scene->acceleration_structure = std::move(model_acceleration_structure);
+            }
+            auto &info = build_infos.emplace_back(*gltf_scene->acceleration_structure.value());
+            std::vector<uint32_t> primitive_counts;
+            for (auto &mesh : gltf_scene->meshes) {
+                for (auto &primitive : mesh->primitives) {
+                    primitive_counts.push_back(primitive->index_count / 3);
+                    info.geometry_datas.emplace_back().triangles
+                        .setVertexFormat(vk::Format::eR32G32B32Sfloat)
+                        .setVertexStride(sizeof(glm::vec3))
+                        .setVertexData(get_buffer_address(gltf_scene->acceleration_structure.value()->vertex_buffer->buffer))
+                        .setMaxVertex(primitive->vertex_count - 1)
+                        .setIndexType(vk::IndexType::eUint32)
+                        .setIndexData(get_buffer_address(gltf_scene->acceleration_structure.value()->index_buffer->buffer))
+                        .sType = vk::StructureType::eAccelerationStructureGeometryTrianglesDataKHR;
+                    info.geometries.emplace_back()
+                        .setGeometry(info.geometry_datas.back())
+                        .setGeometryType(vk::GeometryTypeKHR::eTriangles)
+                        .setFlags(vk::GeometryFlagBitsKHR::eOpaque);
+                    info.ranges.emplace_back()
+                        .setFirstVertex(primitive->first_vertex)
+                        .setPrimitiveOffset(primitive->first_index * sizeof(uint32_t))
+                        .setPrimitiveCount(primitive_counts.back())
+                        .setTransformOffset(0);
+                }
+            }
+            info.build.setType(vk::AccelerationStructureTypeKHR::eBottomLevel)
+                .setMode(mode)
+                .setFlags(flags)
+                .setGeometries(info.geometries);
+            info.size = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, info.build, primitive_counts, manager->dispatcher);
             max_scratch_size = std::max(max_scratch_size, is_update ? info.size.updateScratchSize : info.size.buildScratchSize);
         }
         
@@ -137,6 +188,28 @@ namespace Match {
                 copy_command_buffer.copyBuffer(staging->buffer, model->acceleration_structure.value()->index_buffer->buffer, copy);
                 manager->command_pool->free_single_use(copy_command_buffer);
             }
+            for (auto &gltf_scene : gltf_scenes) {
+                auto *ptr = static_cast<uint8_t *>(staging->map());
+
+                uint64_t vertices_size = gltf_scene->positions.size() * sizeof(glm::vec3);
+                memcpy(ptr, gltf_scene->positions.data(), vertices_size);
+
+                auto copy_command_buffer = manager->command_pool->allocate_single_use();
+                vk::BufferCopy copy {};
+                copy.setSrcOffset(0)
+                    .setDstOffset(0)
+                    .setSize(vertices_size);
+                copy_command_buffer.copyBuffer(staging->buffer, gltf_scene->acceleration_structure.value()->vertex_buffer->buffer, copy);
+                manager->command_pool->free_single_use(copy_command_buffer);
+
+                uint64_t indices_size = gltf_scene->indices.size() * sizeof(uint32_t);
+                memcpy(ptr, gltf_scene->indices.data(), indices_size);
+
+                copy_command_buffer = manager->command_pool->allocate_single_use();
+                copy.setSize(indices_size);
+                copy_command_buffer.copyBuffer(staging->buffer, gltf_scene->acceleration_structure.value()->index_buffer->buffer, copy);
+                manager->command_pool->free_single_use(copy_command_buffer);
+            }
             if (staging.get() != nullptr) {
                 staging->unmap();
             }
@@ -169,7 +242,7 @@ namespace Match {
 
                         info.build.setDstAccelerationStructure(info.uncompacted_acceleration_structure)
                             .setScratchData(scratch_address);
-                        command_buffer.buildAccelerationStructuresKHR(info.build, &info.range, manager->dispatcher);
+                        command_buffer.buildAccelerationStructuresKHR(info.build, info.ranges.data(), manager->dispatcher);
 
                         vk::MemoryBarrier barrier {};
                         barrier.setSrcAccessMask(vk::AccessFlagBits::eAccelerationStructureWriteKHR)
@@ -212,7 +285,7 @@ namespace Match {
                         info.build.setSrcAccelerationStructure(acceleration_structure.bottom_level_acceleration_structure)
                             .setDstAccelerationStructure(acceleration_structure.bottom_level_acceleration_structure)
                             .setScratchData(scratch_address);
-                        command_buffer.buildAccelerationStructuresKHR(info.build, &info.range, manager->dispatcher);
+                        command_buffer.buildAccelerationStructuresKHR(info.build, info.ranges.data(), manager->dispatcher);
 
                         vk::MemoryBarrier barrier {};
                         barrier.setSrcAccessMask(vk::AccessFlagBits::eAccelerationStructureWriteKHR)

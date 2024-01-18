@@ -48,13 +48,15 @@ void RayTracingV2Scene::initialize() {
     sphere_collect->add_sphere(0, { 0, 1, 0 }, 0.7, Material { .albedo = { 0.4, 0.4, 1 }, .roughness = 1, .spec_prob = 0.2 });
     // 金属反射
     sphere_collect->add_sphere(0, { 2, 1, 0 }, 1, Material { .albedo = { 0.4, 0.4, 1 }, .roughness = 0, .spec_prob = 0 });
-    sphere_collect->add_sphere(0, {0, -500, 0 }, 500, Material { .albedo = { 0.8, 0.5, 0.25 }, .roughness = 0, .light_intensity = 0 });
+    sphere_collect->add_sphere(0, {0, -500, 0 }, 500, Material { .albedo = { 0.8, 0.5, 0.25 }, .roughness = 1.0, .light_intensity = 0 });
 
     model = factory->load_model("dragon.obj");
+    gltf_scene = factory->load_gltf_scene("Sponza/glTF/Sponza.gltf");
 
     auto builder = factory->create_acceleration_structure_builder();
     builder->add_model(sphere_collect);
     builder->add_model(model);
+    builder->add_model(gltf_scene);
     builder->build();
     builder.reset();
 
@@ -65,7 +67,11 @@ void RayTracingV2Scene::initialize() {
         .albedo = { 0.8, 0.5, 0.25 },
         .roughness = 0.6,
     };
+    gltf_material = {
+        .spec_prob = 1,
+    };
     instance_collect->add_instance(1, model, glm::translate(glm::vec3(-1, 0.5, 0)), 1, dragon_material);
+    instance_collect->add_instance(2, gltf_scene, glm::mat4(0.01), 2, gltf_material);
     instance_collect->build();
 
     auto [width, height] = Match::runtime_setting->get_window_size();
@@ -85,6 +91,7 @@ void RayTracingV2Scene::initialize() {
     auto closest_hit_shader = factory->compile_shader("ray_tracing_v2_shader/sphere.rchit", Match::ShaderStage::eClosestHit);
     auto intersection_shader = factory->compile_shader("ray_tracing_v2_shader/sphere.rint", Match::ShaderStage::eIntersection);
     auto triangle_closest_hit_shader = factory->compile_shader("ray_tracing_v2_shader/triangle.rchit", Match::ShaderStage::eClosestHit);
+    auto gltf_closest_hit_shader = factory->compile_shader("ray_tracing_v2_shader/gltf.rchit", Match::ShaderStage::eClosestHit);
 
     ray_tracing_shader_program_constants = factory->create_push_constants(
         Match::ShaderStage::eRaygen, 
@@ -94,6 +101,7 @@ void RayTracingV2Scene::initialize() {
             { "frame_count", Match::ConstantType::eInt32 },
             { "view_depth", Match::ConstantType::eFloat },
             { "view_depth_strength", Match::ConstantType::eFloat },
+            { "max_ray_recursion_depth", Match::ConstantType::eInt32 },
         }
     );
 
@@ -121,10 +129,11 @@ void RayTracingV2Scene::initialize() {
         .attach_miss_shader(miss_shader)
         .attach_hit_group(closest_hit_shader, intersection_shader)
         .attach_hit_group(triangle_closest_hit_shader)
+        .attach_hit_group(gltf_closest_hit_shader)
         .attach_descriptor_set(ray_tracing_shader_program_ds)
         .attach_push_constants(ray_tracing_shader_program_constants)
         .compile({
-            .max_ray_recursion_depth = 16,
+            .max_ray_recursion_depth = 1,  // 因为提取了光线递归,所以最大深度为1,这样可以加速光追渲染
         });
 
     auto vert_shader = factory->compile_shader("ray_tracing_v2_shader/shader.vert", Match::ShaderStage::eVertex);
@@ -169,6 +178,9 @@ void RayTracingV2Scene::update(float dt) {
     instance_collect->update<Material>(1, [this](uint32_t index, auto &material) {
         material = dragon_material;
     });
+    instance_collect->update<Material>(2, [this](uint32_t index, auto &material) {
+        material = gltf_material;
+    });
 }
 
 void RayTracingV2Scene::render() {
@@ -188,9 +200,13 @@ void RayTracingV2Scene::render_imgui() {
 
     bool changed = false;
 
-    static int sample_count = 1;
+    static int sample_count = 3;
     changed |= ImGui::SliderInt("Sample Count", &sample_count, 1, 16);
     ray_tracing_shader_program_constants->push_constant("sample_count", sample_count);
+
+    static int max_ray_recursion_depth = 6;
+    changed |= ImGui::SliderInt("Max Ray Recursion Depth", &max_ray_recursion_depth, 1, 16);
+    ray_tracing_shader_program_constants->push_constant("max_ray_recursion_depth", max_ray_recursion_depth);
 
     static float view_depth = 1;
     changed |= ImGui::SliderFloat("View Depth", &view_depth, 0.01, 5);
@@ -198,15 +214,22 @@ void RayTracingV2Scene::render_imgui() {
     ray_tracing_shader_program_constants->push_constant("view_depth", view_depth);
 
     static float view_depth_strength = 0.01;
-    changed |= ImGui::SliderFloat("View Depth Strength", &view_depth_strength, 0.01, 0.5);
+    changed |= ImGui::SliderFloat("View Depth Strength", &view_depth_strength, 0, 0.5);
     ray_tracing_shader_program_constants->push_constant("view_depth_strength", view_depth_strength);
 
-    changed |= ImGui::ColorEdit3("albedo", &dragon_material.albedo.r);
-    changed |= ImGui::SliderFloat("roughness", &dragon_material.roughness, 0, 1);
-    changed |= ImGui::ColorEdit3("spec_albedo", &dragon_material.spec_albedo.r);
-    changed |= ImGui::SliderFloat("spec_prob", &dragon_material.spec_prob, 0, 1);
-    changed |= ImGui::ColorEdit3("light_color", &dragon_material.light_color.r);
-    changed |= ImGui::SliderFloat("light_intensity", &dragon_material.light_intensity, 0, 1);
+    changed |= ImGui::ColorEdit3("dragon_albedo", &dragon_material.albedo.r);
+    changed |= ImGui::SliderFloat("dragon_roughness", &dragon_material.roughness, 0, 1);
+    changed |= ImGui::ColorEdit3("dragon_spec_albedo", &dragon_material.spec_albedo.r);
+    changed |= ImGui::SliderFloat("dragon_spec_prob", &dragon_material.spec_prob, 0, 1);
+    changed |= ImGui::ColorEdit3("dragon_light_color", &dragon_material.light_color.r);
+    changed |= ImGui::SliderFloat("dragon_light_intensity", &dragon_material.light_intensity, 0, 1);
+    ImGui::Separator();
+    changed |= ImGui::ColorEdit3("gltf_albedo", &gltf_material.albedo.r);
+    changed |= ImGui::SliderFloat("gltf_roughness", &gltf_material.roughness, 0, 1);
+    changed |= ImGui::ColorEdit3("gltf_spec_albedo", &gltf_material.spec_albedo.r);
+    changed |= ImGui::SliderFloat("gltf_spec_prob", &gltf_material.spec_prob, 0, 1);
+    changed |= ImGui::ColorEdit3("gltf_light_color", &gltf_material.light_color.r);
+    changed |= ImGui::SliderFloat("gltf_light_intensity", &gltf_material.light_intensity, 0, 1);
 
     if (changed) {
         frame_count = 0;

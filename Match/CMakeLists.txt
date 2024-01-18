@@ -11,6 +11,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 file(GLOB_RECURSE source CONFIGURE_DEPENDS src/Match/*.cpp)
 add_library(Match SHARED ${source})
 
+# Link tinygltf
+target_link_libraries(Match PUBLIC tinygltf)
+
 # Link tinyobjloader
 target_link_libraries(Match PRIVATE tinyobjloader)
 

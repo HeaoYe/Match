@@ -6,6 +6,7 @@ namespace Match {
     class RayTracingModel;
     class Model;
     class SphereCollect;
+    class GLTFScene;
 
     class ModelAccelerationStructure {
         default_no_copy_move_construction(ModelAccelerationStructure);
@@ -24,10 +25,10 @@ namespace Match {
         struct BuildInfo {
             BuildInfo(ModelAccelerationStructure &model_acceleration_structure) : model_acceleration_structure(model_acceleration_structure) {};
             ModelAccelerationStructure &model_acceleration_structure;
-            vk::AccelerationStructureGeometryDataKHR geometry_data {};
-            vk::AccelerationStructureGeometryKHR geometry {};
+            std::vector<vk::AccelerationStructureGeometryDataKHR> geometry_datas {};
+            std::vector<vk::AccelerationStructureGeometryKHR> geometries {};
             vk::AccelerationStructureBuildGeometryInfoKHR build {};
-            vk::AccelerationStructureBuildRangeInfoKHR range {};
+            std::vector<vk::AccelerationStructureBuildRangeInfoKHR> ranges {};
             vk::AccelerationStructureBuildSizesInfoKHR size {};
             vk::AccelerationStructureKHR uncompacted_acceleration_structure {};
             std::unique_ptr<Buffer> uncompacted_acceleration_structure_buffer {};
@@ -46,5 +47,6 @@ namespace Match {
         uint64_t current_scratch_size = 0;
         std::vector<std::shared_ptr<Model>> models;
         std::vector<std::shared_ptr<SphereCollect>> sphere_collects;
+        std::vector<std::shared_ptr<GLTFScene>> gltf_scenes;
     };
 }

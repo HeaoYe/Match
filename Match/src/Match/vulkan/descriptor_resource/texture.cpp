@@ -16,7 +16,7 @@ namespace Match {
         memcpy(buffer.map(), data, size);
         buffer.unmap();
         if (mip_levels == 0) {
-            mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+            mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height))) + 1);
         }
         this->mip_levels = mip_levels;
         image = std::make_unique<Image>(width, height, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst, vk::SampleCountFlagBits::e1, VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, mip_levels);

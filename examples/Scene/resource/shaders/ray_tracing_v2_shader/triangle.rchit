@@ -29,7 +29,7 @@ void main() {
     vec3 pos = W.x * v0.pos + W.y * v1.pos + W.z * v2.pos;
     pos = (gl_ObjectToWorldEXT * vec4(pos, 1)).xyz;
     vec3 normal = W.x * v0.normal + W.y * v1.normal + W.z * v2.normal;
-    normal = (gl_ObjectToWorldEXT * vec4(normal, 0)).xyz;
+    normal = normalize((gl_ObjectToWorldEXT * vec4(normal, 0)).xyz);
 
     compute_hit_color(pos, normal, material);
 }

@@ -98,6 +98,10 @@ namespace Match {
         return std::make_shared<SphereCollect>();
     }
 
+    std::shared_ptr<GLTFScene> ResourceFactory::load_gltf_scene(const std::string &filename) {
+        return std::make_shared<GLTFScene>(root + "/models/" + filename);
+    }
+
     std::shared_ptr<AccelerationStructureBuilder> ResourceFactory::create_acceleration_structure_builder() {
         return std::make_shared<AccelerationStructureBuilder>();
     }

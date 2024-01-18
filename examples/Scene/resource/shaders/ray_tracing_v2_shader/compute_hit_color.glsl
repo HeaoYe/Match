@@ -16,13 +16,18 @@ struct RayInfo {
     uint rnd_state;
     vec3 color;
     vec3 albedo;
+    vec3 origin;
+    vec3 direction;
 };
 
 layout (binding = 1) uniform accelerationStructureEXT instance;
 
 layout (location = 0) rayPayloadInEXT RayInfo ray;
 
-const int max_ray_recursion_depth = 16;
+// 高斯分布随机数
+float uniform_rnd(inout uint state, float mean, float std) {
+    return mean + std * (sqrt(-2 * log(rnd(state))) * cos(2 * 3.1415926535 * rnd(state)));
+}
 
 void compute_hit_color(vec3 pos, vec3 normal, Material material) {
     ray.count += 1;
@@ -32,28 +37,12 @@ void compute_hit_color(vec3 pos, vec3 normal, Material material) {
     ray.color += ray.albedo * material.light_color * material.light_intensity;
     ray.albedo *= mix(material.albedo, material.spec_albedo, is_spec);
 
-    if (ray.count >= max_ray_recursion_depth) {
-        return;
-    }
-
-    vec3 random_direction = normalize(vec3(rnd(ray.rnd_state), rnd(ray.rnd_state), rnd(ray.rnd_state)));
-    vec3 diff_direction = normalize(normal + material.roughness * random_direction);
-    diff_direction *= sign(dot(diff_direction, normal));
-    vec3 direction = mix(
+    vec3 random_direction = normalize(vec3(uniform_rnd(ray.rnd_state, 0, 1), uniform_rnd(ray.rnd_state, 0, 1), uniform_rnd(ray.rnd_state, 0, 1)));
+    vec3 diff_direction = normalize(normal + random_direction);
+    ray.direction = normalize(mix(
         reflect(gl_WorldRayDirectionEXT, normal),
         diff_direction,
-        material.roughness * (1 - is_spec)
-    );
-    traceRayEXT(
-        instance,
-        gl_RayFlagsOpaqueEXT,
-        0xff,
-        0, 0,
-        0,
-        pos,
-        0.001,
-        direction,
-        10000.0,
-        0
-    );
+        material.roughness * material.roughness * (1 - is_spec)
+    ));
+    ray.origin = pos;
 }

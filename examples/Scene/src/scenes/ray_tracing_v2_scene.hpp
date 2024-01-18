@@ -19,9 +19,10 @@ private:
     std::unique_ptr<Camera> camera;
     
     
-    Material dragon_material {};
+    Material dragon_material {}, gltf_material {};
     std::shared_ptr<Match::Model> model;
     std::shared_ptr<Match::SphereCollect> sphere_collect;
+    std::shared_ptr<Match::GLTFScene> gltf_scene;
 
     std::shared_ptr<Match::StorageImage> ray_tracing_result_image;
     std::shared_ptr<Match::RayTracingInstanceCollect> instance_collect;

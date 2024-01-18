@@ -145,6 +145,7 @@ namespace Match {
     RayTracingInstanceCollect::InstanceAddressData RayTracingInstanceCollect::create_instance_address_data(RayTracingModel &model) {
         switch (model.get_ray_tracing_mode_type()) {
         case RayTracingModel::RayTracingModelType::eTriangles:
+        case RayTracingModel::RayTracingModelType::eGLTFScene:
             return {
                 .vertex_buffer_address = get_buffer_address(model.acceleration_structure.value()->vertex_buffer->buffer),
                 .index_buffer_address = get_buffer_address(model.acceleration_structure.value()->index_buffer->buffer),

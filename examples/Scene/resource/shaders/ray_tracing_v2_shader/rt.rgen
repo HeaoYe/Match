@@ -18,6 +18,7 @@ layout (push_constant) uniform C {
     int frame_count;
     float view_depth;
     float view_depth_strength;
+    int max_ray_recursion_depth;
 } c;
 
 struct RayInfo {
@@ -25,6 +26,8 @@ struct RayInfo {
     uint rnd_state;
     vec3 color;
     vec3 albedo;
+    vec3 origin;
+    vec3 direction;
 };
 
 layout (location = 0) rayPayloadEXT RayInfo ray;
@@ -50,18 +53,22 @@ void main() {
         ray.count = 0;
         ray.color = vec3(0);
         ray.albedo = vec3(1);
-        traceRayEXT(
-            instance,
-            gl_RayFlagsOpaqueEXT,
-            0xff,
-            0, 0,
-            0,
-            random_camera_pos,
-            0.001,
-            normalize(view_point - random_camera_pos),
-            10000.0,
-            0
-        );
+        ray.origin = random_camera_pos;
+        ray.direction = normalize(view_point - random_camera_pos);
+        while (ray.count < c.max_ray_recursion_depth) {
+            traceRayEXT(
+                instance,
+                gl_RayFlagsOpaqueEXT,
+                0xff,
+                0, 0,
+                0,
+                ray.origin,
+                0.001,
+                ray.direction,
+                10000.0,
+                0
+            );
+        }
 
         final_color += ray.color;
     }

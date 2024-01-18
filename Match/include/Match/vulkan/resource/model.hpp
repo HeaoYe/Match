@@ -40,6 +40,7 @@ namespace Match {
         enum class RayTracingModelType {
             eTriangles,
             eSpheres,
+            eGLTFScene,
         };
     public:
         virtual RayTracingModelType get_ray_tracing_mode_type() = 0;
