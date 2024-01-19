@@ -8,20 +8,27 @@ namespace Match {
     ModelAccelerationStructure::~ModelAccelerationStructure() {
         manager->device->device.destroyAccelerationStructureKHR(bottom_level_acceleration_structure, nullptr, manager->dispatcher);
         acceleration_structure_buffer.reset();
-        vertex_buffer.reset();
-        index_buffer.reset();
     }
 
     void AccelerationStructureBuilder::add_model(std::shared_ptr<RayTracingModel> model) {
-        switch (model->get_ray_tracing_mode_type()) {
-        case RayTracingModel::RayTracingModelType::eTriangles:
+        switch (model->get_ray_tracing_model_type()) {
+        case RayTracingModel::RayTracingModelType::eModel:
             models.push_back(std::move(std::dynamic_pointer_cast<Model>(model)));
             break;
-        case RayTracingModel::RayTracingModelType::eSpheres:
+        case RayTracingModel::RayTracingModelType::eSphereCollect:
             sphere_collects.push_back(std::dynamic_pointer_cast<SphereCollect>(model));
             break;
-        case RayTracingModel::RayTracingModelType::eGLTFScene:
-            gltf_scenes.push_back(std::dynamic_pointer_cast<GLTFScene>(model));
+        case RayTracingModel::RayTracingModelType::eGLTFPrimitive:
+            MCH_ERROR("Please use add_scene(...) to add GLTFPrimitive with GLTFScene")
+            break;
+        }
+    }
+
+    void AccelerationStructureBuilder::add_scene(std::shared_ptr<RayTracingScene> scene) {
+        switch (scene->get_ray_tracing_scene_type()) {
+        case Match::RayTracingScene::RayTracingSceneType::eGLTFScene:
+            gltf_scenes.push_back(std::dynamic_pointer_cast<GLTFScene>(std::dynamic_pointer_cast<GLTFScene>(scene)));
+            break;
         }
     }
 
@@ -36,14 +43,13 @@ namespace Match {
         auto mode = is_update ? vk::BuildAccelerationStructureModeKHR::eUpdate : vk::BuildAccelerationStructureModeKHR::eBuild;
         for (auto &model : models) {
             if (!is_update) {
-                auto model_acceleration_structure = std::make_unique<ModelAccelerationStructure>();
                 auto vertices_size = model->vertex_count * sizeof(Vertex);
                 auto indices_size = model->index_count * sizeof(uint32_t);
-                model_acceleration_structure->vertex_buffer = std::make_unique<Buffer>(vertices_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
-                model_acceleration_structure->index_buffer = std::make_unique<Buffer>(indices_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+                model->vertex_buffer = std::make_unique<Buffer>(vertices_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+                model->index_buffer = std::make_unique<Buffer>(indices_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
                 max_staging_size = std::max(max_staging_size, vertices_size);
                 max_staging_size = std::max(max_staging_size, indices_size);
-                model->acceleration_structure = std::move(model_acceleration_structure);
+                model->acceleration_structure = std::make_unique<ModelAccelerationStructure>();
             }
             auto primitive_count = model->index_count / 3;
             auto &info = build_infos.emplace_back(*model->acceleration_structure.value());
@@ -51,10 +57,10 @@ namespace Match {
             info.geometry_datas.emplace_back().triangles
                 .setVertexFormat(vk::Format::eR32G32B32Sfloat)
                 .setVertexStride(sizeof(Match::Vertex))
-                .setVertexData(get_buffer_address(model->acceleration_structure.value()->vertex_buffer->buffer))
+                .setVertexData(get_buffer_address(model->vertex_buffer->buffer))
                 .setMaxVertex(model->vertex_count - 1)
                 .setIndexType(vk::IndexType::eUint32)
-                .setIndexData(get_buffer_address(model->acceleration_structure.value()->index_buffer->buffer))
+                .setIndexData(get_buffer_address(model->index_buffer->buffer))
                 .sType = vk::StructureType::eAccelerationStructureGeometryTrianglesDataKHR;
             info.geometries.emplace_back()
                 .setGeometry(info.geometry_datas[0])
@@ -75,13 +81,10 @@ namespace Match {
         }
         for (auto &sphere_collect : sphere_collects) {
             if (!is_update) {
-                auto model_acceleration_structure = std::make_unique<ModelAccelerationStructure>();
                 if (sphere_collect->aabbs.empty()) {
                     sphere_collect->build();
                 }
-                model_acceleration_structure->vertex_buffer = nullptr;
-                model_acceleration_structure->index_buffer = nullptr;
-                sphere_collect->acceleration_structure = std::move(model_acceleration_structure);
+                sphere_collect->acceleration_structure = std::make_unique<ModelAccelerationStructure>();
             }
             auto primitive_count = sphere_collect->aabbs.size();
             auto &info = build_infos.emplace_back(*sphere_collect->acceleration_structure.value());
@@ -109,47 +112,48 @@ namespace Match {
         }
         for (auto &gltf_scene : gltf_scenes) {
             if (!is_update) {
-                auto model_acceleration_structure = std::make_unique<ModelAccelerationStructure>();
                 auto vertices_size = gltf_scene->positions.size() * sizeof(glm::vec3);
                 auto indices_size = gltf_scene->indices.size() * sizeof(uint32_t);
-                model_acceleration_structure->vertex_buffer = std::make_unique<Buffer>(vertices_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
-                model_acceleration_structure->index_buffer = std::make_unique<Buffer>(indices_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+                gltf_scene->vertex_buffer = std::make_unique<Buffer>(vertices_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+                gltf_scene->index_buffer = std::make_unique<Buffer>(indices_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
                 max_staging_size = std::max(max_staging_size, vertices_size);
                 max_staging_size = std::max(max_staging_size, indices_size);
-                gltf_scene->acceleration_structure = std::move(model_acceleration_structure);
             }
-            auto &info = build_infos.emplace_back(*gltf_scene->acceleration_structure.value());
-            std::vector<uint32_t> primitive_counts;
-            for (auto &mesh : gltf_scene->meshes) {
-                for (auto &primitive : mesh->primitives) {
-                    primitive_counts.push_back(primitive->index_count / 3);
+            for (auto *gltf_node : gltf_scene->all_node_references) {
+                for (auto &gltf_primitive : gltf_node->mesh->primitives) {
+                    if (!is_update) {
+                        gltf_primitive->acceleration_structure = std::make_unique<ModelAccelerationStructure>();
+                    }
+                    auto primitive_count = gltf_primitive->index_count / 3;
+                    auto &info = build_infos.emplace_back(*gltf_primitive->acceleration_structure.value());
+
                     info.geometry_datas.emplace_back().triangles
                         .setVertexFormat(vk::Format::eR32G32B32Sfloat)
                         .setVertexStride(sizeof(glm::vec3))
-                        .setVertexData(get_buffer_address(gltf_scene->acceleration_structure.value()->vertex_buffer->buffer))
-                        .setMaxVertex(primitive->vertex_count - 1)
+                        .setVertexData(get_buffer_address(gltf_scene->vertex_buffer->buffer))
+                        .setMaxVertex(gltf_primitive->vertex_count - 1)
                         .setIndexType(vk::IndexType::eUint32)
-                        .setIndexData(get_buffer_address(gltf_scene->acceleration_structure.value()->index_buffer->buffer))
+                        .setIndexData(get_buffer_address(gltf_scene->index_buffer->buffer))
                         .sType = vk::StructureType::eAccelerationStructureGeometryTrianglesDataKHR;
                     info.geometries.emplace_back()
                         .setGeometry(info.geometry_datas.back())
                         .setGeometryType(vk::GeometryTypeKHR::eTriangles)
                         .setFlags(vk::GeometryFlagBitsKHR::eOpaque);
                     info.ranges.emplace_back()
-                        .setFirstVertex(primitive->first_vertex)
-                        .setPrimitiveOffset(primitive->first_index * sizeof(uint32_t))
-                        .setPrimitiveCount(primitive_counts.back())
+                        .setFirstVertex(gltf_primitive->primitive_instance_data.first_vertex)
+                        .setPrimitiveOffset(gltf_primitive->primitive_instance_data.first_index * sizeof(uint32_t))
+                        .setPrimitiveCount(primitive_count)
                         .setTransformOffset(0);
+                    info.build.setType(vk::AccelerationStructureTypeKHR::eBottomLevel)
+                        .setMode(mode)
+                        .setFlags(flags)
+                        .setGeometries(info.geometries);
+                    info.size = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, info.build, primitive_count, manager->dispatcher);
+                    max_scratch_size = std::max(max_scratch_size, is_update ? info.size.updateScratchSize : info.size.buildScratchSize);
                 }
             }
-            info.build.setType(vk::AccelerationStructureTypeKHR::eBottomLevel)
-                .setMode(mode)
-                .setFlags(flags)
-                .setGeometries(info.geometries);
-            info.size = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, info.build, primitive_counts, manager->dispatcher);
-            max_scratch_size = std::max(max_scratch_size, is_update ? info.size.updateScratchSize : info.size.buildScratchSize);
         }
-        
+
         if (max_staging_size > current_staging_size) {
             staging.reset();
             staging = std::make_unique<Buffer>(max_staging_size, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
@@ -173,7 +177,7 @@ namespace Match {
                 copy.setSrcOffset(0)
                     .setDstOffset(0)
                     .setSize(vertices_size);
-                copy_command_buffer.copyBuffer(staging->buffer, model->acceleration_structure.value()->vertex_buffer->buffer, copy);
+                copy_command_buffer.copyBuffer(staging->buffer, model->vertex_buffer->buffer, copy);
                 manager->command_pool->free_single_use(copy_command_buffer);
 
                 uint64_t total_indices_size = 0;
@@ -185,29 +189,25 @@ namespace Match {
                 }
                 copy_command_buffer = manager->command_pool->allocate_single_use();
                 copy.setSize(total_indices_size);
-                copy_command_buffer.copyBuffer(staging->buffer, model->acceleration_structure.value()->index_buffer->buffer, copy);
+                copy_command_buffer.copyBuffer(staging->buffer, model->index_buffer->buffer, copy);
                 manager->command_pool->free_single_use(copy_command_buffer);
             }
             for (auto &gltf_scene : gltf_scenes) {
                 auto *ptr = static_cast<uint8_t *>(staging->map());
-
-                uint64_t vertices_size = gltf_scene->positions.size() * sizeof(glm::vec3);
-                memcpy(ptr, gltf_scene->positions.data(), vertices_size);
-
-                auto copy_command_buffer = manager->command_pool->allocate_single_use();
                 vk::BufferCopy copy {};
                 copy.setSrcOffset(0)
-                    .setDstOffset(0)
-                    .setSize(vertices_size);
-                copy_command_buffer.copyBuffer(staging->buffer, gltf_scene->acceleration_structure.value()->vertex_buffer->buffer, copy);
+                    .setDstOffset(0);
+                
+                copy.setSize(gltf_scene->positions.size() * sizeof(glm::vec3));
+                memcpy(ptr, gltf_scene->positions.data(), copy.size);
+                auto copy_command_buffer = manager->command_pool->allocate_single_use();
+                copy_command_buffer.copyBuffer(staging->buffer, gltf_scene->vertex_buffer->buffer, copy);
                 manager->command_pool->free_single_use(copy_command_buffer);
 
-                uint64_t indices_size = gltf_scene->indices.size() * sizeof(uint32_t);
-                memcpy(ptr, gltf_scene->indices.data(), indices_size);
-
+                copy.setSize(gltf_scene->indices.size() * sizeof(uint32_t));
+                memcpy(ptr, gltf_scene->indices.data(), copy.size);
                 copy_command_buffer = manager->command_pool->allocate_single_use();
-                copy.setSize(indices_size);
-                copy_command_buffer.copyBuffer(staging->buffer, gltf_scene->acceleration_structure.value()->index_buffer->buffer, copy);
+                copy_command_buffer.copyBuffer(staging->buffer, gltf_scene->index_buffer->buffer, copy);
                 manager->command_pool->free_single_use(copy_command_buffer);
             }
             if (staging.get() != nullptr) {

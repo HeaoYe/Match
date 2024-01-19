@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Match/vulkan/resource/model.hpp>
+#include <Match/vulkan/resource/gltf_scene.hpp>
 #include <Match/vulkan/resource/custom_data_registrar.hpp>
 #include <Match/vulkan/utils.hpp>
 #include <Match/core/utils.hpp>
@@ -30,6 +31,8 @@ namespace Match {
         RayTracingInstanceCollect &register_custom_instance_data();
         template <class ...Args>
         RayTracingInstanceCollect &add_instance(uint32_t group_id, std::shared_ptr<RayTracingModel> model, const glm::mat4 &transform_matrix, uint32_t hit_group, Args &&... args);
+        template <class ...Args>
+        RayTracingInstanceCollect &add_scene(uint32_t group_id, std::shared_ptr<RayTracingScene> scene, uint32_t hit_group, Args &&... args);
         template <class CustomInstanceData>
         std::shared_ptr<Buffer> get_custom_instance_data_buffer();
         std::shared_ptr<Buffer> get_instance_address_data_buffer() { return get_custom_instance_data_buffer<InstanceAddressData>(); }
@@ -78,6 +81,18 @@ namespace Match {
         );
 
         return *this;
+    }
+
+    template <class ...Args>
+    RayTracingInstanceCollect &RayTracingInstanceCollect::add_scene(uint32_t group_id, std::shared_ptr<RayTracingScene> scene, uint32_t hit_group, Args &&... args) {
+        switch(scene->get_ray_tracing_scene_type()) {
+        case RayTracingScene::RayTracingSceneType::eGLTFScene:
+            auto gltf_scene = std::dynamic_pointer_cast<GLTFScene>(scene);
+            gltf_scene->enumerate_primitives([&](auto *node, auto gltf_primitive) {
+                add_instance(group_id, gltf_primitive, node->get_world_matrix(), hit_group, gltf_primitive->get_primitive_instance_data(), std::forward<Args>(args)...);
+            });
+            return *this;
+        }
     }
 
     template <class CustomInstanceData>

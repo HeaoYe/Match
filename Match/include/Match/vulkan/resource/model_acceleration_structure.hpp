@@ -4,9 +4,11 @@
 
 namespace Match {
     class RayTracingModel;
+    class RayTracingScene;
     class Model;
     class SphereCollect;
     class GLTFScene;
+    class GLTFNode;
 
     class ModelAccelerationStructure {
         default_no_copy_move_construction(ModelAccelerationStructure);
@@ -15,8 +17,6 @@ namespace Match {
     INNER_VISIBLE:
         vk::AccelerationStructureKHR bottom_level_acceleration_structure ;
         std::unique_ptr<Buffer> acceleration_structure_buffer;
-        std::unique_ptr<Buffer> vertex_buffer;
-        std::unique_ptr<Buffer> index_buffer;
     };
 
     class AccelerationStructureBuilder {
@@ -35,6 +35,7 @@ namespace Match {
         };
     public:
         void add_model(std::shared_ptr<RayTracingModel> model);
+        void add_scene(std::shared_ptr<RayTracingScene> scene);
         void build(bool allow_update = false) { build_update(false, allow_update); }
         void update() { build_update(true, true); }
         ~AccelerationStructureBuilder();

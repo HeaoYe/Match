@@ -143,17 +143,21 @@ namespace Match {
     }
 
     RayTracingInstanceCollect::InstanceAddressData RayTracingInstanceCollect::create_instance_address_data(RayTracingModel &model) {
-        switch (model.get_ray_tracing_mode_type()) {
-        case RayTracingModel::RayTracingModelType::eTriangles:
-        case RayTracingModel::RayTracingModelType::eGLTFScene:
+        switch (model.get_ray_tracing_model_type()) {
+        case RayTracingModel::RayTracingModelType::eModel:
             return {
-                .vertex_buffer_address = get_buffer_address(model.acceleration_structure.value()->vertex_buffer->buffer),
-                .index_buffer_address = get_buffer_address(model.acceleration_structure.value()->index_buffer->buffer),
+                .vertex_buffer_address = get_buffer_address(dynamic_cast<Model &>(model).vertex_buffer->buffer),
+                .index_buffer_address = get_buffer_address(dynamic_cast<Model &>(model).index_buffer->buffer),
             };
-        case RayTracingModel::RayTracingModelType::eSpheres:
+        case RayTracingModel::RayTracingModelType::eSphereCollect:
             return {
                 .vertex_buffer_address = 0,
                 .index_buffer_address = 0,
+            };
+        case RayTracingModel::RayTracingModelType::eGLTFPrimitive:
+            return {
+                .vertex_buffer_address = get_buffer_address(dynamic_cast<GLTFPrimitive &>(model).scene.vertex_buffer->buffer),
+                .index_buffer_address = get_buffer_address(dynamic_cast<GLTFPrimitive &>(model).scene.index_buffer->buffer),
             };
         }
     }

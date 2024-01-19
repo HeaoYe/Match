@@ -1,9 +1,10 @@
 #include <Match/vulkan/resource/gltf_scene.hpp>
 #include <Match/vulkan/descriptor_resource/spec_texture.hpp>
+#include <Match/vulkan/descriptor_resource/descriptor_set.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 namespace Match {
-    GLTFScene::GLTFScene(const std::string &filename) {
+    GLTFScene::GLTFScene(const std::string &filename, const std::vector<std::string> &load_attributes) {
         tinygltf::TinyGLTF loader;
         tinygltf::Model gltf_model;
         std::string err, warn;
@@ -28,9 +29,35 @@ namespace Match {
         }
 
         load_images(gltf_model);
+        load_materials(gltf_model);
+        material_buffer = std::make_shared<Buffer>(materials.size() * sizeof(GLTFMaterial), vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+        memcpy(material_buffer->map(), materials.data(), material_buffer->size);
+        material_buffer->unmap();
         
         for (auto &gltf_mesh : gltf_model.meshes) {
-            meshes.push_back(std::make_shared<GLTFMesh>(*this, gltf_model, gltf_mesh));
+            meshes.push_back(std::make_shared<GLTFMesh>(*this, gltf_model, gltf_mesh, load_attributes));
+        }
+
+        for (auto &[attribute_name, data] : attribute_datas) {
+            attribute_buffer[attribute_name] = std::make_shared<Buffer>(data.size(), vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+            memcpy(attribute_buffer[attribute_name]->map(), data.data(), data.size());
+            attribute_buffer[attribute_name]->unmap();
+        }
+
+        auto gltf_default_scene = gltf_model.scenes[std::max(0, gltf_model.defaultScene)];
+
+        for (uint32_t gltf_node_index : gltf_default_scene.nodes) {
+            auto node = std::make_shared<GLTFNode>(*this, gltf_model, gltf_node_index, nullptr);
+            all_node_references.push_back(node.get());
+            nodes.push_back(std::move(node));
+        }
+    }
+
+    void GLTFScene::enumerate_primitives(std::function<void(GLTFNode *, std::shared_ptr<GLTFPrimitive>)> func) {
+        for (auto *node : all_node_references) {
+            for (auto &primitive : node->mesh->primitives) {
+                func(node, primitive);
+            }
         }
     }
 
@@ -72,20 +99,84 @@ namespace Match {
             }
             textures.push_back(std::make_shared<Match::DataTexture>(rgba_readonly, gltf_image.width, gltf_image.height, 0));
         }
-        
-        uint8_t empty_data[] = { 0, 0, 0, 0 };
-        empty_texture = std::make_shared<DataTexture>(empty_data, 1, 1, 1);
+        sampler = std::make_shared<Sampler>(SamplerOptions {});
+    }
+
+    void GLTFScene::load_materials(const tinygltf::Model &gltf_model) {
+        for (auto &gltf_material : gltf_model.materials) {
+            auto &material = materials.emplace_back();
+            material.base_color_factor = glm::make_vec4(gltf_material.pbrMetallicRoughness.baseColorFactor.data());
+            material.base_color_texture = gltf_material.pbrMetallicRoughness.baseColorTexture.index;
+            material.metallic_factor = gltf_material.pbrMetallicRoughness.metallicFactor;
+            material.roughness_factor = gltf_material.pbrMetallicRoughness.roughnessFactor;
+            material.metallic_roughness_texture = gltf_material.pbrMetallicRoughness.metallicRoughnessTexture.index;
+        }
+    }
+
+    void GLTFScene::bind_textures(std::shared_ptr<DescriptorSet> descriptor_set, uint32_t binding) {
+        std::vector<std::pair<std::shared_ptr<Texture>, std::shared_ptr<Sampler>>> textures_samplers;
+        for (auto &texture : textures) {
+            textures_samplers.push_back(std::make_pair(texture, sampler));
+        }
+        descriptor_set->bind_textures(binding, textures_samplers);
     }
 
     GLTFScene::~GLTFScene() {
-        empty_texture.reset();
-        textures.clear();
+        nodes.clear();
         meshes.clear();
-        indices.clear();
         positions.clear();
+        indices.clear();
+        material_buffer.reset();
+        materials.clear();
+        sampler.reset();
+        textures.clear();
+        vertex_buffer.reset();
+        index_buffer.reset();
     }
 
-    GLTFMesh::GLTFMesh(GLTFScene &scene, const tinygltf::Model &gltf_model, const tinygltf::Mesh &gltf_mesh) {
+    GLTFNode::GLTFNode(GLTFScene &scene, const tinygltf::Model &gltf_model, uint32_t gltf_node_index, GLTFNode *parent) : parent(parent) {
+        auto &gltf_node = gltf_model.nodes[gltf_node_index];
+        assert(gltf_node.mesh > -1);
+        name = gltf_node.name;
+        mesh = scene.meshes[gltf_node.mesh];
+
+        if (gltf_node.rotation.size() == 4) {
+            rotation = glm::make_quat(gltf_node.rotation.data());
+        }
+        if (gltf_node.scale.size() == 3) {
+            scale = glm::make_vec3(gltf_node.scale.data());
+        }
+        if (gltf_node.translation.size() == 3) {
+            translation = glm::make_vec3(gltf_node.translation.data());
+        }
+        if (gltf_node.matrix.size() == 16) {
+            matrix = glm::make_mat4(gltf_node.matrix.data());
+        }
+
+        for (uint32_t gltf_child_index : gltf_node.children) {
+            auto node = std::make_shared<GLTFNode>(scene, gltf_model, gltf_child_index, this);
+            scene.all_node_references.push_back(node.get());
+            children.push_back(std::move(node));
+        }
+    }
+
+    glm::mat4 GLTFNode::get_local_matrix() {
+        return glm::translate(glm::mat4(1.0f),translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) * matrix;
+    }
+
+    glm::mat4 GLTFNode::get_world_matrix() {
+        if (parent != nullptr) {
+            return get_local_matrix() * parent->get_world_matrix();
+        } else {
+            return get_local_matrix();
+        }
+    }
+
+    GLTFNode::~GLTFNode() {
+        children.clear();
+    }
+
+    GLTFMesh::GLTFMesh(GLTFScene &scene, const tinygltf::Model &gltf_model, const tinygltf::Mesh &gltf_mesh, const std::vector<std::string> &load_attributes) {
         name = gltf_mesh.name;
         MCH_DEBUG("Load Mesh {}", name)
         for (auto &gltf_primitive : gltf_mesh.primitives) {
@@ -97,7 +188,7 @@ namespace Match {
                 MCH_WARN("Unsupported Primitive Indices {}", gltf_primitive.indices)
                 continue;
             }
-            primitives.push_back(std::make_unique<GLTFPrimitive>(scene, gltf_model, gltf_primitive));
+            primitives.push_back(std::make_unique<GLTFPrimitive>(scene, gltf_model, gltf_primitive, load_attributes));
         }
     }
 
@@ -105,14 +196,15 @@ namespace Match {
         primitives.clear();
     }
 
-    GLTFPrimitive::GLTFPrimitive(GLTFScene &scene, const tinygltf::Model &gltf_model, const tinygltf::Primitive &gltf_primitive) {
-        first_index = scene.indices.size();
-        first_vertex = scene.positions.size();
-        material_index = gltf_primitive.material;
+    GLTFPrimitive::GLTFPrimitive(GLTFScene &scene, const tinygltf::Model &gltf_model, const tinygltf::Primitive &gltf_primitive, const std::vector<std::string> &load_attributes) : scene(scene) {
+        primitive_instance_data.first_index = scene.indices.size();
+        primitive_instance_data.first_vertex = scene.positions.size();
+        primitive_instance_data.material_index = gltf_primitive.material;
 
         auto no_operator = [](const tinygltf::Accessor &) {};
         auto get_data_pointer = [&](const std::string &name, auto other_operator) {
             if (gltf_primitive.attributes.find(name) == gltf_primitive.attributes.end()) {
+                MCH_ERROR("Attribute {} Not Found", name)
                 return static_cast<const void *>(nullptr);
             }
             const auto &accessor = gltf_model.accessors[gltf_primitive.attributes.find(name)->second];
@@ -129,29 +221,86 @@ namespace Match {
         for (uint32_t i = 0; i < vertex_count; i++) {
             scene.positions.push_back(glm::make_vec3(&position_ptr[i * 3]));
         }
+        for (auto &attribute_name : load_attributes) {
+            uint32_t count = 0;
+            uint32_t stride = 0;
+            auto *ptr = static_cast<const uint8_t *>(get_data_pointer(attribute_name, [&](auto &accessor) {
+                count = accessor.count;
+                switch (accessor.componentType) {
+                case TINYGLTF_COMPONENT_TYPE_DOUBLE:
+                    stride = sizeof(double);
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_FLOAT:
+                case TINYGLTF_COMPONENT_TYPE_INT:
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+                    stride = sizeof(uint32_t);
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_SHORT:
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                    stride = sizeof(uint16_t);
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_BYTE:
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                    stride = sizeof(uint8_t);
+                    break;
+                }
+                switch(accessor.type) {
+                case TINYGLTF_TYPE_VEC2:
+                    stride *= 2;
+                    break;
+                case TINYGLTF_TYPE_VEC3:
+                    stride *= 3;
+                    break;
+                case TINYGLTF_TYPE_VEC4:
+                    stride *= 4;
+                    break;
+                case TINYGLTF_TYPE_MAT2:
+                    stride *= 4;
+                    break;
+                case TINYGLTF_TYPE_MAT3:
+                    stride *= 9;
+                    break;
+                case TINYGLTF_TYPE_MAT4:
+                    stride *= 16;
+                    break;
+                default:
+                    MCH_WARN("Unsupported accessor.type {} {} {}", accessor.type, __FILE__, __LINE__)
+                }
+            }));
+            if (scene.attribute_datas.find(attribute_name) == scene.attribute_datas.end()) {
+                scene.attribute_datas[attribute_name] = {};
+            }
+            auto &data = scene.attribute_datas[attribute_name];
+            auto start = data.size();
+            data.resize(start + count * stride);
+            MCH_DEBUG("{}: count {}, stride {}", attribute_name, count, stride)
+            memcpy(data.data() + start, ptr, count * stride);
+        }
 
         const auto &index_accessor = gltf_model.accessors[gltf_primitive.indices];
         const auto &index_buffer_view = gltf_model.bufferViews[index_accessor.bufferView];
         index_count = index_accessor.count;
         auto *index_ptr = static_cast<const uint8_t *>(gltf_model.buffers[index_buffer_view.buffer].data.data() + index_accessor.byteOffset + index_buffer_view.byteOffset);
-        for (uint32_t i = 0; i < index_count; i ++) {
-            switch (index_accessor.componentType) {
-            case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT:
-                scene.indices.push_back(*(reinterpret_cast<const uint32_t *>(index_ptr)) + first_vertex);
+        switch (index_accessor.componentType) {
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+            for (uint32_t i = 0; i < index_count; i ++) {
+                scene.indices.push_back(*(reinterpret_cast<const uint32_t *>(index_ptr)));
                 index_ptr += 4;
-                break;
-            case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT:
-                scene.indices.push_back(*(reinterpret_cast<const uint16_t *>(index_ptr)) + first_vertex);
-                index_ptr += 2;
-                break;
-            case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE:
-                scene.indices.push_back(*(reinterpret_cast<const uint8_t *>(index_ptr)) + first_vertex);
-                index_ptr += 1;
-                break;
             }
+            break;
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+            for (uint32_t i = 0; i < index_count; i ++) {
+                scene.indices.push_back(*(reinterpret_cast<const uint16_t *>(index_ptr)));
+                index_ptr += 2;
+            }
+            break;
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+            for (uint32_t i = 0; i < index_count; i ++) {
+                scene.indices.push_back(*(reinterpret_cast<const uint8_t *>(index_ptr)));
+                index_ptr += 1;
+            }
+            break;
         }
-        first_index = 0;
-        first_vertex = 0;
     }
 
     GLTFPrimitive::~GLTFPrimitive() {

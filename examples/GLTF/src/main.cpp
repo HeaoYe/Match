@@ -15,9 +15,9 @@ int main() {
     factory = ctx->create_resource_factory("resource");
 
     {
-        auto scene = std::make_shared<Match::GLTFScene>("../Scene/resource/models/Sponze/glTF/Sponza.gltf");
+        auto scene = factory->load_gltf_scene("../../Scene/resource/models/Sponze/glTF/Sponza.gltf");
         auto builder = factory->create_acceleration_structure_builder();
-        builder->add_model(scene);
+        builder->add_scene(scene);
         builder->build();
 
         auto bdr = factory->create_render_pass_builder();
@@ -70,9 +70,9 @@ int main() {
             renderer->bind_shader_program(sp);
             renderer->bind_vertex_buffer(vertex_buffer);
             renderer->bind_index_buffer(index_buffer);
-            for (auto &mesh : scene->meshes) {
-                for (auto &primitive : mesh->primitives) {
-                    renderer->draw_indexed(primitive->index_count, 1, primitive->first_index, primitive->first_vertex, 0);
+            for (auto *node : scene->all_node_references) {
+                for (auto &primitive : node->mesh->primitives) {
+                    renderer->draw_indexed(primitive->index_count, 1, primitive->primitive_instance_data.first_index, primitive->primitive_instance_data.first_vertex, 0);
                 }
             }
 

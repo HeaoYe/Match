@@ -33,6 +33,20 @@ namespace Match {
                     "    vec3 center;\n"
                     "    float radius;\n"
                     "};\n"
+                    "\n"
+                    "struct MatchGLTFPrimitiveInstanceData {"
+                    "    uint first_index;\n"
+                    "    uint first_vertex;\n"
+                    "    uint material_index;\n"
+                    "};\n"
+                    "\n"
+                    "struct MatchGLTFMaterial {\n"
+                    "    vec4 base_color_factor;\n"
+                    "    int base_color_texture;\n"
+                    "    float metallic_factor;\n"
+                    "    float roughness_factor;\n"
+                    "    int metallic_roughness_texture;\n"
+                    "};\n"
                 );
             } else if (strcmp(requested_source, "MatchRandom") == 0) {
                 result->source_name = "MatchRandom";

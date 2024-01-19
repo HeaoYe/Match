@@ -36,12 +36,7 @@ namespace Match {
         }
     }
 
-    Model::Model() {
-        vertex_count = 0;
-        index_count = 0;
-    }
-
-    Model::Model(const std::string &filename) : Model() {
+    Model::Model(const std::string &filename) : vertex_count(0), index_count(0) {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
@@ -93,6 +88,8 @@ namespace Match {
     Model::~Model() {
         vertices.clear();
         meshes.clear();
+        vertex_buffer.reset();
+        index_buffer.reset();
     }
 
     BufferPosition Model::upload_data(std::shared_ptr<VertexBuffer> vertex_buffer, std::shared_ptr<IndexBuffer> index_buffer, BufferPosition position) {

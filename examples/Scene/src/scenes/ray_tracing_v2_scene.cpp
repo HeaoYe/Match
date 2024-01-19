@@ -3,6 +3,9 @@
 #include <random>
 
 void RayTracingV2Scene::initialize() {
+    // 设置日志级别
+    Match::set_log_level(Match::LogLevel::eDebug);
+
     this->is_ray_tracing_scene = true;
     auto render_pass_builder = factory->create_render_pass_builder();
     render_pass_builder->add_subpass("main")
@@ -23,7 +26,7 @@ void RayTracingV2Scene::initialize() {
     std::normal_distribution<float> scale_distribution(0.2, 0.1);
     std::uniform_real_distribution<float> color_distribution(0, 1);
 
-    for (uint32_t i = 0; i < 100; i ++) {
+    for (uint32_t i = 0; i < 200; i ++) {
         float r = scale_distribution(generator);
         glm::vec3 color {
             color_distribution(generator),
@@ -32,13 +35,13 @@ void RayTracingV2Scene::initialize() {
         };
         sphere_collect->add_sphere(
             0, 
-            { distribution(generator) * 5, r, distribution(generator) * 5 }, 
+            { distribution(generator) * 4, r + (distribution(generator) > 0 ? 4 : 0), distribution(generator) * 4 }, 
             r,
             Material {
                 .albedo = color,
                 .roughness = color_distribution(generator) * color_distribution(generator),
-                .light_color = color,
-                .light_intensity = color_distribution(generator) * color_distribution(generator),
+                .light_color = glm::vec3 { 1 },
+                .light_intensity = color_distribution(generator) * 1.2f,
             }
         );
     }
@@ -51,27 +54,31 @@ void RayTracingV2Scene::initialize() {
     sphere_collect->add_sphere(0, {0, -500, 0 }, 500, Material { .albedo = { 0.8, 0.5, 0.25 }, .roughness = 1.0, .light_intensity = 0 });
 
     model = factory->load_model("dragon.obj");
-    gltf_scene = factory->load_gltf_scene("Sponza/glTF/Sponza.gltf");
+    // 加载顶点数据和uv坐标数据
+    gltf_scene = factory->load_gltf_scene("Sponza/glTF/Sponza.gltf", {
+        "NORMAL", "TEXCOORD_0"
+    });
 
     auto builder = factory->create_acceleration_structure_builder();
     builder->add_model(sphere_collect);
     builder->add_model(model);
-    builder->add_model(gltf_scene);
+    // 添加需要创建光追加速结构的场景
+    builder->add_scene(gltf_scene);
     builder->build();
     builder.reset();
 
     instance_collect = factory->create_ray_tracing_instance_collect();
     instance_collect->register_custom_instance_data<Material>();
+    // 添加GLTFPrimitive信息,用于在shader中定位VertexBuffer和IndexBuffer和材质
+    instance_collect->register_custom_instance_data<Match::GLTFPrimitiveInstanceData>();
     instance_collect->add_instance(0, sphere_collect, glm::mat4(1), 0);
     dragon_material = {
         .albedo = { 0.8, 0.5, 0.25 },
         .roughness = 0.6,
     };
-    gltf_material = {
-        .spec_prob = 1,
-    };
     instance_collect->add_instance(1, model, glm::translate(glm::vec3(-1, 0.5, 0)), 1, dragon_material);
-    instance_collect->add_instance(2, gltf_scene, glm::mat4(0.01), 2, gltf_material);
+    // 添加场景
+    instance_collect->add_scene(2, gltf_scene, 2);
     instance_collect->build();
 
     auto [width, height] = Match::runtime_setting->get_window_size();
@@ -114,6 +121,12 @@ void RayTracingV2Scene::initialize() {
         { Match::ShaderStage::eClosestHit, 4, Match::DescriptorType::eStorageBuffer },
         { Match::ShaderStage::eClosestHit, 5, Match::DescriptorType::eStorageBuffer },
         { Match::ShaderStage::eClosestHit, 6, Match::DescriptorType::eStorageBuffer },
+        { Match::ShaderStage::eClosestHit, 7, Match::DescriptorType::eStorageBuffer },    // GLTFPrimitive信息
+        { Match::ShaderStage::eClosestHit, 8, Match::DescriptorType::eStorageBuffer },    // 材质信息
+        { Match::ShaderStage::eClosestHit, 9, Match::DescriptorType::eStorageBuffer },    // 法线缓存
+        { Match::ShaderStage::eClosestHit, 10, Match::DescriptorType::eStorageBuffer },  // uv坐标缓存
+        // GLTF场景所有Texture
+        { Match::ShaderStage::eClosestHit, 11, Match::DescriptorType::eTexture, gltf_scene->get_textures_count() },
     })
         .allocate()
         .bind_storage_image(0, ray_tracing_result_image)
@@ -122,7 +135,12 @@ void RayTracingV2Scene::initialize() {
         .bind_storage_buffer(3, sphere_collect->get_spheres_buffer())
         .bind_storage_buffer(4, sphere_collect->get_custom_data_buffer<Material>())
         .bind_storage_buffer(5, instance_collect->get_instance_address_data_buffer())
-        .bind_storage_buffer(6, instance_collect->get_custom_instance_data_buffer<Material>());
+        .bind_storage_buffer(6, instance_collect->get_custom_instance_data_buffer<Material>())
+        .bind_storage_buffer(7, instance_collect->get_custom_instance_data_buffer<Match::GLTFPrimitiveInstanceData>())
+        .bind_storage_buffer(8, gltf_scene->get_materials_buffer())
+        .bind_storage_buffer(9, gltf_scene->get_attribute_buffer("NORMAL"))
+        .bind_storage_buffer(10, gltf_scene->get_attribute_buffer("TEXCOORD_0"));
+    gltf_scene->bind_textures(ray_tracing_shader_program_ds, 11);
     
     ray_tracing_shader_program = factory->create_ray_tracing_shader_program();
     ray_tracing_shader_program->attach_raygen_shader(raygen_shader)
@@ -178,9 +196,6 @@ void RayTracingV2Scene::update(float dt) {
     instance_collect->update<Material>(1, [this](uint32_t index, auto &material) {
         material = dragon_material;
     });
-    instance_collect->update<Material>(2, [this](uint32_t index, auto &material) {
-        material = gltf_material;
-    });
 }
 
 void RayTracingV2Scene::render() {
@@ -217,19 +232,12 @@ void RayTracingV2Scene::render_imgui() {
     changed |= ImGui::SliderFloat("View Depth Strength", &view_depth_strength, 0, 0.5);
     ray_tracing_shader_program_constants->push_constant("view_depth_strength", view_depth_strength);
 
-    changed |= ImGui::ColorEdit3("dragon_albedo", &dragon_material.albedo.r);
-    changed |= ImGui::SliderFloat("dragon_roughness", &dragon_material.roughness, 0, 1);
-    changed |= ImGui::ColorEdit3("dragon_spec_albedo", &dragon_material.spec_albedo.r);
-    changed |= ImGui::SliderFloat("dragon_spec_prob", &dragon_material.spec_prob, 0, 1);
-    changed |= ImGui::ColorEdit3("dragon_light_color", &dragon_material.light_color.r);
-    changed |= ImGui::SliderFloat("dragon_light_intensity", &dragon_material.light_intensity, 0, 1);
-    ImGui::Separator();
-    changed |= ImGui::ColorEdit3("gltf_albedo", &gltf_material.albedo.r);
-    changed |= ImGui::SliderFloat("gltf_roughness", &gltf_material.roughness, 0, 1);
-    changed |= ImGui::ColorEdit3("gltf_spec_albedo", &gltf_material.spec_albedo.r);
-    changed |= ImGui::SliderFloat("gltf_spec_prob", &gltf_material.spec_prob, 0, 1);
-    changed |= ImGui::ColorEdit3("gltf_light_color", &gltf_material.light_color.r);
-    changed |= ImGui::SliderFloat("gltf_light_intensity", &gltf_material.light_intensity, 0, 1);
+    changed |= ImGui::ColorEdit3("albedo", &dragon_material.albedo.r);
+    changed |= ImGui::SliderFloat("roughness", &dragon_material.roughness, 0, 1);
+    changed |= ImGui::ColorEdit3("spec_albedo", &dragon_material.spec_albedo.r);
+    changed |= ImGui::SliderFloat("spec_prob", &dragon_material.spec_prob, 0, 1);
+    changed |= ImGui::ColorEdit3("light_color", &dragon_material.light_color.r);
+    changed |= ImGui::SliderFloat("light_intensity", &dragon_material.light_intensity, 0, 1);
 
     if (changed) {
         frame_count = 0;
