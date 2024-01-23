@@ -29,6 +29,9 @@ namespace Match {
         RayTracingInstanceCollect(bool allow_update);
         template <class CustomInstanceData>
         RayTracingInstanceCollect &register_custom_instance_data();
+        RayTracingInstanceCollect &register_gltf_primitive_instance_data() {
+            return register_custom_instance_data<GLTFPrimitiveInstanceData>();
+        }
         template <class ...Args>
         RayTracingInstanceCollect &add_instance(uint32_t group_id, std::shared_ptr<RayTracingModel> model, const glm::mat4 &transform_matrix, uint32_t hit_group, Args &&... args);
         template <class ...Args>
@@ -36,6 +39,7 @@ namespace Match {
         template <class CustomInstanceData>
         std::shared_ptr<Buffer> get_custom_instance_data_buffer();
         std::shared_ptr<Buffer> get_instance_address_data_buffer() { return get_custom_instance_data_buffer<InstanceAddressData>(); }
+        std::shared_ptr<Buffer> get_gltf_primitive_data_buffer() { return get_custom_instance_data_buffer<GLTFPrimitiveInstanceData>(); }
         RayTracingInstanceCollect &build();
         RayTracingInstanceCollect &update(uint32_t group_id, UpdateCallback update_callback);
         template <class CustomInstanceData>

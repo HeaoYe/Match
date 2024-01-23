@@ -63,7 +63,7 @@ namespace Match {
         GLTFNode *parent {};
         std::vector<std::shared_ptr<GLTFNode>> children {};
 
-        glm::quat rotation {};
+        glm::quat rotation { 0, 0, 0, 0 };
         glm::vec3 scale { 1 };
         glm::vec3 translation { 0 };
         glm::mat4 matrix { 1 };
@@ -72,6 +72,9 @@ namespace Match {
     struct GLTFMaterial {
         glm::vec4 base_color_factor { 1 };
         int base_color_texture { -1 };
+        glm::vec3 emissive_factor { 0 };
+        int emissive_texture { -1 };
+        int normal_texture { -1 };
         float metallic_factor { 1 };
         float roughness_factor { 1 };
         int metallic_roughness_texture { -1 };

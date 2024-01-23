@@ -11,8 +11,17 @@ namespace Match {
 
         size_t pos = filename.find_last_of('/');
         path = filename.substr(0, pos);
-        
-        auto ret = loader.LoadASCIIFromFile(&gltf_model, &err, &warn, filename);
+
+        auto filetype = filename.substr(filename.find_last_of('.') + 1);
+        bool ret = false;
+        if (filetype == "gltf") {
+            ret = loader.LoadASCIIFromFile(&gltf_model, &err, &warn, filename);
+        } else if (filetype == "glb") {
+            ret = loader.LoadBinaryFromFile(&gltf_model, &err, &warn, filename);
+        } else {
+            MCH_ERROR("Unknown GLTF Filetype {}", filename)
+        }
+
         if (!warn.empty()) {
             MCH_WARN("Warn: {} {}", warn, filename);
         }
@@ -55,6 +64,9 @@ namespace Match {
 
     void GLTFScene::enumerate_primitives(std::function<void(GLTFNode *, std::shared_ptr<GLTFPrimitive>)> func) {
         for (auto *node : all_node_references) {
+            if (node->mesh.get() == nullptr) {
+                continue;
+            }
             for (auto &primitive : node->mesh->primitives) {
                 func(node, primitive);
             }
@@ -107,6 +119,9 @@ namespace Match {
             auto &material = materials.emplace_back();
             material.base_color_factor = glm::make_vec4(gltf_material.pbrMetallicRoughness.baseColorFactor.data());
             material.base_color_texture = gltf_material.pbrMetallicRoughness.baseColorTexture.index;
+            material.emissive_factor = glm::make_vec3(gltf_material.emissiveFactor.data());
+            material.emissive_texture = gltf_material.emissiveTexture.index;
+            material.normal_texture = gltf_material.normalTexture.index;
             material.metallic_factor = gltf_material.pbrMetallicRoughness.metallicFactor;
             material.roughness_factor = gltf_material.pbrMetallicRoughness.roughnessFactor;
             material.metallic_roughness_texture = gltf_material.pbrMetallicRoughness.metallicRoughnessTexture.index;
@@ -136,12 +151,18 @@ namespace Match {
 
     GLTFNode::GLTFNode(GLTFScene &scene, const tinygltf::Model &gltf_model, uint32_t gltf_node_index, GLTFNode *parent) : parent(parent) {
         auto &gltf_node = gltf_model.nodes[gltf_node_index];
-        assert(gltf_node.mesh > -1);
+        
         name = gltf_node.name;
-        mesh = scene.meshes[gltf_node.mesh];
 
+        if (gltf_node.mesh > -1) { 
+            mesh = scene.meshes[gltf_node.mesh];
+        }
         if (gltf_node.rotation.size() == 4) {
-            rotation = glm::make_quat(gltf_node.rotation.data());
+            auto t_rotation = glm::make_quat(gltf_node.rotation.data());
+            rotation.x = t_rotation.w;
+            rotation.y = t_rotation.x;
+            rotation.z = t_rotation.y;
+            rotation.w = t_rotation.z;
         }
         if (gltf_node.scale.size() == 3) {
             scale = glm::make_vec3(gltf_node.scale.data());
@@ -161,12 +182,12 @@ namespace Match {
     }
 
     glm::mat4 GLTFNode::get_local_matrix() {
-        return glm::translate(glm::mat4(1.0f),translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) * matrix;
+        return glm::translate(glm::mat4(1), translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1), scale) * matrix;
     }
 
     glm::mat4 GLTFNode::get_world_matrix() {
         if (parent != nullptr) {
-            return get_local_matrix() * parent->get_world_matrix();
+            return parent->get_world_matrix() * get_local_matrix();
         } else {
             return get_local_matrix();
         }

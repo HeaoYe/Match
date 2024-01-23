@@ -119,39 +119,37 @@ namespace Match {
                 max_staging_size = std::max(max_staging_size, vertices_size);
                 max_staging_size = std::max(max_staging_size, indices_size);
             }
-            for (auto *gltf_node : gltf_scene->all_node_references) {
-                for (auto &gltf_primitive : gltf_node->mesh->primitives) {
-                    if (!is_update) {
-                        gltf_primitive->acceleration_structure = std::make_unique<ModelAccelerationStructure>();
-                    }
-                    auto primitive_count = gltf_primitive->index_count / 3;
-                    auto &info = build_infos.emplace_back(*gltf_primitive->acceleration_structure.value());
-
-                    info.geometry_datas.emplace_back().triangles
-                        .setVertexFormat(vk::Format::eR32G32B32Sfloat)
-                        .setVertexStride(sizeof(glm::vec3))
-                        .setVertexData(get_buffer_address(gltf_scene->vertex_buffer->buffer))
-                        .setMaxVertex(gltf_primitive->vertex_count - 1)
-                        .setIndexType(vk::IndexType::eUint32)
-                        .setIndexData(get_buffer_address(gltf_scene->index_buffer->buffer))
-                        .sType = vk::StructureType::eAccelerationStructureGeometryTrianglesDataKHR;
-                    info.geometries.emplace_back()
-                        .setGeometry(info.geometry_datas.back())
-                        .setGeometryType(vk::GeometryTypeKHR::eTriangles)
-                        .setFlags(vk::GeometryFlagBitsKHR::eOpaque);
-                    info.ranges.emplace_back()
-                        .setFirstVertex(gltf_primitive->primitive_instance_data.first_vertex)
-                        .setPrimitiveOffset(gltf_primitive->primitive_instance_data.first_index * sizeof(uint32_t))
-                        .setPrimitiveCount(primitive_count)
-                        .setTransformOffset(0);
-                    info.build.setType(vk::AccelerationStructureTypeKHR::eBottomLevel)
-                        .setMode(mode)
-                        .setFlags(flags)
-                        .setGeometries(info.geometries);
-                    info.size = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, info.build, primitive_count, manager->dispatcher);
-                    max_scratch_size = std::max(max_scratch_size, is_update ? info.size.updateScratchSize : info.size.buildScratchSize);
+            gltf_scene->enumerate_primitives([&](auto *gltf_node, auto gltf_primitive) {
+                if (!is_update) {
+                    gltf_primitive->acceleration_structure = std::make_unique<ModelAccelerationStructure>();
                 }
-            }
+                auto primitive_count = gltf_primitive->index_count / 3;
+                auto &info = build_infos.emplace_back(*gltf_primitive->acceleration_structure.value());
+
+                info.geometry_datas.emplace_back().triangles
+                    .setVertexFormat(vk::Format::eR32G32B32Sfloat)
+                    .setVertexStride(sizeof(glm::vec3))
+                    .setVertexData(get_buffer_address(gltf_scene->vertex_buffer->buffer))
+                    .setMaxVertex(gltf_primitive->vertex_count - 1)
+                    .setIndexType(vk::IndexType::eUint32)
+                    .setIndexData(get_buffer_address(gltf_scene->index_buffer->buffer))
+                    .sType = vk::StructureType::eAccelerationStructureGeometryTrianglesDataKHR;
+                info.geometries.emplace_back()
+                    .setGeometry(info.geometry_datas.back())
+                    .setGeometryType(vk::GeometryTypeKHR::eTriangles)
+                    .setFlags(vk::GeometryFlagBitsKHR::eOpaque);
+                info.ranges.emplace_back()
+                    .setFirstVertex(gltf_primitive->primitive_instance_data.first_vertex)
+                    .setPrimitiveOffset(gltf_primitive->primitive_instance_data.first_index * sizeof(uint32_t))
+                    .setPrimitiveCount(primitive_count)
+                    .setTransformOffset(0);
+                info.build.setType(vk::AccelerationStructureTypeKHR::eBottomLevel)
+                    .setMode(mode)
+                    .setFlags(flags)
+                    .setGeometries(info.geometries);
+                info.size = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, info.build, primitive_count, manager->dispatcher);
+                max_scratch_size = std::max(max_scratch_size, is_update ? info.size.updateScratchSize : info.size.buildScratchSize);
+            });
         }
 
         if (max_staging_size > current_staging_size) {
