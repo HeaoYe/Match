@@ -10,6 +10,7 @@
 #include <Match/vulkan/resource/buffer.hpp>
 #include <Match/vulkan/resource/sampler.hpp>
 #include <Match/vulkan/resource/model.hpp>
+#include <Match/vulkan/resource/gltf_scene.hpp>
 #include <Match/vulkan/descriptor_resource/uniform.hpp>
 #include <Match/vulkan/descriptor_resource/texture.hpp>
 #include <Match/vulkan/resource/ray_tracing_instance_collect.hpp>
@@ -37,6 +38,7 @@ namespace Match {
         std::shared_ptr<Texture> create_texture(const uint8_t *data, uint32_t width, uint32_t height, uint32_t mip_levels = 0);
         std::shared_ptr<Model> load_model(const std::string &filename);
         std::shared_ptr<SphereCollect> create_sphere_collect();
+        std::shared_ptr<GLTFScene> load_gltf_scene(const std::string &filename, const std::vector<std::string> &load_attributes = {});
         std::shared_ptr<AccelerationStructureBuilder> create_acceleration_structure_builder();
         std::shared_ptr<RayTracingInstanceCollect> create_ray_tracing_instance_collect(bool allow_update = true);
         std::shared_ptr<RayTracingShaderProgram> create_ray_tracing_shader_program();

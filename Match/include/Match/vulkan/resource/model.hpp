@@ -36,29 +36,41 @@ namespace Match {
 
     class RayTracingModel {
         default_no_copy_move_construction(RayTracingModel)
-    INNER_PROTECT:
+    public:
         enum class RayTracingModelType {
-            eTriangles,
-            eSpheres,
+            eModel,
+            eSphereCollect,
+            eGLTFPrimitive,
         };
     public:
-        virtual RayTracingModelType get_ray_tracing_mode_type() = 0;
+        virtual RayTracingModelType get_ray_tracing_model_type() = 0;
         virtual ~RayTracingModel();
     INNER_PROTECT:
         std::optional<std::unique_ptr<ModelAccelerationStructure>> acceleration_structure;
     };
 
-    class Model : public RayTracingModel {
+    class RayTracingScene {
+        default_no_copy_move_construction(RayTracingScene)
+    public:
+        enum class RayTracingSceneType {
+            eGLTFScene,
+        };
+    INNER_PROTECT:
+    public:
+        virtual RayTracingSceneType get_ray_tracing_scene_type() = 0;
+        virtual ~RayTracingScene() = default;
+    };
+
+    class Model final : public RayTracingModel {
         no_copy_move_construction(Model)
     public:
-        Model();
         Model(const std::string &filename);
         BufferPosition upload_data(std::shared_ptr<VertexBuffer> vertex_buffer, std::shared_ptr<IndexBuffer> index_buffer, BufferPosition position = { 0, 0 });
         std::shared_ptr<const Mesh> get_mesh_by_name(const std::string &name) const;
         std::vector<std::string> enumerate_meshes_name() const;
         uint32_t get_vertex_count() const { return vertex_count; }
         uint32_t get_index_count() const { return index_count; }
-        RayTracingModelType get_ray_tracing_mode_type() override { return RayTracingModelType::eTriangles; }
+        RayTracingModelType get_ray_tracing_model_type() override { return RayTracingModelType::eModel; }
         ~Model() override;
     INNER_VISIBLE:
         BufferPosition position;
@@ -66,6 +78,10 @@ namespace Match {
         uint32_t vertex_count;
         uint32_t index_count;
         std::map<std::string, std::shared_ptr<Mesh>> meshes;
+    INNER_VISIBLE:
+        // using for ray_tracing_acceration_structure
+        std::unique_ptr<Buffer> vertex_buffer;
+        std::unique_ptr<Buffer> index_buffer;
     };
 
     struct SphereData {
@@ -73,7 +89,7 @@ namespace Match {
         float radius;
     };
     
-    class SphereCollect : public RayTracingModel {
+    class SphereCollect final : public RayTracingModel {
         no_copy_move_construction(SphereCollect)
     INNER_VISIBLE:
         struct SphereAaBbData {
@@ -95,7 +111,7 @@ namespace Match {
         template <class CustomSphereData>
         std::shared_ptr<Buffer> get_custom_data_buffer() { return registrar->get_custom_data_buffer<CustomSphereData>(); }
         std::shared_ptr<Buffer> get_spheres_buffer() { return registrar->get_custom_data_buffer<SphereData>(); };
-        RayTracingModelType get_ray_tracing_mode_type() override { return RayTracingModelType::eSpheres; }
+        RayTracingModelType get_ray_tracing_model_type() override { return RayTracingModelType::eSphereCollect; }
         ~SphereCollect() override;
     INNER_VISIBLE:
         std::unique_ptr<CustomDataRegistrar<uint8_t>> registrar;

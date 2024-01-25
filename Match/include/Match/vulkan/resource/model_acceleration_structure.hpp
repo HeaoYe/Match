@@ -4,8 +4,11 @@
 
 namespace Match {
     class RayTracingModel;
+    class RayTracingScene;
     class Model;
     class SphereCollect;
+    class GLTFScene;
+    class GLTFNode;
 
     class ModelAccelerationStructure {
         default_no_copy_move_construction(ModelAccelerationStructure);
@@ -14,8 +17,6 @@ namespace Match {
     INNER_VISIBLE:
         vk::AccelerationStructureKHR bottom_level_acceleration_structure ;
         std::unique_ptr<Buffer> acceleration_structure_buffer;
-        std::unique_ptr<Buffer> vertex_buffer;
-        std::unique_ptr<Buffer> index_buffer;
     };
 
     class AccelerationStructureBuilder {
@@ -24,16 +25,17 @@ namespace Match {
         struct BuildInfo {
             BuildInfo(ModelAccelerationStructure &model_acceleration_structure) : model_acceleration_structure(model_acceleration_structure) {};
             ModelAccelerationStructure &model_acceleration_structure;
-            vk::AccelerationStructureGeometryDataKHR geometry_data {};
-            vk::AccelerationStructureGeometryKHR geometry {};
+            std::vector<vk::AccelerationStructureGeometryDataKHR> geometry_datas {};
+            std::vector<vk::AccelerationStructureGeometryKHR> geometries {};
             vk::AccelerationStructureBuildGeometryInfoKHR build {};
-            vk::AccelerationStructureBuildRangeInfoKHR range {};
+            std::vector<vk::AccelerationStructureBuildRangeInfoKHR> ranges {};
             vk::AccelerationStructureBuildSizesInfoKHR size {};
             vk::AccelerationStructureKHR uncompacted_acceleration_structure {};
             std::unique_ptr<Buffer> uncompacted_acceleration_structure_buffer {};
         };
     public:
         void add_model(std::shared_ptr<RayTracingModel> model);
+        void add_scene(std::shared_ptr<RayTracingScene> scene);
         void build(bool allow_update = false) { build_update(false, allow_update); }
         void update() { build_update(true, true); }
         ~AccelerationStructureBuilder();
@@ -46,5 +48,6 @@ namespace Match {
         uint64_t current_scratch_size = 0;
         std::vector<std::shared_ptr<Model>> models;
         std::vector<std::shared_ptr<SphereCollect>> sphere_collects;
+        std::vector<std::shared_ptr<GLTFScene>> gltf_scenes;
     };
 }

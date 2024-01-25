@@ -57,14 +57,14 @@ float G2(float NoL, float NoV, float roughness2) {
     return 0.5 / (lambda_in + lambda_out);
 }
 
-vec3 compute_direction_light(vec3 direction, vec3 color, vec3 pos, vec3 N, vec3 V, vec3 F0, float roughness2) {
+vec3 compute_direction_light(vec3 direction, vec3 color, vec3 N, vec3 V, vec3 F0, float roughness2) {
     vec3 H = normalize(V + direction);
     float NoL = max(dot(N, direction), 0);
     float NoV = max(dot(N, V), 0);
     float LoH = max(dot(direction, H), 0);
     vec3 diffuse_color = material.color * (1 - material.metallic) / PI;
 
-    vec3 spec_color = F(F0, LoH) * G2(NoL, NoV, roughness2);
+    vec3 spec_color = F(F0, LoH) * G2(NoL, NoV, roughness2) * NDF_GGX(N, H, roughness2);
 
     return (diffuse_color + spec_color * SPEC_ADD) * NoL * color;
 }
@@ -72,7 +72,7 @@ vec3 compute_direction_light(vec3 direction, vec3 color, vec3 pos, vec3 N, vec3 
 vec3 compute_point_light(vec3 light_pos, vec3 color, vec3 pos, vec3 N, vec3 V, vec3 F0, float roughness2) {
     vec3 L = normalize(light_pos - pos);
     float distance = length(light_pos - pos);
-    return compute_direction_light(L, color, pos, N, V, F0, roughness2) / (distance * distance);
+    return compute_direction_light(L, color, N, V, F0, roughness2) / (distance * distance);
 }
 
 void main() {
@@ -85,7 +85,7 @@ void main() {
     vec3 V = normalize(camera.pos - frag_pos);
     float roughness2 = clamp(roughness * roughness, 0.001, 0.999);
 
-    vec3 color = compute_direction_light(-lights.direction, lights.color, frag_pos, N, V, F0, roughness2);
+    vec3 color = compute_direction_light(-lights.direction, lights.color, N, V, F0, roughness2);
     for (int i = 0; i < 3; i ++) {
         color += compute_point_light(lights.point_lights[i].pos, lights.point_lights[i].color, frag_pos, N, V, F0, roughness2);
     }
