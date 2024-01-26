@@ -22,3 +22,9 @@
 [submodule "thirdparty/tinygltf"]
 	path = thirdparty/tinygltf
 	url = https://github.com/syoyo/tinygltf
+[submodule "thirdparty/spdlog"]
+	path = thirdparty/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "thirdparty/glfw"]
+	path = thirdparty/glfw
+	url = https://github.com/glfw/glfw
