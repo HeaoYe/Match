@@ -60,7 +60,9 @@ namespace Match {
 
     DescriptorSet::~DescriptorSet() {
         if (callback_id.has_value()) {
-            renderer.lock()->remove_resource_recreate_callback(callback_id.value());
+            if (!renderer.expired()) {
+                renderer.lock()->remove_resource_recreate_callback(callback_id.value());
+            }
             callback_id.reset();
         }
         this->free();
