@@ -75,28 +75,29 @@ namespace Match {
             { VK_KHR_SWAPCHAIN_EXTENSION_NAME, false },
             { VK_KHR_BIND_MEMORY_2_EXTENSION_NAME, false }
         };
+        
+        vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address_features {};
+        vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features {};
+        vk::PhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_pipeline_features {};
+        vk::PhysicalDeviceRayQueryFeaturesKHR ray_query_features {};
         if (setting.enable_ray_tracing) {
             required_extensions.insert(std::make_pair(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, false));
             required_extensions.insert(std::make_pair(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, false));
             required_extensions.insert(std::make_pair(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, false));
             required_extensions.insert(std::make_pair(VK_KHR_RAY_QUERY_EXTENSION_NAME, false));
 
-            vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address_features {};
             buffer_device_address_features.setBufferDeviceAddress(VK_TRUE);
 
-            vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features {};
             acceleration_structure_features.setAccelerationStructure(VK_TRUE)
                 .setAccelerationStructureCaptureReplay(VK_TRUE)
                 .setAccelerationStructureIndirectBuild(VK_FALSE)
                 .setAccelerationStructureHostCommands(VK_FALSE)
                 .setDescriptorBindingAccelerationStructureUpdateAfterBind(VK_TRUE);
-            vk::PhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_pipeline_features {};
             ray_tracing_pipeline_features.setRayTracingPipeline(VK_TRUE)
                 .setRayTracingPipelineShaderGroupHandleCaptureReplay(VK_FALSE)
                 .setRayTracingPipelineShaderGroupHandleCaptureReplayMixed(VK_FALSE)
                 .setRayTracingPipelineTraceRaysIndirect(VK_TRUE)
                 .setRayTraversalPrimitiveCulling(VK_TRUE);
-            vk::PhysicalDeviceRayQueryFeaturesKHR ray_query_features {};
             ray_query_features.setRayQuery(VK_TRUE);
 
             device_create_info.setPNext(
