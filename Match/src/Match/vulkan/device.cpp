@@ -1,6 +1,7 @@
 #include <Match/vulkan/device.hpp>
 #include <Match/core/setting.hpp>
 #include <Match/vulkan/utils.hpp>
+#include <Match/constant.hpp>
 #include "inner.hpp"
 
 namespace Match {
@@ -19,7 +20,7 @@ namespace Match {
 
     Device::Device() {
         bool selected_device = false;
-        if (setting.device_name != "auto") {
+        if (setting.device_name != AUTO_SELECT_DEVICE) {
             auto devices = manager->instance.enumeratePhysicalDevices();
             vk::PhysicalDeviceProperties properties;
             bool found_device = false;
@@ -38,7 +39,7 @@ namespace Match {
                 MCH_DEBUG("Cannot find device {}", setting.device_name)
             }
         }
-        if ((setting.device_name == "auto") || (!selected_device)) {
+        if ((setting.device_name == AUTO_SELECT_DEVICE) || (!selected_device)) {
             MCH_DEBUG("Auto find device")
             selected_device = false;
             auto devices = manager->instance.enumeratePhysicalDevices();

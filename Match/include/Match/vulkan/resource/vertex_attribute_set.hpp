@@ -15,7 +15,7 @@ namespace Match {
         std::vector<InputAttributeInfo> attributes;
     };
 
-    class  VertexAttributeSet {
+    class VertexAttributeSet {
         no_copy_move_construction(VertexAttributeSet)
     public:
         VertexAttributeSet(const std::vector<InputBindingInfo> &binding_infos);
