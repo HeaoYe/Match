@@ -77,5 +77,11 @@ option(TINYGLTF_BUILD_BUILDER_EXAMPLE "Build glTF builder example" OFF)
 option(TINYGLTF_HEADER_ONLY "On: header-only mode. Off: create tinygltf library(No TINYGLTF_IMPLEMENTATION required in your project)" OFF)
 option(TINYGLTF_INSTALL "Install tinygltf files during install step. Usually set to OFF if you include tinygltf through add_subdirectory()" OFF)
 add_subdirectory(thirdparty/tinygltf)
+
+option(MATCH_BUILD_EXAMPLES "Build Match Examples" ON)
+
 add_subdirectory(Match)
-add_subdirectory(examples)
+
+if (MATCH_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
