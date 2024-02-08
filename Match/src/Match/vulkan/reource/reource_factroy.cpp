@@ -49,7 +49,7 @@ namespace Match {
         return std::make_shared<IndexBuffer>(type, count, additional_usage);
     }
 
-    std::shared_ptr<DescriptorSet> ResourceFactory::create_descriptor_set(std::weak_ptr<Renderer> renderer) {
+    std::shared_ptr<DescriptorSet> ResourceFactory::create_descriptor_set(std::optional<std::weak_ptr<Renderer>> renderer) {
         return std::make_shared<DescriptorSet>(renderer);
     }
 
