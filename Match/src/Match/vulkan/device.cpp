@@ -70,6 +70,7 @@ namespace Match {
         features.depthClamp = VK_TRUE;
         features.sampleRateShading = VK_TRUE;
         features.shaderInt64 = VK_TRUE;
+        features.fragmentStoresAndAtomics = VK_TRUE;
         vk::PhysicalDeviceVulkan12Features vk12_features {};
         vk12_features.runtimeDescriptorArray = VK_TRUE;
         vk12_features.bufferDeviceAddress = VK_TRUE;
