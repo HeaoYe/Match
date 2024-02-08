@@ -29,7 +29,7 @@ namespace Match {
         std::shared_ptr<GraphicsShaderProgram> create_shader_program(std::weak_ptr<Renderer> renderer, const std::string &subpass_name);
         std::shared_ptr<VertexBuffer> create_vertex_buffer(uint32_t vertex_size, uint32_t count, vk::BufferUsageFlags additional_usage = vk::BufferUsageFlags {});
         std::shared_ptr<IndexBuffer> create_index_buffer(IndexType type, uint32_t count, vk::BufferUsageFlags additional_usage = vk::BufferUsageFlags {});
-        std::shared_ptr<DescriptorSet> create_descriptor_set(std::weak_ptr<Renderer> renderer);
+        std::shared_ptr<DescriptorSet> create_descriptor_set(std::optional<std::weak_ptr<Renderer>> renderer = {});
         std::shared_ptr<PushConstants> create_push_constants(ShaderStages stages, const std::vector<PushConstantInfo> &infos);
         std::shared_ptr<UniformBuffer> create_uniform_buffer(uint64_t size, bool create_for_each_frame_in_flight = false);
         std::shared_ptr<StorageImage> create_storage_image(uint32_t width, uint32_t height, vk::Format format = vk::Format::eR8G8B8A8Snorm, bool sampled = true);

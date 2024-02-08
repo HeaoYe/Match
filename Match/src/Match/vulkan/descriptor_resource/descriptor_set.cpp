@@ -4,7 +4,7 @@
 #include "../inner.hpp"
 
 namespace Match {
-    DescriptorSet::DescriptorSet(std::weak_ptr<Renderer> renderer) : allocated(false), renderer(renderer) {
+    DescriptorSet::DescriptorSet(std::optional<std::weak_ptr<Renderer>> renderer) : allocated(false), renderer(renderer) {
     }
 
     DescriptorSet &DescriptorSet::add_descriptors(const std::vector<DescriptorInfo> &descriptor_infos) {
@@ -59,9 +59,9 @@ namespace Match {
     }
 
     DescriptorSet::~DescriptorSet() {
-        if (callback_id.has_value()) {
-            if (!renderer.expired()) {
-                renderer.lock()->remove_resource_recreate_callback(callback_id.value());
+        if (renderer.has_value() && callback_id.has_value()) {
+            if (!renderer->expired()) {
+                renderer->lock()->remove_resource_recreate_callback(callback_id.value());
             }
             callback_id.reset();
         }
@@ -128,7 +128,11 @@ namespace Match {
     }
 
     DescriptorSet &DescriptorSet::bind_input_attachments(uint32_t binding, const std::vector<std::pair<std::string, std::shared_ptr<Sampler>>> &attachment_names_samplers) {
-        auto locked_renderer = renderer.lock();
+        if (!renderer.has_value()) {
+            MCH_ERROR("Please give an exist renderer if you want to bind input attachment.")
+            return *this;
+        }
+        auto locked_renderer = renderer->lock();
         if (!callback_id.has_value()) {
             callback_id = locked_renderer->register_resource_recreate_callback([this]() {
                 update_input_attachments();

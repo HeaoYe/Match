@@ -27,7 +27,7 @@ namespace Match {
     class DescriptorSet {
         no_copy_move_construction(DescriptorSet)
     public:
-        DescriptorSet(std::weak_ptr<Renderer> renderer);
+        DescriptorSet(std::optional<std::weak_ptr<Renderer>> renderer);
         DescriptorSet &add_descriptors(const std::vector<DescriptorInfo> &descriptor_infos);
         DescriptorSet &allocate();
         DescriptorSet &free();
@@ -50,7 +50,7 @@ namespace Match {
         void update_input_attachments();
     INNER_VISIBLE:
         bool allocated;
-        std::weak_ptr<Renderer> renderer;
+        std::optional<std::weak_ptr<Renderer>> renderer;
         std::map<uint32_t, std::vector<std::pair<std::string, std::shared_ptr<Sampler>>>> input_attachments_temp;
         std::optional<uint32_t> callback_id;
         std::vector<vk::DescriptorSetLayoutBinding> layout_bindings;
