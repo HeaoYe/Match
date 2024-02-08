@@ -65,8 +65,8 @@ namespace Match {
         return std::make_shared<UniformBuffer>(size, create_for_each_frame_in_flight);
     }
 
-    std::shared_ptr<StorageImage> ResourceFactory::create_storage_image(uint32_t width, uint32_t height, vk::Format format, bool sampled) {
-        return std::make_shared<StorageImage>(width, height, format, sampled);
+    std::shared_ptr<StorageImage> ResourceFactory::create_storage_image(uint32_t width, uint32_t height, vk::Format format, bool sampled, bool enable_clear) {
+        return std::make_shared<StorageImage>(width, height, format, sampled, enable_clear);
     }
 
     std::shared_ptr<Texture> ResourceFactory::load_texture(const std::string &filename, uint32_t mip_levels) {
