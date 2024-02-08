@@ -70,14 +70,18 @@ namespace Match {
         features.depthClamp = VK_TRUE;
         features.sampleRateShading = VK_TRUE;
         features.shaderInt64 = VK_TRUE;
+        vk::PhysicalDeviceVulkan12Features vk12_features {};
+        vk12_features.runtimeDescriptorArray = VK_TRUE;
+        vk12_features.bufferDeviceAddress = VK_TRUE;
+        vk12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
         vk::DeviceCreateInfo device_create_info {};
+        device_create_info.setPNext(&vk12_features);
 
         std::map<std::string, bool> required_extensions = {
             { VK_KHR_SWAPCHAIN_EXTENSION_NAME, false },
             { VK_KHR_BIND_MEMORY_2_EXTENSION_NAME, false }
         };
         
-        vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address_features {};
         vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features {};
         vk::PhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_pipeline_features {};
         vk::PhysicalDeviceRayQueryFeaturesKHR ray_query_features {};
@@ -86,8 +90,6 @@ namespace Match {
             required_extensions.insert(std::make_pair(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, false));
             required_extensions.insert(std::make_pair(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, false));
             required_extensions.insert(std::make_pair(VK_KHR_RAY_QUERY_EXTENSION_NAME, false));
-
-            buffer_device_address_features.setBufferDeviceAddress(VK_TRUE);
 
             acceleration_structure_features.setAccelerationStructure(VK_TRUE)
                 .setAccelerationStructureCaptureReplay(VK_TRUE)
@@ -102,11 +104,9 @@ namespace Match {
             ray_query_features.setRayQuery(VK_TRUE);
 
             device_create_info.setPNext(
-                &buffer_device_address_features.setPNext(
-                    &acceleration_structure_features.setPNext(
-                        &ray_tracing_pipeline_features.setPNext(
-                            &ray_query_features
-                        )
+                &acceleration_structure_features.setPNext(
+                    &ray_tracing_pipeline_features.setPNext(
+                        &ray_query_features.setPNext(&vk12_features)
                     )
                 )
             );
