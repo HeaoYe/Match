@@ -7,7 +7,7 @@ namespace Match {
     class StorageImage : public Texture {
         no_copy_move_construction(StorageImage)
     public:
-        StorageImage(uint32_t width, uint32_t height, vk::Format format, bool sampled);
+        StorageImage(uint32_t width, uint32_t height, vk::Format format, bool sampled, bool enable_clear);
         vk::ImageLayout get_image_layout() override { return vk::ImageLayout::eGeneral; }
         vk::ImageView get_image_view() override { return image_view; };
         uint32_t get_mip_levels() override { return 1; };
