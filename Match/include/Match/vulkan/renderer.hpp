@@ -56,7 +56,7 @@ namespace Match {
             inner_bind_shader_program(bind_point, shader_program);
         }
         void bind_vertex_buffer(const std::shared_ptr<VertexBuffer> &vertex_buffer, uint32_t binding = 0);
-        void bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers);
+        void bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers, uint32_t first_binding = 0);
         void bind_index_buffer(std::shared_ptr<IndexBuffer> index_buffer);
         void set_viewport(float x, float y, float width, float height);
         void set_viewport(float x, float y, float width, float height, float min_depth, float max_depth);

@@ -179,14 +179,14 @@ namespace Match {
         current_buffer.bindVertexBuffers(binding, { vertex_buffer->buffer->buffer }, { 0 });
     }
 
-    void Renderer::bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers) {
+    void Renderer::bind_vertex_buffers(const std::vector<std::shared_ptr<VertexBuffer>> &vertex_buffers, uint32_t first_binding) {
         std::vector<vk::Buffer> buffers(vertex_buffers.size());
         std::vector<vk::DeviceSize> sizes(vertex_buffers.size());
         for (uint32_t i = 0; i < vertex_buffers.size(); i ++) {
             buffers[i] = vertex_buffers[i]->buffer->buffer;
             sizes[i] = 0;
         }
-        current_buffer.bindVertexBuffers(0, buffers, sizes);
+        current_buffer.bindVertexBuffers(first_binding, buffers, sizes);
     }
 
     void Renderer::bind_index_buffer(std::shared_ptr<IndexBuffer> index_buffer) {
