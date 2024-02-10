@@ -3,6 +3,14 @@
 #include <Match/core/utils.hpp>
 
 namespace Match {
+    ShaderIncluder::ShaderIncluder(const std::string &filename) {
+        if (filename.find('/') == std::string::npos) {
+            filepath = "./";
+        } else {
+            filepath = filename.substr(0, filename.find_last_of('/') + 1);
+        }
+    }
+
     shaderc_include_result* ShaderIncluder::GetInclude(const char* requested_source, shaderc_include_type type, const char* requesting_source, size_t include_depth) {
         auto result = new shaderc_include_result();
         std::string *contents;
@@ -80,7 +88,7 @@ namespace Match {
             }
         } else {
             result->source_name = requested_source;
-            auto data = read_binary_file("resource/shaders/" + std::string(requested_source));
+            auto data = read_binary_file(filepath + std::string(requested_source));
             contents = new std::string(data.data(), data.size());
         }
         result->source_name_length = strlen(result->source_name);
@@ -91,7 +99,7 @@ namespace Match {
     }
 
     void ShaderIncluder::ReleaseInclude(shaderc_include_result* data) {
-        free(static_cast<std::string *>(data->user_data));
-        free(data);
+        delete static_cast<std::string *>(data->user_data);
+        delete data;
     }
 }

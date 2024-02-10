@@ -25,12 +25,14 @@ namespace Match {
             break;
         case Match::ShaderStage::eIntersection:
             kind = shaderc_glsl_intersection_shader;
+            break;
         case Match::ShaderStage::eCompute:
             kind = shaderc_glsl_compute_shader;
+            break;
         }
         shaderc::Compiler compiler {};
         shaderc::CompileOptions options {};
-        options.SetIncluder(std::make_unique<ShaderIncluder>());
+        options.SetIncluder(std::make_unique<ShaderIncluder>(name));
         if (setting.enable_ray_tracing) {
            options.SetTargetSpirv(shaderc_spirv_version_1_6);
         }

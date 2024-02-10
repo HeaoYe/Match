@@ -26,7 +26,7 @@ namespace Match {
             MCH_ERROR("Faild compile shader {}", filename)
             return nullptr;
         }
-        return std::make_shared<Shader>(filename, std::string(code.data(), code.size()), stage);
+        return std::make_shared<Shader>(root + "/shaders/" + filename, std::string(code.data(), code.size()), stage);
     }
 
     std::shared_ptr<Shader> ResourceFactory::compile_shader_from_string(const std::string &code, ShaderStage stage) {
