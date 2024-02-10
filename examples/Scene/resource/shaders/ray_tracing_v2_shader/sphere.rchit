@@ -4,7 +4,7 @@
 #extension GL_EXT_scalar_block_layout : require
 
 #include <MatchTypes>
-#include "ray_tracing_v2_shader/compute_hit_color.glsl"
+#include "compute_hit_color.glsl"
 
 layout (binding = 3, scalar) buffer Sphere_ { MatchSphere spheres[]; } sphere_;
 layout (binding = 4, scalar) buffer Material_ { Material materials[]; } material_;

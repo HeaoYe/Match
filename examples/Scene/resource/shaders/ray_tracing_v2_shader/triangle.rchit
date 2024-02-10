@@ -5,7 +5,7 @@
 #extension GL_EXT_buffer_reference : require
 
 #include <MatchTypes>
-#include "ray_tracing_v2_shader/compute_hit_color.glsl"
+#include "compute_hit_color.glsl"
 
 layout (binding = 5, scalar) buffer MatchInstanceAddressInfo_ { MatchInstanceAddressInfo infos[]; } addr_info_;
 layout (binding = 6, scalar) buffer Material_ { Material materials[]; } material_;

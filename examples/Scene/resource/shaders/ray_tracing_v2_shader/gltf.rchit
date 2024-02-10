@@ -6,7 +6,7 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include <MatchTypes>
-#include "ray_tracing_v2_shader/compute_hit_color.glsl"
+#include "compute_hit_color.glsl"
 
 layout (binding = 5, scalar) readonly buffer MatchInstanceAddressInfo_ { MatchInstanceAddressInfo infos[]; } addr_info_;
 layout (binding = 7, scalar) readonly buffer MatchGLTFPrimitiveInstanceDataBuffer { MatchGLTFPrimitiveInstanceData primitive_datas[]; } primitive_;
