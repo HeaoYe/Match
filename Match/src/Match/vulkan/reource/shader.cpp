@@ -25,6 +25,8 @@ namespace Match {
             break;
         case Match::ShaderStage::eIntersection:
             kind = shaderc_glsl_intersection_shader;
+        case Match::ShaderStage::eCompute:
+            kind = shaderc_glsl_compute_shader;
         }
         shaderc::Compiler compiler {};
         shaderc::CompileOptions options {};

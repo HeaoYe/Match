@@ -300,6 +300,7 @@ namespace Match {
         eMiss = static_cast<uint32_t>(vk::ShaderStageFlagBits::eMissKHR),
         eClosestHit = static_cast<uint32_t>(vk::ShaderStageFlagBits::eClosestHitKHR),
         eIntersection = static_cast<uint32_t>(vk::ShaderStageFlagBits::eIntersectionKHR),
+        eCompute = static_cast<uint32_t>(vk::ShaderStageFlagBits::eCompute),
     };
     
     using ShaderStages = Flags<ShaderStage>;

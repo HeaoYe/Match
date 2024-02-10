@@ -150,7 +150,7 @@ namespace Match {
             .setBasePipelineIndex(0);
         locked_renderer.reset();
 
-        pipeline = manager->device->device.createGraphicsPipelines(nullptr, { create_info }).value[0];
+        pipeline = manager->device->device.createGraphicsPipeline(nullptr, create_info).value;
 
         return *this;
     }
@@ -272,5 +272,33 @@ namespace Match {
         miss_shaders.clear();
         hit_groups.clear();
         hit_shader_count = 0;
+    }
+
+    ComputeShaderProgram::ComputeShaderProgram() {}
+
+    ComputeShaderProgram::~ComputeShaderProgram() {
+        compute_shader.shader.reset();
+    }
+
+    ComputeShaderProgram &ComputeShaderProgram::attach_compute_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
+        compute_shader.shader = shader;
+        compute_shader.entry = entry;
+        return *this;
+    }
+
+    ComputeShaderProgram &ComputeShaderProgram::compile(const ComputeShaderProgramCompileOptions &options) {
+        auto shader_stage_create_info = create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eCompute, compute_shader.shader->module.value(), compute_shader.entry);
+
+        compile_pipeline_layout();
+        
+        vk::ComputePipelineCreateInfo pipeline_create_info {};
+        pipeline_create_info.setLayout(layout)
+            .setStage(shader_stage_create_info)
+            .setBasePipelineHandle(nullptr)
+            .setBasePipelineIndex(0);
+
+        pipeline = manager->device->device.createComputePipeline(nullptr, pipeline_create_info).value;
+        
+        return *this;
     }
 }
