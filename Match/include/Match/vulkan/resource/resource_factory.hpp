@@ -42,6 +42,7 @@ namespace Match {
         std::shared_ptr<AccelerationStructureBuilder> create_acceleration_structure_builder();
         std::shared_ptr<RayTracingInstanceCollect> create_ray_tracing_instance_collect(bool allow_update = true);
         std::shared_ptr<RayTracingShaderProgram> create_ray_tracing_shader_program();
+        std::shared_ptr<ComputeShaderProgram> create_compute_shader_program();
     INNER_VISIBLE:
         std::string root;
     };

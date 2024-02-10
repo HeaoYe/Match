@@ -113,4 +113,8 @@ namespace Match {
     std::shared_ptr<RayTracingShaderProgram> ResourceFactory::create_ray_tracing_shader_program() {
         return std::make_shared<RayTracingShaderProgram>();
     }
+ 
+    std::shared_ptr<ComputeShaderProgram> ResourceFactory::create_compute_shader_program() {
+        return std::make_shared<ComputeShaderProgram>();
+    }
 }
