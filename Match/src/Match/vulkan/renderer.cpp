@@ -243,6 +243,10 @@ namespace Match {
         current_buffer.traceRaysKHR(current_ray_tracing_shader_program->raygen_region, current_ray_tracing_shader_program->miss_region, current_ray_tracing_shader_program->hit_region, {}, width, height, depth, manager->dispatcher);
     }
 
+    void Renderer::dispatch(uint32_t group_count_x, uint32_t group_count_y, uint32_t group_count_z) {
+        current_buffer.dispatch(group_count_x, group_count_y, group_count_z);
+    }
+
     void Renderer::next_subpass() {
         current_buffer.nextSubpass(vk::SubpassContents::eInline);
         current_subpass += 1;

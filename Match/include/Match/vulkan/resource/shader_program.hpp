@@ -21,6 +21,8 @@ namespace Match {
         uint32_t max_ray_recursion_depth = 1;
     };
 
+    struct ComputeShaderProgramCompileOptions {};
+
     class Renderer;
 
     template <class ShaderProgramClass>
@@ -128,5 +130,21 @@ namespace Match {
     template <>
     struct ShaderProgramBindPoint<RayTracingShaderProgram> {
         const static vk::PipelineBindPoint bind_point = vk::PipelineBindPoint::eRayTracingKHR;
+    };
+
+    class ComputeShaderProgram : public ShaderProgramTemplate<ComputeShaderProgram, ComputeShaderProgramCompileOptions> {
+        no_copy_move_construction(ComputeShaderProgram)
+    public:
+        ComputeShaderProgram();
+        ComputeShaderProgram &attach_compute_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
+        ComputeShaderProgram &compile(const ComputeShaderProgramCompileOptions &options = {}) override;
+        ~ComputeShaderProgram() override;
+    INNER_VISIBLE:
+        ShaderStageInfo compute_shader;
+    };
+
+    template <>
+    struct ShaderProgramBindPoint<ComputeShaderProgram> {
+        const static vk::PipelineBindPoint bind_point = vk::PipelineBindPoint::eCompute;
     };
 }

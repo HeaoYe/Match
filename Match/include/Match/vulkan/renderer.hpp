@@ -50,6 +50,8 @@ namespace Match {
                 current_graphics_shader_program = shader_program;
             } else if constexpr (bind_point == vk::PipelineBindPoint::eRayTracingKHR) {
                 current_ray_tracing_shader_program = shader_program;
+            } else if constexpr (bind_point == vk::PipelineBindPoint::eCompute) {
+                current_compute_shader_program = shader_program;
             } else {
                 throw std::runtime_error("Match Core Fatal");
             }
@@ -69,6 +71,7 @@ namespace Match {
         void draw_model_mesh(std::shared_ptr<const Model> model, const std::string &name, uint32_t instance_count, uint32_t first_instance);
         void draw_model(std::shared_ptr<const Model> model, uint32_t instance_count, uint32_t first_instance);
         void trace_rays(uint32_t width = uint32_t(-1), uint32_t height = uint32_t(-1), uint32_t depth = 1);
+        void dispatch(uint32_t group_count_x, uint32_t group_count_y = 1, uint32_t group_count_z = 1);
         uint32_t register_resource_recreate_callback(const ResourceRecreateCallback &callback);
         void remove_resource_recreate_callback(uint32_t id);
     private:
@@ -100,5 +103,6 @@ namespace Match {
     private:
         std::shared_ptr<GraphicsShaderProgram> current_graphics_shader_program;
         std::shared_ptr<RayTracingShaderProgram> current_ray_tracing_shader_program;
+        std::shared_ptr<ComputeShaderProgram> current_compute_shader_program;
     };
 }
