@@ -23,6 +23,19 @@ namespace Match {
         VmaAllocation buffer_allocation;
     };
 
+    class InFlightBuffer : public StorageBuffer {
+        no_copy_construction(InFlightBuffer);
+    public:
+        InFlightBuffer(uint64_t size, vk::BufferUsageFlags buffer_usage, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags);
+        void *map();
+        void unmap();
+        ~InFlightBuffer();
+        vk::Buffer get_buffer(uint32_t in_flight_num) override { return in_flight_buffers[in_flight_num]->get_buffer(0); }
+        uint64_t get_size() override { return in_flight_buffers.front()->get_size(); }
+    INNER_VISIBLE:
+        std::vector<std::unique_ptr<Buffer>> in_flight_buffers;
+    };
+
     class TwoStageBuffer : public StorageBuffer {
         no_copy_move_construction(TwoStageBuffer)
     public:
