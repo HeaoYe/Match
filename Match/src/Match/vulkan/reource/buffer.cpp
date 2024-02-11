@@ -52,6 +52,25 @@ namespace Match {
         vmaDestroyBuffer(manager->vma_allocator, buffer, buffer_allocation);
     }
 
+    InFlightBuffer::InFlightBuffer(uint64_t size, vk::BufferUsageFlags buffer_usage, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags) {
+        in_flight_buffers.reserve(setting.max_in_flight_frame);
+        for (uint32_t i = 0; i < setting.max_in_flight_frame; i ++) {
+            in_flight_buffers.push_back(std::make_unique<Buffer>(size, buffer_usage, vma_usage, vma_flags));
+        }
+    }
+    
+    void *InFlightBuffer::map() {
+        return in_flight_buffers[runtime_setting->current_in_flight]->map();
+    }
+    
+    void InFlightBuffer::unmap() {
+        in_flight_buffers[runtime_setting->current_in_flight]->unmap();
+    }
+
+    InFlightBuffer::~InFlightBuffer() {
+        in_flight_buffers.clear();
+    }
+
     TwoStageBuffer::TwoStageBuffer(uint64_t size, vk::BufferUsageFlags usage, vk::BufferUsageFlags additional_usage) {
         staging = std::make_unique<Buffer>(size, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
         buffer = std::make_unique<Buffer>(size, usage | vk::BufferUsageFlagBits::eTransferDst | additional_usage, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);        
