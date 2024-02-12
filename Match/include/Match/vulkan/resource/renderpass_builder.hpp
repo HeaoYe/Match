@@ -5,13 +5,13 @@
 
 namespace Match {
     struct AttachmentInfo {
-        vk::AttachmentDescription description_write;
-        vk::ImageUsageFlags usage;
-        std::optional<vk::AttachmentDescription> description_read;
-        vk::ImageUsageFlags usage_read;
-        uint32_t offset;
-        vk::ImageAspectFlags aspect;
-        vk::ClearValue clear_value;
+        vk::AttachmentDescription description_write {};
+        vk::ImageUsageFlags usage {};
+        std::optional<vk::AttachmentDescription> description_read {};
+        vk::ImageUsageFlags usage_read {};
+        uint32_t offset {};
+        vk::ImageAspectFlags aspect {};
+        vk::ClearValue clear_value {};
     };
 
     class RenderPassBuilder;

@@ -8,7 +8,7 @@
 #include "../vulkan/inner.hpp"
 
 namespace Match {
-    ImGuiLayer::ImGuiLayer(Renderer &renderer) : RenderLayer(renderer) {
+    ImGuiLayer::ImGuiLayer(Renderer &renderer, const std::vector<std::string> &input_attachments) : RenderLayer(renderer) {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -42,8 +42,11 @@ namespace Match {
         descriptor_pool = manager->device->device.createDescriptorPool(create_info);
 
         auto &last_subpass_name = renderer.render_pass_builder->subpass_builders.back()->name;
-        renderer.render_pass_builder->add_subpass("ImGui Layer")
-            .attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT)
+        auto &subpass = renderer.render_pass_builder->add_subpass("ImGui Layer");
+        for (auto attachemnt_name : input_attachments) {
+            subpass.attach_input_attachment(attachemnt_name);
+        }
+        subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT)
             .wait_for(
                 last_subpass_name,
                 { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite },
