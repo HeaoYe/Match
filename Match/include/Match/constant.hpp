@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Match/commons.hpp>
 
 namespace Match {
