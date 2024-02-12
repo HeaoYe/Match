@@ -6,7 +6,7 @@ namespace Match {
     class ImGuiLayer final : public RenderLayer {
         no_copy_move_construction(ImGuiLayer)
     public:
-        ImGuiLayer(Renderer &renderer);
+        ImGuiLayer(Renderer &renderer, const std::vector<std::string> &input_attachments = {});
         void begin_render() override;
         void end_render() override;
         ~ImGuiLayer();
