@@ -90,6 +90,7 @@ namespace Match {
         std::unique_ptr<FrameBufferSet> framebuffer_set;
         std::vector<std::unique_ptr<RenderLayer>> layers;
         std::map<std::string, uint32_t> layers_map;
+        uint32_t current_callback_id;
         std::map<uint32_t, ResourceRecreateCallback> callbacks;
         bool resized;
         uint32_t index;
