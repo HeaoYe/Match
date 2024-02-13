@@ -133,6 +133,7 @@ namespace Match {
             auto result = manager->device->present_queue.presentKHR(present_info);
             if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || resized) {
                 update_resources();
+                resized = false;
             }
         } catch (vk::OutOfDateKHRError) {
             update_resources();
@@ -268,7 +269,8 @@ namespace Match {
     }
 
     uint32_t Renderer::register_resource_recreate_callback(const ResourceRecreateCallback &callback) {
-        uint32_t id = callbacks.size();
+        uint32_t id = current_callback_id;
+        current_callback_id ++;
         callbacks.insert(std::make_pair(id, std::move(callback)));
         return id;
     }
