@@ -220,6 +220,7 @@ namespace Match {
         eDepth,
         eDepthBuffer,
         eFloat4Buffer,
+        eUint64Buffer,
     };
 
     struct AccessInfo {

@@ -168,6 +168,24 @@ namespace Match {
                 attachment.usage |= vk::ImageUsageFlagBits::eInputAttachment | vk::ImageUsageFlagBits::eSampled;
             }
             break;
+        case AttachmentType::eUint64Buffer:
+            attachment.description_write.format = vk::Format::eR32G32Uint;
+            attachment.description_write.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            attachment.usage = vk::ImageUsageFlagBits::eColorAttachment;
+            attachment.aspect = vk::ImageAspectFlagBits::eColor;
+            attachment.clear_value = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+            if (runtime_setting->is_msaa_enabled()) {
+                attachment.description_read = attachment.description_write;
+                attachment.description_read->samples = vk::SampleCountFlagBits::e1;
+                attachment.description_read->loadOp = vk::AttachmentLoadOp::eDontCare;
+                attachment.description_write.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+                attachment.usage_read = vk::ImageUsageFlagBits::eInputAttachment | vk::ImageUsageFlagBits::eSampled;
+                attachment.offset = resolved_attachment_count;
+                resolved_attachment_count += 1;
+            } else {
+                attachment.usage |= vk::ImageUsageFlagBits::eInputAttachment | vk::ImageUsageFlagBits::eSampled;
+            }
+            break;
         }
         return *this;
     }
