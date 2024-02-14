@@ -221,6 +221,7 @@ namespace Match {
         eDepthBuffer,
         eFloat4Buffer,
         eUint64Buffer,
+        eColorBuffer,
     };
 
     struct AccessInfo {
