@@ -76,6 +76,8 @@ namespace Match {
         vk12_features.runtimeDescriptorArray = VK_TRUE;
         vk12_features.bufferDeviceAddress = VK_TRUE;
         vk12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        vk12_features.drawIndirectCount = VK_TRUE;
+        vk12_features.samplerFilterMinmax = VK_TRUE;
         vk::DeviceCreateInfo device_create_info {};
         device_create_info.setPNext(&vk12_features);
 
