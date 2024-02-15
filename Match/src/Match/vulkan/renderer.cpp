@@ -113,13 +113,17 @@ namespace Match {
         current_buffer.endRenderPass();
     }
 
-    void Renderer::present() {
+    void Renderer::present(const std::vector<vk::PipelineStageFlags> &wait_stages, const std::vector<vk::Semaphore> &wait_samaphores) {
         current_buffer.end();
 
         vk::SubmitInfo submit_info {};
-        std::vector<vk::PipelineStageFlags> wait_stages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-        submit_info.setWaitSemaphores(image_available_semaphores[current_in_flight])
-            .setWaitDstStageMask(wait_stages)
+        auto wait_stages_ = wait_stages;
+        wait_stages_.push_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+        auto wait_samaphores_ = wait_samaphores;
+        wait_samaphores_.push_back(image_available_semaphores[current_in_flight]);
+
+        submit_info.setWaitSemaphores(wait_samaphores_)
+            .setWaitDstStageMask(wait_stages_)
             .setCommandBuffers(current_buffer)
             .setSignalSemaphores(render_finished_semaphores[current_in_flight]);
         manager->device->graphics_queue.submit({ submit_info }, in_flight_fences[current_in_flight]);

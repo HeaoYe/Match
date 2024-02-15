@@ -38,7 +38,7 @@ namespace Match {
         void acquire_next_image();
         void begin_render_pass();
         void end_render_pass();
-        void present();
+        void present(const std::vector<vk::PipelineStageFlags> &wait_stages = {}, const std::vector<vk::Semaphore> &wait_samaphores = {});
         void begin_render();
         void end_render();
         void begin_layer_render(const std::string &name);
