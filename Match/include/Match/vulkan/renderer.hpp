@@ -38,6 +38,7 @@ namespace Match {
         void acquire_next_image();
         void begin_render_pass();
         void end_render_pass();
+        void report_submit_info(const vk::SubmitInfo &submit_info);
         void present(const std::vector<vk::PipelineStageFlags> &wait_stages = {}, const std::vector<vk::Semaphore> &wait_samaphores = {});
         void begin_render();
         void end_render();
@@ -101,6 +102,7 @@ namespace Match {
         std::vector<vk::Semaphore> image_available_semaphores;
         std::vector<vk::Semaphore> render_finished_semaphores;
         std::vector<vk::Fence> in_flight_fences;
+        std::vector<std::vector<vk::SubmitInfo>> in_flight_submit_infos;
     private:
         std::shared_ptr<GraphicsShaderProgram> current_graphics_shader_program;
         std::shared_ptr<RayTracingShaderProgram> current_ray_tracing_shader_program;

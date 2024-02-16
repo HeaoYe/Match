@@ -22,6 +22,7 @@ namespace Match {
             image_available_semaphores[i] = manager->device->device.createSemaphore(semaphore_create_info);
             render_finished_semaphores[i] = manager->device->device.createSemaphore(semaphore_create_info);
             in_flight_fences[i] = manager->device->device.createFence(fence_create_info);
+            in_flight_submit_infos.emplace_back();
         }
     }
 
@@ -113,10 +114,14 @@ namespace Match {
         current_buffer.endRenderPass();
     }
 
+    void Renderer::report_submit_info(const vk::SubmitInfo &submit_info) {
+        in_flight_submit_infos[current_in_flight].push_back(submit_info);
+    }
+    
     void Renderer::present(const std::vector<vk::PipelineStageFlags> &wait_stages, const std::vector<vk::Semaphore> &wait_samaphores) {
         current_buffer.end();
 
-        vk::SubmitInfo submit_info {};
+        auto &submit_info = in_flight_submit_infos[current_in_flight].emplace_back();
         auto wait_stages_ = wait_stages;
         wait_stages_.push_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
         auto wait_samaphores_ = wait_samaphores;
@@ -126,7 +131,7 @@ namespace Match {
             .setWaitDstStageMask(wait_stages_)
             .setCommandBuffers(current_buffer)
             .setSignalSemaphores(render_finished_semaphores[current_in_flight]);
-        manager->device->graphics_queue.submit({ submit_info }, in_flight_fences[current_in_flight]);
+        manager->device->graphics_queue.submit(in_flight_submit_infos[current_in_flight], in_flight_fences[current_in_flight]);
 
         vk::PresentInfoKHR present_info {};
         present_info.setWaitSemaphores(render_finished_semaphores[current_in_flight])
@@ -145,6 +150,7 @@ namespace Match {
         current_in_flight = (current_in_flight + 1) % setting.max_in_flight_frame;
         runtime_setting->current_in_flight = current_in_flight;
         current_buffer = command_buffers[current_in_flight];
+        in_flight_submit_infos[current_in_flight].clear();
     }
 
     void Renderer::begin_render() {
