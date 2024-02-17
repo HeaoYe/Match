@@ -46,7 +46,7 @@ namespace Match {
         no_copy_move_construction(RenderPassBuilder)
     public:
         RenderPassBuilder();
-        RenderPassBuilder &add_attachment(const std::string &name, AttachmentType type);
+        RenderPassBuilder &add_attachment(const std::string &name, AttachmentType type, vk::ImageUsageFlags additional_usage = {});
         SubpassBuilder &add_subpass(const std::string &name);
         vk::RenderPassCreateInfo build();
     INNER_VISIBLE:

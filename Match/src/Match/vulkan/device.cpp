@@ -72,6 +72,7 @@ namespace Match {
         features.shaderInt64 = VK_TRUE;
         features.fragmentStoresAndAtomics = VK_TRUE;
         features.multiDrawIndirect = VK_TRUE;
+        features.geometryShader = VK_TRUE;
         vk::PhysicalDeviceVulkan12Features vk12_features {};
         vk12_features.runtimeDescriptorArray = VK_TRUE;
         vk12_features.bufferDeviceAddress = VK_TRUE;
