@@ -149,6 +149,15 @@ namespace Match {
                 attachment.aspect |= vk::ImageAspectFlagBits::eStencil;
             }
             attachment.clear_value = { { 1.0f, 0 } };
+            attachment.description_write.setStencilLoadOp(vk::AttachmentLoadOp::eClear);
+            break;
+        case AttachmentType::eStencil:
+            attachment.description_write.format = vk::Format::eD24UnormS8Uint;
+            attachment.description_write.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+            attachment.usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+            attachment.aspect = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
+            attachment.clear_value = { { 1.0f, 0 } };
+            attachment.description_write.setStencilLoadOp(vk::AttachmentLoadOp::eClear);
             break;
         case AttachmentType::eFloat4Buffer:
             attachment.description_write.format = vk::Format::eR32G32B32A32Sfloat;

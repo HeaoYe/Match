@@ -102,7 +102,7 @@ namespace Match {
             .setDepthBiasClamp(VK_FALSE)
             .setFrontFace(transform<vk::FrontFace>(options.front_face))
             .setCullMode(transform<vk::CullModeFlags>(options.cull_mode))
-            .setLineWidth(1.0f);
+            .setLineWidth(options.line_width);
 
         vk::PipelineMultisampleStateCreateInfo multisample_state {};
         multisample_state.rasterizationSamples = transform<vk::SampleCountFlagBits>(runtime_setting->multisample_count);
@@ -117,7 +117,9 @@ namespace Match {
             .setDepthWriteEnable(options.depth_write_enable)
             .setDepthCompareOp(options.depth_compere_op)
             .setDepthBoundsTestEnable(VK_FALSE)
-            .setStencilTestEnable(VK_FALSE);
+            .setStencilTestEnable(options.stencil_test_enable)
+            .setFront(options.stencil_front)
+            .setBack(options.stencil_back);
 
         auto locked_renderer = renderer.lock();
         uint32_t subpass_idx = locked_renderer->render_pass_builder->get_subpass_index(subpass_name);

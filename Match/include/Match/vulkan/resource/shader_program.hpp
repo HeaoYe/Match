@@ -9,11 +9,15 @@ namespace Match {
     struct GraphicsShaderProgramCompileOptions {
         Topology topology = Topology::eTriangleList;
         PolygonMode polygon_mode = PolygonMode::eFill;
+        float line_width = 1.0f;
         CullMode cull_mode = CullMode::eBack;
         FrontFace front_face = FrontFace::eClockwise;
         vk::Bool32 depth_test_enable = VK_FALSE;
         vk::Bool32 depth_write_enable = VK_TRUE;
         vk::CompareOp depth_compere_op = vk::CompareOp::eLess;
+        vk::Bool32 stencil_test_enable = VK_FALSE;
+        vk::StencilOpState stencil_front = {};
+        vk::StencilOpState stencil_back = {};
         std::vector<vk::DynamicState> dynamic_states;
     };
 
