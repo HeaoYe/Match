@@ -218,11 +218,12 @@ namespace Match {
     enum class AttachmentType {
         eColor,
         eDepth,
+        eStencil,
         eDepthBuffer,
+        eStencilBuffer,
         eFloat4Buffer,
         eUint64Buffer,
         eColorBuffer,
-        eStencil,
     };
 
     struct AccessInfo {

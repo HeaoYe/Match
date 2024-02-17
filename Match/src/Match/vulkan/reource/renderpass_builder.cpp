@@ -151,6 +151,8 @@ namespace Match {
             attachment.clear_value = { { 1.0f, 0 } };
             attachment.description_write.setStencilLoadOp(vk::AttachmentLoadOp::eClear);
             break;
+        case AttachmentType::eStencilBuffer:
+            attachment.usage = vk::ImageUsageFlagBits::eInputAttachment | vk::ImageUsageFlagBits::eSampled;
         case AttachmentType::eStencil:
             attachment.description_write.format = vk::Format::eD24UnormS8Uint;
             attachment.description_write.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
