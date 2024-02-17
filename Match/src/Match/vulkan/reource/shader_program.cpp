@@ -102,7 +102,7 @@ namespace Match {
             .setDepthBiasClamp(VK_FALSE)
             .setFrontFace(transform<vk::FrontFace>(options.front_face))
             .setCullMode(transform<vk::CullModeFlags>(options.cull_mode))
-            .setLineWidth(1.0f);
+            .setLineWidth(options.line_width);
 
         vk::PipelineMultisampleStateCreateInfo multisample_state {};
         multisample_state.rasterizationSamples = transform<vk::SampleCountFlagBits>(runtime_setting->multisample_count);
