@@ -113,7 +113,7 @@ namespace Match {
         }
     }
 
-    RenderPassBuilder &RenderPassBuilder::add_attachment(const std::string &name, AttachmentType type) {
+    RenderPassBuilder &RenderPassBuilder::add_attachment(const std::string &name, AttachmentType type, vk::ImageUsageFlags additional_usage) {
         attachments_map.insert(std::make_pair(name, attachments.size()));
         auto &attachment = attachments.emplace_back();
         attachment.description_write.setSamples(transform<vk::SampleCountFlagBits>(runtime_setting->multisample_count))
@@ -205,6 +205,8 @@ namespace Match {
             }
             break;
         }
+        attachment.usage |= additional_usage;
+        attachment.usage_read |= additional_usage;
         return *this;
     }
 

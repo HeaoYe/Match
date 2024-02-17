@@ -39,7 +39,7 @@ namespace Match {
     class TwoStageBuffer : public StorageBuffer {
         no_copy_move_construction(TwoStageBuffer)
     public:
-        TwoStageBuffer(uint64_t size, vk::BufferUsageFlags usage, vk::BufferUsageFlags additional_usage = vk::BufferUsageFlags {});
+        TwoStageBuffer(uint64_t size, vk::BufferUsageFlags usage, vk::BufferUsageFlags additional_usage = {});
         void *map();
         void flush();
         void unmap();
