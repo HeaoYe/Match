@@ -9,6 +9,9 @@ namespace Match {
 
     Attachment::Attachment(const vk::AttachmentDescription& description, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect) {
         image = std::make_unique<Image>(runtime_setting->window_size.width, runtime_setting->window_size.height, description.format, usage, description.samples, VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+        if (aspect == (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil)) {
+            aspect = vk::ImageAspectFlagBits::eDepth;
+        }
         image_view = create_image_view(image->image, description.format, aspect, 1);
     }
 
@@ -52,7 +55,7 @@ namespace Match {
         uint32_t swapchain_image_view_idx;
 
         for (auto &[name, idx] : renderer.render_pass_builder->attachments_map) {
-            auto attachment = renderer.render_pass_builder->attachments[idx];
+            auto &attachment = renderer.render_pass_builder->attachments[idx];
             if (idx == 0) {
                 if (attachment.description_read.has_value()) {
                     attachments[idx] = std::move(Attachment(attachment.description_write, attachment.usage, attachment.aspect));
