@@ -14,6 +14,9 @@ namespace Match {
         vk::Bool32 depth_test_enable = VK_FALSE;
         vk::Bool32 depth_write_enable = VK_TRUE;
         vk::CompareOp depth_compere_op = vk::CompareOp::eLess;
+        vk::Bool32 stencil_test_enable = VK_FALSE;
+        vk::StencilOpState stencil_front = {};
+        vk::StencilOpState stencil_back = {};
         std::vector<vk::DynamicState> dynamic_states;
     };
 

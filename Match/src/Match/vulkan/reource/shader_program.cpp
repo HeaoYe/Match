@@ -117,7 +117,9 @@ namespace Match {
             .setDepthWriteEnable(options.depth_write_enable)
             .setDepthCompareOp(options.depth_compere_op)
             .setDepthBoundsTestEnable(VK_FALSE)
-            .setStencilTestEnable(VK_FALSE);
+            .setStencilTestEnable(options.stencil_test_enable)
+            .setFront(options.stencil_front)
+            .setBack(options.stencil_back);
 
         auto locked_renderer = renderer.lock();
         uint32_t subpass_idx = locked_renderer->render_pass_builder->get_subpass_index(subpass_name);
