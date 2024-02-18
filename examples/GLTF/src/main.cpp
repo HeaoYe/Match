@@ -15,7 +15,7 @@ int main() {
     factory = ctx->create_resource_factory("resource");
 
     {
-        auto scene = factory->load_gltf_scene("../../Scene/resource/models/Sponze/glTF/Sponza.gltf");
+        auto scene = factory->load_gltf_scene("../../../Scene/resource/models/Sponza/glTF/Sponza.gltf");
         auto builder = factory->create_acceleration_structure_builder();
         builder->add_scene(scene);
         builder->build();
