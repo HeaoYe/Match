@@ -37,10 +37,22 @@ cmake_minimum_required(VERSION 3.27)
 project(NewProject)
 
 set(MATCH_BUILD_EXAMPLES OFF)
+if (WIN32)
+    # set(BASH_EXECUTABLE "你安装的Git中的bash.exe的完整路径")
+    # 如果你把xxx\Git\bin加入了环境变量，可以省略这步
+    # * 注意！如果你的Windows启用了Linux子系统功能
+    # * 那么C:\Windows\System32目录下会有bash.exe文件
+    # * 这种情况下无论如何都不能省略这步
+    set(BASH_EXECUTABLE "D:\\Git\\bin\\bash.exe")
+endif()
 add_subdirectory(Match)
 
 add_executable(NewProject main.cpp)
 target_link_libraries(NewProject Match)
+if (WIN32)
+    # COPYDLL(TARGET_NAME 在当前CMakeLists.txt的目录下,与Match仓库的相对路径)
+    COPYDLL(NewProject ./Match)
+endif()
 ```
 4. 在MyProject文件夹下，新建main.cpp
 
@@ -310,13 +322,13 @@ g++ --version
 
 ### 6.设置环境变量
 1. 设置 -> 系统 -> 关于 -> 高级系统设置 -> 环境变量
-2. 需要在Path中 添加CMake的目录 & MSYS2的目录 & VulkanSDK的目录
-- CMake:
-```CMake解压目录\cmake-3.29.0-rc1-windows-x86_64\bin```
-- MSYS2:
-```MSYS64安装目录\ucrt64\bin```
-- VulkanSDK:
-```VulkanSDK安装目录\Bin```
+2. 需要在Path中添加 CMake的bin目录 & MSYS2的bin目录 & VulkanSDK的Bin目录
+- CMake的bin目录:
+例如 ```E:\CMake\cmake-3.29.0-rc1-windows-x86_64\bin```
+- MSYS2的bin目录:
+例如 ```E:\msys64\ucrt64\bin```
+- VulkanSDK的Bin目录:
+例如 ```E:\VulkanSDK\1.3.275.0\Bin```
 3. 点击新建 -> 输入路径 -> 点击上移 移动到最上面
 4. 设置好后，Win+r 输入cmd
 5. 输入命令验证安装是否成功

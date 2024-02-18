@@ -51,12 +51,14 @@ function(COPYDLL TARGET_NAME PATH_PREFIX)
             TARGET ${TARGET_NAME}
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${PATH_PREFIX}"/Match/Match/libMatch.dll"
-            ${PATH_PREFIX}"/Match/thirdparty/glfw/src/glfw3.dll"
-            ${PATH_PREFIX}"/Match/thirdparty/imgui/libImGui.dll"
-            ${PATH_PREFIX}"/Match/thirdparty/shaderc/libshaderc/libshaderc_shared.dll"
-            ${PATH_PREFIX}"/Match/thirdparty/shaderc/third_party/glslang/SPIRV/SPIRVd.dll"
-            ${PATH_PREFIX}"/Match/thirdparty/spdlog/libspdlogd.dll"
+            ${PATH_PREFIX}"/Match/libMatch.dll"
+            ${PATH_PREFIX}"/thirdparty/glfw/src/glfw3.dll"
+            ${PATH_PREFIX}"/thirdparty/imgui/libImGui.dll"
+            ${PATH_PREFIX}"/thirdparty/shaderc/libshaderc/libshaderc_shared.dll"
+            ${PATH_PREFIX}"/thirdparty/shaderc/third_party/glslang/SPIRV/SPIRVd.dll"
+            ${PATH_PREFIX}"/thirdparty/spdlog/libspdlogd.dll"
+            ${PATH_PREFIX}"/thirdparty/tinygltf/libtinygltf.dll"
+            ${PATH_PREFIX}"/thirdparty/tinyobjloader/libtinyobjloader.dll"
             $<TARGET_FILE_DIR:${TARGET_NAME}>
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
@@ -65,12 +67,46 @@ function(COPYDLL TARGET_NAME PATH_PREFIX)
             TARGET ${TARGET_NAME}
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "../../Match/libMatch.dll"
-            "../../thirdparty/glfw/src/glfw3.dll"
-            "../../thirdparty/imgui/libImGui.dll"
-            "../../thirdparty/shaderc/libshaderc/libshaderc_shared.dll"
-            "../../thirdparty/shaderc/third_party/glslang/SPIRV/SPIRV.dll"
-            "../../thirdparty/spdlog/libspdlog.dll"
+            ${PATH_PREFIX}"/Match/libMatch.dll"
+            ${PATH_PREFIX}"/thirdparty/glfw/src/glfw3.dll"
+            ${PATH_PREFIX}"/thirdparty/imgui/libImGui.dll"
+            ${PATH_PREFIX}"/thirdparty/shaderc/libshaderc/libshaderc_shared.dll"
+            ${PATH_PREFIX}"/thirdparty/shaderc/third_party/glslang/SPIRV/SPIRV.dll"
+            ${PATH_PREFIX}"/thirdparty/spdlog/libspdlog.dll"
+            ${PATH_PREFIX}"/thirdparty/tinygltf/libtinygltf.dll"
+            ${PATH_PREFIX}"/thirdparty/tinyobjloader/libtinyobjloader.dll"
+            $<TARGET_FILE_DIR:${TARGET_NAME}>
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    elseif (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+        add_custom_command(
+            TARGET ${TARGET_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${PATH_PREFIX}"/Match/libMatch.dll"
+            ${PATH_PREFIX}"/thirdparty/glfw/src/glfw3.dll"
+            ${PATH_PREFIX}"/thirdparty/imgui/libImGui.dll"
+            ${PATH_PREFIX}"/thirdparty/shaderc/libshaderc/libshaderc_shared.dll"
+            ${PATH_PREFIX}"/thirdparty/shaderc/third_party/glslang/SPIRV/SPIRV.dll"
+            ${PATH_PREFIX}"/thirdparty/spdlog/libspdlog.dll"
+            ${PATH_PREFIX}"/thirdparty/tinygltf/libtinygltf.dll"
+            ${PATH_PREFIX}"/thirdparty/tinyobjloader/libtinyobjloader.dll"
+            $<TARGET_FILE_DIR:${TARGET_NAME}>
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        add_custom_command(
+            TARGET ${TARGET_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${PATH_PREFIX}"/Match/libMatch.dll"
+            ${PATH_PREFIX}"/thirdparty/glfw/src/glfw3.dll"
+            ${PATH_PREFIX}"/thirdparty/imgui/libImGui.dll"
+            ${PATH_PREFIX}"/thirdparty/shaderc/libshaderc/libshaderc_shared.dll"
+            ${PATH_PREFIX}"/thirdparty/shaderc/third_party/glslang/SPIRV/SPIRV.dll"
+            ${PATH_PREFIX}"/thirdparty/spdlog/libspdlog.dll"
+            ${PATH_PREFIX}"/thirdparty/tinygltf/libtinygltf.dll"
+            ${PATH_PREFIX}"/thirdparty/tinyobjloader/libtinyobjloader.dll"
             $<TARGET_FILE_DIR:${TARGET_NAME}>
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )

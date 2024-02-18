@@ -8,5 +8,5 @@ add_executable(Scene ${source} ${headers})
 
 target_link_libraries(Scene PRIVATE Match)
 if (WIN32)
-    COPYDLL(Scene ../../..)
+    COPYDLL(Scene ../..)
 endif()
