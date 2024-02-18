@@ -1,0 +1,40 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Sandbox",
+            "program": "${workspaceFolder}/build/examples/Sandbox/Sandbox",
+            "args": [],
+            "cwd": "${workspaceFolder}/examples/Sandbox"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Scene",
+            "program": "${workspaceFolder}/build/examples/Scene/Scene",
+            "args": [],
+            "cwd": "${workspaceFolder}/examples/Scene"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "RayTracing",
+            "program": "${workspaceFolder}/build/examples/RayTracing/RayTracing",
+            "args": [],
+            "cwd": "${workspaceFolder}/examples/RayTracing"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "GLTFSCene",
+            "program": "${workspaceFolder}/build/examples/GLTF/GLTF",
+            "args": [],
+            "cwd": "${workspaceFolder}/examples/GLTF"
+        },
+    ]
+}
