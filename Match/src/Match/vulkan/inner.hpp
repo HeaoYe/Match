@@ -3,5 +3,5 @@
 #include <Match/vulkan/manager.hpp>
 
 namespace Match {
-    extern APIManager *manager;
+    MATCH_API extern APIManager *manager;
 }

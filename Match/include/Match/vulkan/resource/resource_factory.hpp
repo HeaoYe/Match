@@ -16,7 +16,7 @@
 #include <Match/vulkan/resource/ray_tracing_instance_collect.hpp>
 
 namespace Match {
-    class ResourceFactory {
+    class MATCH_API ResourceFactory {
         no_copy_move_construction(ResourceFactory)
     public:
         ResourceFactory(const std::string &root);

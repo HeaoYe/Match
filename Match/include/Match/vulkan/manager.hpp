@@ -9,7 +9,7 @@
 #include <Match/vulkan/descriptor_resource/descriptor_pool.hpp>
 
 namespace Match {
-    class APIManager {
+    class MATCH_API APIManager {
         no_copy_move_construction(APIManager)
     private:
         APIManager();

@@ -3,8 +3,7 @@
 #include <Match/vulkan/resource/renderpass_builder.hpp>
 
 namespace Match {
-
-    class RenderPass {
+    class MATCH_API RenderPass {
         no_copy_move_construction(RenderPass)
     public:
         RenderPass(std::shared_ptr<RenderPassBuilder> builder);

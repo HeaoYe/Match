@@ -226,7 +226,7 @@ namespace Match {
         eColorBuffer,
     };
 
-    struct AccessInfo {
+    struct MATCH_API AccessInfo {
         vk::PipelineStageFlags stage;
         vk::AccessFlags access;
     };

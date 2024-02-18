@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 
 namespace Match {
-    class Window {
+    class MATCH_API Window {
         no_copy_move_construction(Window)
     public:
         Window();
@@ -17,5 +17,5 @@ namespace Match {
         GLFWwindow *window;
     };
 
-    extern std::unique_ptr<Window> window;
+    MATCH_API extern std::unique_ptr<Window> window;
 }

@@ -4,13 +4,13 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    struct SwapchainDetails {
+    struct MATCH_API SwapchainDetails {
         vk::SurfaceCapabilitiesKHR capabilities;
         std::vector<vk::SurfaceFormatKHR> formats;
         std::vector<vk::PresentModeKHR> present_modes;
     };
 
-    class Swapchain {
+    class MATCH_API Swapchain {
         no_copy_move_construction(Swapchain)
     public:
         Swapchain();

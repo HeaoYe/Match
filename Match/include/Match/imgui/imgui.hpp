@@ -3,7 +3,7 @@
 #include <Match/vulkan/renderer.hpp>
 
 namespace Match {
-    class ImGuiLayer final : public RenderLayer {
+    class MATCH_API ImGuiLayer final : public RenderLayer {
         no_copy_move_construction(ImGuiLayer)
     public:
         ImGuiLayer(Renderer &renderer, const std::vector<std::string> &input_attachments = {});

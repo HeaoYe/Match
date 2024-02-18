@@ -7,17 +7,17 @@
 #include <tiny_gltf.h>
 
 namespace Match {
-    class GLTFScene;
-    class GLTFMesh;
-    class DescriptorSet;
+    class MATCH_API GLTFScene;
+    class MATCH_API GLTFMesh;
+    class MATCH_API DescriptorSet;
 
-    struct GLTFPrimitiveInstanceData {
+    struct MATCH_API GLTFPrimitiveInstanceData {
         uint32_t first_index { 0 };
         uint32_t first_vertex { 0 };
         uint32_t material_index { 0 };
     };
 
-    class GLTFPrimitive final : public RayTracingModel {
+    class MATCH_API GLTFPrimitive final : public RayTracingModel {
         no_copy_move_construction(GLTFPrimitive)
     public:
     public:
@@ -38,7 +38,7 @@ namespace Match {
         glm::vec3 pos_max { 0 };
     };
 
-    class GLTFMesh {
+    class MATCH_API GLTFMesh {
         no_copy_move_construction(GLTFMesh)
     public:
         GLTFMesh(GLTFScene &scene, const tinygltf::Model &gltf_model, const tinygltf::Mesh &gltf_mesh, const std::vector<std::string> &load_attributes);
@@ -48,7 +48,7 @@ namespace Match {
         std::vector<std::shared_ptr<GLTFPrimitive>> primitives {};
     };
 
-    class GLTFNode {
+    class MATCH_API GLTFNode {
         no_copy_move_construction(GLTFNode)
     public:
         GLTFNode(GLTFScene &scene, const tinygltf::Model &gltf_model, uint32_t gltf_node_index, GLTFNode *parent);
@@ -69,7 +69,7 @@ namespace Match {
         glm::mat4 matrix { 1 };
     };
 
-    struct GLTFMaterial {
+    struct MATCH_API GLTFMaterial {
         glm::vec4 base_color_factor { 1 };
         int base_color_texture { -1 };
         glm::vec3 emissive_factor { 0 };
@@ -80,7 +80,7 @@ namespace Match {
         int metallic_roughness_texture { -1 };
     };
 
-    class GLTFScene final : public RayTracingScene {
+    class MATCH_API GLTFScene final : public RayTracingScene {
         no_copy_move_construction(GLTFScene)
     public:
         GLTFScene(const std::string &filename, const std::vector<std::string> &load_attributes);

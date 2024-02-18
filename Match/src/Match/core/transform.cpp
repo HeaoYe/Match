@@ -1,3 +1,4 @@
+#include "Match/types.hpp"
 #include <Match/core/utils.hpp>
 #include <Match/core/logger.hpp>
 
@@ -18,5 +19,6 @@ namespace Match {
         case LogLevel::eFatal:
             return spdlog::level::critical;
         }
+        return spdlog::level::critical;
     }
 }

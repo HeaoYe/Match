@@ -8,7 +8,7 @@
 #include <Match/vulkan/resource/model.hpp>
 
 namespace Match {
-    class RenderLayer {
+    class MATCH_API RenderLayer {
         no_copy_move_construction(RenderLayer)
     public:
         RenderLayer(Renderer &renderer) : renderer(renderer) {}
@@ -19,7 +19,7 @@ namespace Match {
         Renderer &renderer;
     };
 
-    class Renderer {
+    class MATCH_API Renderer {
         no_copy_move_construction(Renderer)
         using ResourceRecreateCallback = std::function<void()>;
     public:

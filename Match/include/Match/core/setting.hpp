@@ -4,7 +4,7 @@
 #include <optional>
 
 namespace Match {
-    struct Setting {
+    struct MATCH_API Setting {
         bool debug_mode = false;
         std::string device_name = "auto";
         std::string app_name = "Match App";
@@ -23,7 +23,7 @@ namespace Match {
         std::vector<std::string> device_extensions {};
     };
 
-    class RuntimeSetting {
+    class MATCH_API RuntimeSetting {
         default_no_copy_move_construction(RuntimeSetting)
     public:
         RuntimeSetting &set_vsync(bool n);
@@ -41,6 +41,6 @@ namespace Match {
         uint32_t current_in_flight = 0;
     };
 
-    extern Setting setting;
-    extern std::shared_ptr<RuntimeSetting> runtime_setting;
+    MATCH_API extern Setting setting;
+    MATCH_API extern std::shared_ptr<RuntimeSetting> runtime_setting;
 }

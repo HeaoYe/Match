@@ -3,14 +3,14 @@
 #include <Match/vulkan/resource/buffer.hpp>
 
 namespace Match {
-    class RayTracingModel;
-    class RayTracingScene;
-    class Model;
-    class SphereCollect;
-    class GLTFScene;
-    class GLTFNode;
+    class MATCH_API RayTracingModel;
+    class MATCH_API RayTracingScene;
+    class MATCH_API Model;
+    class MATCH_API SphereCollect;
+    class MATCH_API GLTFScene;
+    class MATCH_API GLTFNode;
 
-    class ModelAccelerationStructure {
+    class MATCH_API ModelAccelerationStructure {
         default_no_copy_move_construction(ModelAccelerationStructure);
     public:
         ~ModelAccelerationStructure();
@@ -19,7 +19,7 @@ namespace Match {
         std::unique_ptr<Buffer> acceleration_structure_buffer;
     };
 
-    class AccelerationStructureBuilder {
+    class MATCH_API AccelerationStructureBuilder {
         default_no_copy_move_construction(AccelerationStructureBuilder)
     private:
         struct BuildInfo {

@@ -1,4 +1,5 @@
 #include "ray_tracing_scene.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>
 #include <random>
 

@@ -10,7 +10,7 @@
 #include <optional>
 
 namespace Match {
-    struct DescriptorInfo {
+    struct MATCH_API DescriptorInfo {
         DescriptorInfo(ShaderStages stages, uint32_t binding, DescriptorType type, uint32_t count, const vk::Sampler *immutable_samplers) : stages(stages), binding(binding), type(type), count(count), immutable_samplers(immutable_samplers) {}
         DescriptorInfo(ShaderStages stages, uint32_t binding, DescriptorType type, uint32_t count) : stages(stages), binding(binding), type(type), count(count), immutable_samplers(nullptr) {}
         DescriptorInfo(ShaderStages stages, uint32_t binding, DescriptorType type, const vk::Sampler *immutable_samplers) : stages(stages), binding(binding), type(type), count(1), immutable_samplers(immutable_samplers) {}
@@ -22,9 +22,9 @@ namespace Match {
         const vk::Sampler *immutable_samplers;
     };
 
-    class Renderer;
+    class MATCH_API Renderer;
 
-    class DescriptorSet {
+    class MATCH_API DescriptorSet {
         no_copy_move_construction(DescriptorSet)
     public:
         DescriptorSet(std::optional<std::weak_ptr<Renderer>> renderer);

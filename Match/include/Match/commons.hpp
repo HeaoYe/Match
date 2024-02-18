@@ -15,6 +15,16 @@
     #define INNER_PROTECT protected
 #endif
 
+#if defined (PLATFORM_WINDOWS)
+    #if defined (WINDOWS_DLL)
+        #define MATCH_API __declspec(dllexport)
+    #else
+        #define MATCH_API __declspec(dllimport)
+    #endif
+#else
+    #define MATCH_API
+#endif
+
 namespace Match {
     #define no_copy_construction(cls_name) cls_name(const cls_name &) = delete;
     #define no_move_construction(cls_name) cls_name(cls_name &&) = delete;

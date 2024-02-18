@@ -5,7 +5,7 @@
 
 namespace Match {
     template <class CustomCreateInfo>
-    class CustomDataRegistrar {
+    class MATCH_API CustomDataRegistrar {
         default_no_copy_move_construction(CustomDataRegistrar)
     INNER_VISIBLE:
         struct CustomDataWrapper {
@@ -38,7 +38,7 @@ namespace Match {
             }
             custom_data_wrapper_map[class_hash_code] = {
                 .size = sizeof(type_t),
-                .create_stage_vector_callback = []() {
+                .create_stage_vector_callback = [] {
                     auto *stage_vector_ptr = new vector_t();
                     return stage_vector_ptr;
                 },

@@ -7,7 +7,7 @@
 #include <Match/core/utils.hpp>
 
 namespace Match {
-    class RayTracingInstanceCollect {
+    class MATCH_API RayTracingInstanceCollect {
         no_copy_move_construction(RayTracingInstanceCollect)
     INNER_VISIBLE:
         struct InstanceCreateInfo {
@@ -97,6 +97,7 @@ namespace Match {
             });
             return *this;
         }
+        return *this;
     }
 
     template <class CustomInstanceData>

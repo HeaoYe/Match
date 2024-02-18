@@ -83,6 +83,7 @@ namespace Match {
         init_info.Device = manager->device->device;
         init_info.QueueFamily = manager->device->graphics_family_index;
         init_info.Queue = manager->device->graphics_queue;
+        init_info.RenderPass = renderer.render_pass->render_pass;
         init_info.PipelineCache = VK_NULL_HANDLE;
         init_info.DescriptorPool = descriptor_pool;
         init_info.Subpass = renderer.render_pass_builder->subpass_builders.size() - 1;
@@ -95,7 +96,7 @@ namespace Match {
                 MCH_ERROR("ImGui Vulkan Error: {}", static_cast<uint32_t>(res))
             }
         };
-        ImGui_ImplVulkan_Init(&init_info, renderer.render_pass->render_pass);
+        ImGui_ImplVulkan_Init(&init_info);
     }
 
     void ImGuiLayer::begin_render() {

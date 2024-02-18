@@ -1,5 +1,6 @@
 #include "scene.hpp"
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>
 
 Scene::Scene(std::shared_ptr<Match::ResourceFactory> factory) : factory(factory) {}

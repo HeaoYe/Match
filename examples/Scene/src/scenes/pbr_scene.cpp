@@ -1,4 +1,5 @@
 #include "pbr_scene.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>
 
 void PBRScene::initialize() {
@@ -90,7 +91,8 @@ void PBRScene::render_imgui() {
     ImGui::ColorEdit3("点光源2颜色", &lights->data->point_lights[2].color.r);
 
     ImGui::ColorEdit3("颜色", &material->data->color.r);
-    ImGui::SliderFloat("粗cao度", &material->data->roughness, 0, 1);
+    // ImGui::SliderFloat("粗cao度", &material->data->roughness, 0, 1);
+    ImGui::SliderFloat("粗糙度", &material->data->roughness, 0, 1);
     ImGui::SliderFloat("金属度", &material->data->metallic, 0, 1);
     ImGui::SliderFloat("反射度", &material->data->reflectance, 0, 1);
 }

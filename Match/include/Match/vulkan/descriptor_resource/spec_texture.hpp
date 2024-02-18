@@ -4,7 +4,7 @@
 #include <ktxvulkan.h>
 
 namespace Match {
-    class DataTexture final : public Texture {
+    class MATCH_API DataTexture final : public Texture {
         no_copy_move_construction(DataTexture)
     public:
         DataTexture(const uint8_t *data, uint32_t width, uint32_t height, uint32_t mip_levels);
@@ -18,7 +18,7 @@ namespace Match {
         uint32_t mip_levels;
     };
 
-    class ImgTexture final : public Texture {
+    class MATCH_API ImgTexture final : public Texture {
         no_copy_move_construction(ImgTexture)
     public:
         ImgTexture(const std::string &filename, uint32_t mip_levels);
@@ -30,7 +30,7 @@ namespace Match {
         std::unique_ptr<DataTexture> texture;
     };
 
-    class KtxTexture final : public Texture {
+    class MATCH_API KtxTexture final : public Texture {
         no_copy_move_construction(KtxTexture)
     public:
         KtxTexture(const std::string &filename);
