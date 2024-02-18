@@ -160,6 +160,7 @@ namespace Match {
                 .index_buffer_address = get_buffer_address(dynamic_cast<GLTFPrimitive &>(model).scene.index_buffer->buffer),
             };
         }
+        return {};
     }
 
     bool RayTracingInstanceCollect::check_model_suitable(RayTracingModel &model) {

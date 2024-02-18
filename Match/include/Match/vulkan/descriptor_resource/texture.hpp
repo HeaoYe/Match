@@ -3,7 +3,7 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    class Texture {
+    class MATCH_API Texture {
         default_no_copy_move_construction(Texture)
     public:
         virtual ~Texture() = default;

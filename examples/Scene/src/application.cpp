@@ -3,8 +3,10 @@
 
 Application::Application() {
     Match::setting.device_name = Match::AUTO_SELECT_DEVICE;
+    Match::setting.chinese_font_filename = "../fonts/SourceHanSansCN-Normal.ttf";
+#if !defined(PLATFORM_WINDOWS)
     Match::setting.default_font_filename = "/usr/share/fonts/TTF/JetBrainsMonoNerdFontMono-Light.ttf";
-    Match::setting.chinese_font_filename = "/usr/share/fonts/adobe-source-han-sans/SourceHanSansCN-Medium.otf";
+#endif
     Match::setting.font_size = 24.0f;
     auto &context = Match::Initialize();
 

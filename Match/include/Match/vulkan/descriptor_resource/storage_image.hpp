@@ -4,7 +4,7 @@
 #include <Match/vulkan/resource/image.hpp>
 
 namespace Match {
-    class StorageImage : public Texture {
+    class MATCH_API StorageImage : public Texture {
         no_copy_move_construction(StorageImage)
     public:
         StorageImage(uint32_t width, uint32_t height, vk::Format format, bool sampled, bool enable_clear);

@@ -13,7 +13,7 @@ struct PointLight {
 struct LightController {
     struct LightUniform {
         alignas(16) PointLight lights[10];
-        alignas(4) uint num;
+        alignas(4) uint32_t num;
     } *data;
     LightController(std::weak_ptr<Match::ResourceFactory> factory);
     std::shared_ptr<Match::UniformBuffer> uniform;

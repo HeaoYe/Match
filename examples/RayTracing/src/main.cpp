@@ -1,6 +1,7 @@
 #include "utils.hpp"
 #include "camera.hpp"
 #include <imgui.h>
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>
 
 struct PointLight {
@@ -21,8 +22,10 @@ public:
         Match::setting.debug_mode = true;
         Match::setting.max_in_flight_frame = 1;
         Match::setting.window_size = { 1920, 1080 };
+        Match::setting.chinese_font_filename = "../fonts/SourceHanSansCN-Normal.ttf";
+    #if !defined(PLATFORM_WINDOWS)
         Match::setting.default_font_filename = "/usr/share/fonts/TTF/JetBrainsMonoNerdFontMono-Light.ttf";
-        Match::setting.chinese_font_filename = "/usr/share/fonts/adobe-source-han-sans/SourceHanSansCN-Medium.otf";
+    #endif
         Match::setting.font_size = 24.0f;
         Match::setting.enable_ray_tracing = true;
         Match::setting.device_extensions.push_back(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);

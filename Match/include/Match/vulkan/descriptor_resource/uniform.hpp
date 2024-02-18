@@ -4,7 +4,7 @@
 #include <Match/vulkan/descriptor_resource/storage_buffer.hpp>
 
 namespace Match {
-    class UniformBuffer : public StorageBuffer {
+    class MATCH_API UniformBuffer : public StorageBuffer {
         no_copy_move_construction(UniformBuffer);
     public:
         UniformBuffer(uint64_t size, bool create_for_each_frame_in_flight);

@@ -4,7 +4,7 @@
 #include <optional>
 
 namespace Match {
-    struct AttachmentInfo {
+    struct MATCH_API AttachmentInfo {
         vk::AttachmentDescription description_write {};
         vk::ImageUsageFlags usage {};
         std::optional<vk::AttachmentDescription> description_read {};
@@ -14,9 +14,9 @@ namespace Match {
         vk::ClearValue clear_value {};
     };
 
-    class RenderPassBuilder;
+    class MATCH_API RenderPassBuilder;
 
-    class SubpassBuilder {
+    class MATCH_API SubpassBuilder {
         no_copy_move_construction(SubpassBuilder)
     public:
         SubpassBuilder(const std::string &name, RenderPassBuilder &builder) : name(name), builder(builder) {}
@@ -42,7 +42,7 @@ namespace Match {
         std::optional<vk::AttachmentReference> depth_attachment;
     };
 
-    class RenderPassBuilder {
+    class MATCH_API RenderPassBuilder {
         no_copy_move_construction(RenderPassBuilder)
     public:
         RenderPassBuilder();

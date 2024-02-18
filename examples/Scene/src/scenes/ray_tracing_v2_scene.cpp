@@ -1,4 +1,5 @@
 #include "ray_tracing_v2_scene.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
 #include <random>
 

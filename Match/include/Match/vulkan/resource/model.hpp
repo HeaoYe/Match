@@ -7,7 +7,7 @@
 #include <optional>
 
 namespace Match {
-    struct Vertex {
+    struct MATCH_API Vertex {
         glm::vec3 pos;
         glm::vec3 normal;
         glm::vec3 color;
@@ -18,12 +18,12 @@ namespace Match {
         static InputBindingInfo generate_input_binding(uint32_t binding);
     };
 
-    struct BufferPosition {
+    struct MATCH_API BufferPosition {
         uint32_t vertex_buffer_offset;
         uint32_t index_buffer_offset;
     };
 
-    class Mesh {
+    class MATCH_API Mesh {
         no_copy_move_construction(Mesh)
     public:
         Mesh();
@@ -34,7 +34,7 @@ namespace Match {
         std::vector<uint32_t> indices;
     };
 
-    class RayTracingModel {
+    class MATCH_API RayTracingModel {
         default_no_copy_move_construction(RayTracingModel)
     public:
         enum class RayTracingModelType {
@@ -49,7 +49,7 @@ namespace Match {
         std::optional<std::unique_ptr<ModelAccelerationStructure>> acceleration_structure;
     };
 
-    class RayTracingScene {
+    class MATCH_API RayTracingScene {
         default_no_copy_move_construction(RayTracingScene)
     public:
         enum class RayTracingSceneType {
@@ -61,7 +61,7 @@ namespace Match {
         virtual ~RayTracingScene() = default;
     };
 
-    class Model final : public RayTracingModel {
+    class MATCH_API Model final : public RayTracingModel {
         no_copy_move_construction(Model)
     public:
         Model(const std::string &filename);
@@ -84,12 +84,12 @@ namespace Match {
         std::unique_ptr<Buffer> index_buffer;
     };
 
-    struct SphereData {
+    struct MATCH_API SphereData {
         glm::vec3 center;
         float radius;
     };
     
-    class SphereCollect final : public RayTracingModel {
+    class MATCH_API SphereCollect final : public RayTracingModel {
         no_copy_move_construction(SphereCollect)
     INNER_VISIBLE:
         struct SphereAaBbData {

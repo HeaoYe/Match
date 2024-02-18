@@ -1,15 +1,11 @@
 project(Match)
 
-# Set Window System
-option(USE_WAYLAND "Use Wayland" ON)
-option(USE_XCB "Use XCB" ON)
-option(USE_XLIB "Use XLIB" ON)
-option(USE_WIN32 "Use WIN32" OFF)
-
 # Add Shared Library
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 file(GLOB_RECURSE source CONFIGURE_DEPENDS src/Match/*.cpp)
-add_library(Match SHARED ${source})
+file(GLOB_RECURSE headers CONFIGURE_DEPENDS include/Match/*.hpp)
+add_library(Match SHARED ${source} ${headers})
+target_include_directories(Match PUBLIC include)
 
 # Link tinygltf
 target_link_libraries(Match PUBLIC tinygltf)
@@ -31,7 +27,6 @@ target_include_directories(Match PRIVATE ../${stb_DIR})
 
 # Link spdlog
 target_link_libraries(Match PUBLIC spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
-target_include_directories(Match PUBLIC include)
 
 # Link Render API
 target_link_libraries(Match PUBLIC Vulkan::Vulkan)
@@ -41,3 +36,43 @@ target_link_libraries(Match PUBLIC VulkanMemoryAllocator)
 target_link_libraries(Match PRIVATE shaderc_shared)
 
 target_compile_definitions(Match PRIVATE MATCH_INNER_VISIBLE)
+if (WIN32)
+    target_compile_definitions(Match PUBLIC PLATFORM_WINDOWS)
+    target_compile_definitions(Match PRIVATE WINDOWS_DLL)
+endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(Match PRIVATE -O3)
+endif()
+
+function(COPYDLL TARGET_NAME)
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_custom_command(
+            TARGET ${TARGET_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "../../Match/libMatch.dll"
+            "../../thirdparty/glfw/src/glfw3.dll"
+            "../../thirdparty/imgui/libImGui.dll"
+            "../../thirdparty/shaderc/libshaderc/libshaderc_shared.dll"
+            "../../thirdparty/shaderc/third_party/glslang/SPIRV/SPIRVd.dll"
+            "../../thirdparty/spdlog/libspdlogd.dll"
+            $<TARGET_FILE_DIR:${TARGET_NAME}>
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_custom_command(
+            TARGET ${TARGET_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "../../Match/libMatch.dll"
+            "../../thirdparty/glfw/src/glfw3.dll"
+            "../../thirdparty/imgui/libImGui.dll"
+            "../../thirdparty/shaderc/libshaderc/libshaderc_shared.dll"
+            "../../thirdparty/shaderc/third_party/glslang/SPIRV/SPIRV.dll"
+            "../../thirdparty/spdlog/libspdlog.dll"
+            $<TARGET_FILE_DIR:${TARGET_NAME}>
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    endif ()
+endfunction(COPYDLL)

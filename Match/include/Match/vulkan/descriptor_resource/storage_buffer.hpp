@@ -3,7 +3,7 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    class StorageBuffer {
+    class MATCH_API StorageBuffer {
         default_no_copy_move_construction(StorageBuffer)
     public:
         virtual ~StorageBuffer() = default;

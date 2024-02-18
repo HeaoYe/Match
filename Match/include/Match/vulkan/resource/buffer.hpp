@@ -4,7 +4,7 @@
 #include <Match/vulkan/descriptor_resource/storage_buffer.hpp>
 
 namespace Match {
-    class Buffer : public StorageBuffer {
+    class MATCH_API Buffer : public StorageBuffer {
         no_copy_construction(Buffer);
     public:
         Buffer(uint64_t size, vk::BufferUsageFlags buffer_usage, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags);
@@ -23,7 +23,7 @@ namespace Match {
         VmaAllocation buffer_allocation;
     };
 
-    class InFlightBuffer : public StorageBuffer {
+    class MATCH_API InFlightBuffer : public StorageBuffer {
         no_copy_construction(InFlightBuffer);
     public:
         InFlightBuffer(uint64_t size, vk::BufferUsageFlags buffer_usage, VmaMemoryUsage vma_usage, VmaAllocationCreateFlags vma_flags);
@@ -36,7 +36,7 @@ namespace Match {
         std::vector<std::unique_ptr<Buffer>> in_flight_buffers;
     };
 
-    class TwoStageBuffer : public StorageBuffer {
+    class MATCH_API TwoStageBuffer : public StorageBuffer {
         no_copy_move_construction(TwoStageBuffer)
     public:
         TwoStageBuffer(uint64_t size, vk::BufferUsageFlags usage, vk::BufferUsageFlags additional_usage = {});
@@ -62,13 +62,13 @@ namespace Match {
         std::unique_ptr<Buffer> buffer;
     };
 
-    class VertexBuffer : public TwoStageBuffer {
+    class MATCH_API VertexBuffer : public TwoStageBuffer {
         no_copy_move_construction(VertexBuffer)
     public:
         VertexBuffer(uint32_t vertex_size, uint32_t count, vk::BufferUsageFlags additional_usage);
     };
     
-    class IndexBuffer : public TwoStageBuffer {
+    class MATCH_API IndexBuffer : public TwoStageBuffer {
         no_copy_move_construction(IndexBuffer)
     public:
         IndexBuffer(IndexType type, uint32_t count, vk::BufferUsageFlags additional_usage);

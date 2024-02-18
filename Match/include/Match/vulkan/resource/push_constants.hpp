@@ -3,12 +3,12 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    struct PushConstantInfo {
+    struct MATCH_API PushConstantInfo {
         std::string name;
         ConstantType type;
     };
 
-    class PushConstants {
+    class MATCH_API PushConstants {
         no_copy_move_construction(PushConstants)
     public:
         PushConstants(ShaderStages stages, const std::vector<PushConstantInfo> &infos);

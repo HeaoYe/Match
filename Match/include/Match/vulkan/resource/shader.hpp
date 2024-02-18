@@ -5,12 +5,12 @@
 #include <optional>
 
 namespace Match {
-    struct ConstantInfo {
+    struct MATCH_API ConstantInfo {
         std::string name;
         ConstantType type;
     };
 
-    class Shader {
+    class MATCH_API Shader {
         no_copy_move_construction(Shader)
         using binding = uint32_t;
     public:

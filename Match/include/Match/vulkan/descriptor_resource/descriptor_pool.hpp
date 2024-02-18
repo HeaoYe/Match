@@ -3,7 +3,7 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    class DescriptorPool {
+    class MATCH_API DescriptorPool {
         no_copy_move_construction(DescriptorPool)
     public:
         DescriptorPool();

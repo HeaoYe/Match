@@ -4,7 +4,7 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    class Device {
+    class MATCH_API Device {
         no_copy_move_construction(Device)
     public:
         Device();

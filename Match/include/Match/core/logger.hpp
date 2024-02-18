@@ -5,7 +5,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace Match {
-    class Logger {
+    class MATCH_API Logger {
         default_no_copy_move_construction(Logger)
     public:
         void initialize();
@@ -48,9 +48,9 @@ namespace Match {
         LogLevel level = LogLevel::eInfo;
     };
 
-    extern Logger g_logger;
+    MATCH_API extern Logger g_logger;
 
-    void set_log_level(LogLevel level);
+    MATCH_API void set_log_level(LogLevel level);
 }
 
 #define MCH_TRACE(...) ::Match::g_logger.trace(__VA_ARGS__);

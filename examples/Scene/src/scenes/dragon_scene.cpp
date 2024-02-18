@@ -1,4 +1,6 @@
 #include "dragon_scene.hpp"
+#include "Match/core/setting.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>
 #include <imgui.h>
 

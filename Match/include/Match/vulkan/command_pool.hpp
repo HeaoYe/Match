@@ -3,7 +3,7 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    class CommandPool {
+    class MATCH_API CommandPool {
         no_copy_move_construction(CommandPool)
     public:
         CommandPool(vk::CommandPoolCreateFlags flags);

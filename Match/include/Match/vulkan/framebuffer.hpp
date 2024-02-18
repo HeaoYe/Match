@@ -7,7 +7,7 @@
 namespace Match {
     class Renderer;
 
-    class Attachment {
+    class MATCH_API Attachment {
         no_copy_construction(Attachment)
     public:
         Attachment();
@@ -20,7 +20,7 @@ namespace Match {
         vk::ImageView image_view;
     };
 
-    class FrameBuffer {
+    class MATCH_API FrameBuffer {
         no_copy_move_construction(FrameBuffer)
     public:
         FrameBuffer(const Renderer &renderer, const std::vector<vk::ImageView> &image_views);
@@ -29,7 +29,7 @@ namespace Match {
         vk::Framebuffer framebuffer;
     };
 
-    class FrameBufferSet {
+    class MATCH_API FrameBufferSet {
         no_copy_move_construction(FrameBufferSet)
     public:
         FrameBufferSet(const Renderer &renderer);

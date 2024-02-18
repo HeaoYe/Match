@@ -3,19 +3,19 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    struct InputAttributeInfo {
+    struct MATCH_API InputAttributeInfo {
         InputAttributeInfo(VertexType type, uint32_t stride = 0) : type(type), stride(0) {}
         VertexType type;
         uint32_t stride;
     };
 
-    struct InputBindingInfo {
+    struct MATCH_API InputBindingInfo {
         uint32_t binding;
         InputRate rate;
         std::vector<InputAttributeInfo> attributes;
     };
 
-    class VertexAttributeSet {
+    class MATCH_API VertexAttributeSet {
         no_copy_move_construction(VertexAttributeSet)
     public:
         VertexAttributeSet(const std::vector<InputBindingInfo> &binding_infos);

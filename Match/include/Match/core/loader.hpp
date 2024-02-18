@@ -6,7 +6,7 @@
 #include <Match/vulkan/renderpass.hpp>
 
 namespace Match {
-    std::vector<std::string> EnumerateDevices();
-    APIManager &Initialize();
-    void Destroy();
+    MATCH_API std::vector<std::string> EnumerateDevices();
+    MATCH_API APIManager &Initialize();
+    MATCH_API void Destroy();
 }

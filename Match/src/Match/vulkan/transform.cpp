@@ -10,6 +10,7 @@ namespace Match {
     template <>
     vk::PrimitiveTopology transform<vk::PrimitiveTopology>(Topology topology) {
         switch (topology) {
+        default:
         _case(vk::PrimitiveTopology, ePointList, Topology, ePointList)
         _case(vk::PrimitiveTopology, eLineList, Topology, eLineList)
         _case(vk::PrimitiveTopology, eLineStrip, Topology, eLineStrip)
@@ -21,6 +22,7 @@ namespace Match {
     template <>
     vk::PolygonMode transform<vk::PolygonMode>(PolygonMode mode) {
         switch (mode) {
+        default:
         _case(vk::PolygonMode, eFill, PolygonMode, eFill)
         _case(vk::PolygonMode, eLine, PolygonMode, eLine)
         _case(vk::PolygonMode, ePoint, PolygonMode, ePoint)
@@ -30,6 +32,7 @@ namespace Match {
     template <>
     vk::CullModeFlags transform<vk::CullModeFlags>(CullMode mode) {
         switch (mode) {
+        default:
         _case(vk::CullModeFlagBits, eNone, CullMode, eNone)
         _case(vk::CullModeFlagBits, eFront, CullMode, eFront)
         _case(vk::CullModeFlagBits, eBack, CullMode, eBack)
@@ -40,6 +43,7 @@ namespace Match {
     template <>
     vk::FrontFace transform<vk::FrontFace>(FrontFace mode) {
         switch (mode) {
+        default:
         _case(vk::FrontFace, eClockwise, FrontFace, eClockwise)
         _case(vk::FrontFace, eCounterClockwise, FrontFace, eCounterClockwise)
         }
@@ -48,6 +52,7 @@ namespace Match {
     template <>
     vk::Format transform<vk::Format>(VertexType type) {
         switch (type) {
+        default:
         _case(vk::Format, eR8Sint, VertexType, eInt8)
         _case(vk::Format, eR8G8Sint, VertexType, eInt8x2)
         _case(vk::Format, eR8G8B8Sint, VertexType, eInt8x3)
@@ -94,6 +99,7 @@ namespace Match {
     template <>
     uint32_t transform<uint32_t>(VertexType type) {
         switch (type) {
+        default:
         __case(1, VertexType, eInt8)
         __case(2, VertexType, eInt8x2)
         __case(3, VertexType, eInt8x3)
@@ -140,6 +146,7 @@ namespace Match {
     template <>
     vk::VertexInputRate transform<vk::VertexInputRate>(InputRate rate) {
         switch (rate) {
+        default:
         _case(vk::VertexInputRate, eVertex, InputRate, ePerVertex)
         _case(vk::VertexInputRate, eInstance, InputRate, ePerInstance)
         }
@@ -148,6 +155,7 @@ namespace Match {
     template <>
     vk::IndexType transform<vk::IndexType>(IndexType type) {
         switch (type) {
+        default:
         _case(vk::IndexType, eUint16, IndexType, eUint16)
         _case(vk::IndexType, eUint32, IndexType, eUint32)
         }
@@ -156,6 +164,7 @@ namespace Match {
     template <>
     uint32_t transform<uint32_t>(IndexType type) {
         switch (type) {
+        default:
         __case(2, IndexType, eUint16)
         __case(4, IndexType, eUint32)
         }
@@ -164,6 +173,7 @@ namespace Match {
     template <>
     vk::DescriptorType transform<vk::DescriptorType>(DescriptorType type) {
         switch (type) {
+        default:
         _case(vk::DescriptorType, eUniformBuffer, DescriptorType, eUniform)
         _case(vk::DescriptorType, eCombinedImageSampler, DescriptorType, eTexture)
         _case(vk::DescriptorType, eCombinedImageSampler, DescriptorType, eTextureAttachment)
@@ -177,6 +187,7 @@ namespace Match {
     template <>
     vk::Filter transform<vk::Filter>(SamplerFilter filter) {
         switch (filter) {
+        default:
         _case(vk::Filter, eLinear, SamplerFilter, eLinear)
         _case(vk::Filter, eNearest, SamplerFilter, eNearest)
         }
@@ -185,6 +196,7 @@ namespace Match {
     template <>
     vk::SamplerMipmapMode transform<vk::SamplerMipmapMode>(SamplerFilter filter) {
         switch (filter) {
+        default:
         _case(vk::SamplerMipmapMode, eLinear, SamplerFilter, eLinear)
         _case(vk::SamplerMipmapMode, eNearest, SamplerFilter, eNearest)
         }
@@ -193,6 +205,7 @@ namespace Match {
     template <>
     vk::SamplerAddressMode transform<vk::SamplerAddressMode>(SamplerAddressMode mode) {
         switch (mode) {
+        default:
         _case(vk::SamplerAddressMode, eClampToBorder, SamplerAddressMode, eClampToBorder)
         _case(vk::SamplerAddressMode, eClampToEdge, SamplerAddressMode, eClampToEdge)
         _case(vk::SamplerAddressMode, eRepeat, SamplerAddressMode, eRepeat)
@@ -203,6 +216,7 @@ namespace Match {
     template <>
     vk::BorderColor transform<vk::BorderColor>(SamplerBorderColor color) {
         switch (color) {
+        default:
         _case(vk::BorderColor, eFloatOpaqueBlack, SamplerBorderColor, eFloatOpaqueBlack)
         _case(vk::BorderColor, eFloatOpaqueWhite, SamplerBorderColor, eFloatOpaqueWhite)
         _case(vk::BorderColor, eFloatTransparentBlack, SamplerBorderColor, eFloatTransparentBlack)
@@ -215,6 +229,7 @@ namespace Match {
     template <>
     vk::SampleCountFlagBits transform<vk::SampleCountFlagBits>(SampleCount count) {
         switch (count) {
+        default:
         _case(vk::SampleCountFlagBits, e1, SampleCount, e1)
         _case(vk::SampleCountFlagBits, e2, SampleCount, e2)
         _case(vk::SampleCountFlagBits, e4, SampleCount, e4)
