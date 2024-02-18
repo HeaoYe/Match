@@ -45,18 +45,18 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_options(Match PRIVATE -O3)
 endif()
 
-function(COPYDLL TARGET_NAME)
+function(COPYDLL TARGET_NAME PATH_PREFIX)
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
         add_custom_command(
             TARGET ${TARGET_NAME}
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "../../Match/libMatch.dll"
-            "../../thirdparty/glfw/src/glfw3.dll"
-            "../../thirdparty/imgui/libImGui.dll"
-            "../../thirdparty/shaderc/libshaderc/libshaderc_shared.dll"
-            "../../thirdparty/shaderc/third_party/glslang/SPIRV/SPIRVd.dll"
-            "../../thirdparty/spdlog/libspdlogd.dll"
+            ${PATH_PREFIX}"/Match/Match/libMatch.dll"
+            ${PATH_PREFIX}"/Match/thirdparty/glfw/src/glfw3.dll"
+            ${PATH_PREFIX}"/Match/thirdparty/imgui/libImGui.dll"
+            ${PATH_PREFIX}"/Match/thirdparty/shaderc/libshaderc/libshaderc_shared.dll"
+            ${PATH_PREFIX}"/Match/thirdparty/shaderc/third_party/glslang/SPIRV/SPIRVd.dll"
+            ${PATH_PREFIX}"/Match/thirdparty/spdlog/libspdlogd.dll"
             $<TARGET_FILE_DIR:${TARGET_NAME}>
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
