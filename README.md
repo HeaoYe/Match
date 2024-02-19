@@ -175,7 +175,7 @@ int main() {
             // +++ 开始My ImGui Layer渲染
             renderer->begin_layer_render("My ImGui Layer");
 
-            // 绘制ImGui
+            // +++ 绘制ImGui
             ImGui::Begin("My First Frame");
             ImGui::Text("Hello World !");
             ImGui::End();
