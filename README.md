@@ -4,8 +4,8 @@
 A cross platform vulkan renderer
 
 # 一、环境搭建
-- [Windows](##在Windows平台搭建环境)
-- [Linux](##在Linux平台搭建环境)
+- [Windows](#在Windows平台搭建环境)
+- [Linux](#在Linux平台搭建环境)
 
 # 二、克隆并初始化仓库
 ```bash
@@ -330,7 +330,7 @@ vkcube
 ### 7.安装VSCode，不演示了，网上有很多教学
 
 ### 8.配置VSCode
-[配置VSCode](##配置VSCode)
+[配置VSCode](#配置VSCode)
 
 ---
 
@@ -342,7 +342,7 @@ sudo pacman -S code vulkan-devel cmake clang git python
 ```
 
 ### 2.配置VSCode
-[配置VSCode](##配置VSCode)
+[配置VSCode](#配置VSCode)
 
 ---
 
@@ -371,9 +371,6 @@ sudo pacman -S code vulkan-devel cmake clang git python
     - 按照需求填写就行
     ```json
     {
-        // Use IntelliSense to learn about possible attributes.
-        // Hover to view descriptions of existing attributes.
-        // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
         "version": "0.2.0",
         "configurations": [
             {
