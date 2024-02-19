@@ -17,11 +17,15 @@ python ./utils/git-sync-deps
 ```
 
 # 三、编译与运行
-1. 用VScode打开Match
+1. 用VSCode打开Match
 2. F7编译
 3. 点击左侧Run And Debug按钮
 4. 修改要运行的程序
 5. F5运行
+6. VSCode默认会在程序抛出异常时中断
+- 但是Vulkan的C++API在需要重建交换链时也会抛异常
+- 导致窗口大小改变时，程序会中断
+- 取消勾选 **C++: on throw** 即可
 
 # 四、将Match作为第三方库
 1. 新建MyProject文件夹并进入
@@ -34,9 +38,11 @@ cd MyProject
 ```cmake
 cmake_minimum_required(VERSION 3.27)
 
-project(NewProject)
+project(MyProject)
 
+# 不构建案例代码
 set(MATCH_BUILD_EXAMPLES OFF)
+
 if (WIN32)
     # set(BASH_EXECUTABLE "你安装的Git中的bash.exe的完整路径")
     # 如果你把xxx\Git\bin加入了环境变量，可以省略这步
@@ -45,13 +51,14 @@ if (WIN32)
     # * 这种情况下无论如何都不能省略这步
     set(BASH_EXECUTABLE "D:\\Git\\bin\\bash.exe")
 endif()
+
 add_subdirectory(Match)
 
-add_executable(NewProject main.cpp)
-target_link_libraries(NewProject Match)
+add_executable(MyProject main.cpp)
+target_link_libraries(MyProject Match)
 if (WIN32)
     # COPYDLL(TARGET_NAME 在当前CMakeLists.txt的目录下,与Match仓库的相对路径)
-    COPYDLL(NewProject ./Match)
+    COPYDLL(MyProject ./Match)
 endif()
 ```
 4. 在MyProject文件夹下，新建main.cpp
@@ -61,21 +68,21 @@ endif()
 #include <Match/Match.hpp>
 
 int main() {
-    // 初始化Match
+    // +++ 初始化Match
     auto &ctx = Match::Initialize();
 
-    // GameLoop
+    // +++ GameLoop
     while (Match::window->is_alive()) {
         Match::window->poll_events();
     }
 
-    // 销毁Match
+    // +++ 销毁Match
     Match::Destroy();
     return 0;
 }
 ```
 
-#### 设置背景颜色
+#### 设置背景颜色 + 启用8xMSAA抗锯齿
 ```cpp
 #include <Match/Match.hpp>
 
@@ -84,31 +91,34 @@ int main() {
     auto &ctx = Match::Initialize();
 
     {
-        // 创建资源工厂
+        // +++ 创建资源工厂
         auto factory = ctx.create_resource_factory("");
 
-        // 创建RenderPass
+        // +++ 启用8xMSAA抗锯齿
+        Match::runtime_setting->set_multisample_count(Match::SampleCount::e8);
+
+        // +++ 创建RenderPass
         auto render_pass_builder = factory->create_render_pass_builder();
         auto &main_subpass = render_pass_builder->add_subpass("Main Subpass");
         main_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
         
-        // 创建Renderer
+        // +++ 创建Renderer
         auto renderer = factory->create_renderer(render_pass_builder);
         
-        // 设置背景颜色
+        // +++ 设置背景颜色
         renderer->set_clear_value(Match::SWAPCHAIN_IMAGE_ATTACHMENT, { { 0.3f, 0.7f, 0.4f, 1.0f } });
 
         // GameLoop
         while (Match::window->is_alive()) {
             Match::window->poll_events();
 
-            // 开始渲染
+            // +++ 开始渲染
             renderer->begin_render();
-            // 结束渲染
+            // +++ 结束渲染
             renderer->end_render();
         }
 
-        // 等待销毁
+        // +++ 等待销毁
         renderer->wait_for_destroy();
     }
 
@@ -121,10 +131,11 @@ int main() {
 #### 添加ImGui
 ```cpp
 #include <Match/Match.hpp>
+// +++ 
 #include <imgui.h>
 
 int main() {
-    // 设置字体大小
+    // +++ 设置字体大小
     Match::setting.font_size = 30.0f;
 
     // 初始化Match
@@ -134,6 +145,9 @@ int main() {
         // 创建资源工厂
         auto factory = ctx.create_resource_factory("");
 
+        // 启用8xMSAA抗锯齿
+        Match::runtime_setting->set_multisample_count(Match::SampleCount::e8);
+
         // 创建RenderPass
         auto render_pass_builder = factory->create_render_pass_builder();
         auto &main_subpass = render_pass_builder->add_subpass("Main Subpass");
@@ -141,6 +155,8 @@ int main() {
         
         // 创建Renderer
         auto renderer = factory->create_renderer(render_pass_builder);
+
+        // +++ 附加ImGui渲染层
         renderer->attach_render_layer<Match::ImGuiLayer>("My ImGui Layer");
         
         // 设置背景颜色
@@ -153,14 +169,14 @@ int main() {
             // 开始渲染
             renderer->begin_render();
 
-            // 开始My ImGui Layer渲染
+            // +++ 开始My ImGui Layer渲染
             renderer->begin_layer_render("My ImGui Layer");
 
             ImGui::Begin("My First Frame");
             ImGui::Text("Hello World !");
             ImGui::End();
 
-            // 结束My ImGui Layer渲染
+            // +++ 结束My ImGui Layer渲染
             renderer->end_layer_render("My ImGui Layer");
 
             // 结束渲染
@@ -192,6 +208,9 @@ int main() {
     {
         // 创建资源工厂
         auto factory = ctx.create_resource_factory("");
+        
+        // 启用8xMSAA抗锯齿
+        Match::runtime_setting->set_multisample_count(Match::SampleCount::e8);
 
         // 创建RenderPass
         auto render_pass_builder = factory->create_render_pass_builder();
@@ -200,38 +219,40 @@ int main() {
         
         // 创建Renderer
         auto renderer = factory->create_renderer(render_pass_builder);
+        
+        // 附加ImGui渲染层
         renderer->attach_render_layer<Match::ImGuiLayer>("My ImGui Layer");
         
         // 设置背景颜色
         renderer->set_clear_value(Match::SWAPCHAIN_IMAGE_ATTACHMENT, { { 0.3f, 0.7f, 0.4f, 1.0f } });
 
-        // 从字符串编译 顶点着色器
+        // +++ 从字符串编译 顶点着色器
         auto vert_shader = factory->compile_shader_from_string(
             "#version 450\n"
             "void main() {\n"
             "    vec2 pos = vec2(-0.8, -0.5);\n"
             "    if (gl_VertexIndex == 1) pos = vec2(0.8, -0.5);\n"
             "    if (gl_VertexIndex == 2) pos = vec2(0, 0.5);\n"
-            "    gl_Position = vec4(pos, 0, 1);"
+            "    gl_Position = vec4(pos, 0, 1);\n"
             "}",
             Match::ShaderStage::eVertex
         );
-        // 从字符串编译 像素着色器
+        // +++ 从字符串编译 像素着色器
         auto frag_shader = factory->compile_shader_from_string(
             "#version 450\n"
-            "layout (location = 0) out vec4 out_color;"
+            "layout (location = 0) out vec4 out_color;\n"
             "void main() {\n"
-            "    out_color = vec4(0.1, 0.3, 0.8, 1);"
+            "    out_color = vec4(0.1, 0.3, 0.8, 1);\n"
             "}",
             Match::ShaderStage::eFragment
         );
-        // 创建着色器程序
+        // +++ 创建着色器程序
         auto shader_program = factory->create_shader_program(renderer, "Main Subpass");
-        // 附加顶点着色器
+        // +++ 附加顶点着色器
         shader_program->attach_vertex_shader(vert_shader);
-        // 附加像素着色器
+        // +++ 附加像素着色器
         shader_program->attach_fragment_shader(frag_shader);
-        // 编译着色器程序，禁用三角形剔除
+        // +++ 编译着色器程序，禁用三角形剔除
         shader_program->compile({
             .cull_mode = Match::CullMode::eNone
         });
@@ -243,7 +264,7 @@ int main() {
             // 开始渲染
             renderer->begin_render();
             
-            // 绑定着色器程序并绘制三角形
+            // +++ 绑定着色器程序并绘制三角形
             renderer->bind_shader_program(shader_program);
             renderer->draw(3, 1, 0, 0);
 
@@ -299,7 +320,7 @@ python --version
 ```bash
 pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain
 ```
-6. 安装好后输入命令验证是否安装成功
+5. 安装好后输入命令验证是否安装成功
 ```bash
 gcc --version
 g++ --version
@@ -314,7 +335,7 @@ g++ --version
 5. 也可以根据自己的需求进行配置
 
 ### 5.安装VulkanSDK
-(VulkanSDK官网)[https://vulkan.lunarg.com/]
+[VulkanSDK官网](https://vulkan.lunarg.com/)
 1. 点击SDK
 2. 下载并运行 VulkanSDK-1.3.275.0-Installer.exe (160MB)
 3. 设置安装位置并记下来
