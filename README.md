@@ -5,7 +5,12 @@ A cross platform vulkan renderer
 
 # 一、环境搭建
 - [Windows](#在Windows平台搭建环境)
+    - 【Vulkan渲染引擎 31 支持Windows平台+运行环境配置】
+    - &nbsp; https://www.bilibili.com/video/BV13v421C7hq
+
 - [Linux](#在Linux平台搭建环境)
+    - 【Vulkan渲染引擎 32 Linux平台运行环境配置】
+    - &nbsp; https://www.bilibili.com/video/BV1VW421N7j9
 
 # 二、克隆并初始化仓库
 ```bash
