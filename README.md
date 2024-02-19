@@ -20,12 +20,12 @@ python ./utils/git-sync-deps
 1. 用VSCode打开Match
 2. F7编译
 3. 点击左侧Run And Debug按钮
-4. 修改要运行的程序
+4. 选择要运行的程序
 5. F5运行
 6. VSCode默认会在程序抛出异常时中断
-- 但是Vulkan的C++API在需要重建交换链时也会抛异常
-- 导致窗口大小改变时，程序会中断
-- 取消勾选 **C++: on throw** 即可
+    - 但是Vulkan的C++API在需要重建交换链时也会抛异常
+    - 导致窗口大小改变时，程序会中断
+    - 取消勾选 **C++: on throw** 即可
 
 # 四、将Match作为第三方库
 1. 新建MyProject文件夹并进入
@@ -73,6 +73,7 @@ int main() {
 
     // +++ GameLoop
     while (Match::window->is_alive()) {
+        // +++ 处理事件
         Match::window->poll_events();
     }
 
@@ -110,6 +111,7 @@ int main() {
 
         // GameLoop
         while (Match::window->is_alive()) {
+            // 处理事件
             Match::window->poll_events();
 
             // +++ 开始渲染
@@ -164,6 +166,7 @@ int main() {
 
         // GameLoop
         while (Match::window->is_alive()) {
+            // 处理事件
             Match::window->poll_events();
 
             // 开始渲染
@@ -172,6 +175,7 @@ int main() {
             // +++ 开始My ImGui Layer渲染
             renderer->begin_layer_render("My ImGui Layer");
 
+            // 绘制ImGui
             ImGui::Begin("My First Frame");
             ImGui::Text("Hello World !");
             ImGui::End();
@@ -237,7 +241,7 @@ int main() {
             "}",
             Match::ShaderStage::eVertex
         );
-        // +++ 从字符串编译 像素着色器
+        // +++ 从字符串编译 片段着色器
         auto frag_shader = factory->compile_shader_from_string(
             "#version 450\n"
             "layout (location = 0) out vec4 out_color;\n"
@@ -246,11 +250,12 @@ int main() {
             "}",
             Match::ShaderStage::eFragment
         );
+
         // +++ 创建着色器程序
         auto shader_program = factory->create_shader_program(renderer, "Main Subpass");
         // +++ 附加顶点着色器
         shader_program->attach_vertex_shader(vert_shader);
-        // +++ 附加像素着色器
+        // +++ 附加片段着色器
         shader_program->attach_fragment_shader(frag_shader);
         // +++ 编译着色器程序，禁用三角形剔除
         shader_program->compile({
@@ -259,6 +264,7 @@ int main() {
 
         // GameLoop
         while (Match::window->is_alive()) {
+            // 处理事件
             Match::window->poll_events();
 
             // 开始渲染
@@ -271,6 +277,7 @@ int main() {
             // 开始My ImGui Layer渲染
             renderer->begin_layer_render("My ImGui Layer");
 
+            // 绘制ImGui
             ImGui::Begin("My First Frame");
             ImGui::Text("Hello World !");
             ImGui::End();
@@ -396,11 +403,11 @@ sudo pacman -S code vulkan-devel cmake clang git python
     - --header-insertion=never
 3. 如何编译
     - 按F7编译带有CMakeLists.txt的项目。
-    - 如果按F7没反应，重新用VSCode打开一个带有CMakeLists.txt的文件夹
+    - 如果按F7没反应，确认打开的文件夹中有CMakeLists.txt，然后重启VSCode
     - 第一次编译需要选择C++编译器，Windows用户选择从MSYS2下载的gcc，linux选择gcc或clang
 4. 如何运行
     - 在项目的CPP文件或头文件中，按F5运行
-    - 第一次运行会在生成.vscode/launch.json
+    - 第一次运行会生成.vscode/launch.json
     - 按照需求填写就行
     ```json
     {

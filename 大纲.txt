@@ -118,10 +118,16 @@
 
 本期大纲
 
-    1. Match渲染引擎支持Windows了！！！！！！！！！！！！！
+    1.Match渲染引擎支持Windows了！！！！！！！！！！！！！
 
-    2. 目前只测试了Windows10，因为没有Windows11
+    2.目前只测试了Windows10，因为没有Windows11
 
-    3. 目前不打算支持Mac，因为没有MacBook
+    3.目前不打算支持Mac，因为没有MacBook
 
-    4. 在Windows平台，从0搭建开发运行环境
+    4.在Windows平台，从0搭建开发运行环境
+
+本期大纲
+
+    1.在Linux平台，从0搭建开发运行环境
+
+    搭建好了,谢谢观看!
