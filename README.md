@@ -23,11 +23,12 @@ python ./utils/git-sync-deps
 
 # 三、编译与运行
 1. 用VSCode打开Match
-2. F7编译
-3. 点击左侧Run And Debug按钮
-4. 选择要运行的程序
-5. F5运行
-6. VSCode默认会在程序抛出异常时中断
+2. Windows需要修改CMakeLists.txt第86行，修改为set(BASH_EXECUTABLE "你安装的Git中的bash.exe的完整路径")
+3. F7编译
+4. 点击左侧Run And Debug按钮
+5. 选择要运行的程序
+6. F5运行
+7. VSCode默认会在程序抛出异常时中断
     - 但是Vulkan的C++API在需要重建交换链时也会抛异常
     - 导致窗口大小改变时，程序会中断
     - 取消勾选 **C++: on throw** 即可
