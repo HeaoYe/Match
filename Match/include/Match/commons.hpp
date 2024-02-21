@@ -5,6 +5,8 @@
 #include <set>  // IWYU pragma: export
 #include <memory>  // IWYU pragma: export
 #include <string>  // IWYU pragma: export
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>  // IWYU pragma: export
 
 #if defined (MATCH_INNER_VISIBLE)
