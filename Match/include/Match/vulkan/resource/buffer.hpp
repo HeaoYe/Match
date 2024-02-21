@@ -67,7 +67,7 @@ namespace Match {
     public:
         VertexBuffer(uint32_t vertex_size, uint32_t count, vk::BufferUsageFlags additional_usage);
     };
-    
+
     class MATCH_API IndexBuffer : public TwoStageBuffer {
         no_copy_move_construction(IndexBuffer)
     public:

@@ -11,7 +11,7 @@ namespace Match {
     void RuntimeSetting::resize(const WindowSize &size) {
         window_size = size;
     }
-    
+
     bool RuntimeSetting::is_msaa_enabled() {
         return multisample_count != SampleCount::e1;
     }

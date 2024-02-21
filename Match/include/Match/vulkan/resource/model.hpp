@@ -11,7 +11,7 @@ namespace Match {
         glm::vec3 pos;
         glm::vec3 normal;
         glm::vec3 color;
- 
+
         bool operator==(const Vertex& rhs) const {
             return pos == rhs.pos && normal == rhs.normal && color == rhs.color;
         }
@@ -88,7 +88,7 @@ namespace Match {
         glm::vec3 center;
         float radius;
     };
-    
+
     class MATCH_API SphereCollect final : public RayTracingModel {
         no_copy_move_construction(SphereCollect)
     INNER_VISIBLE:

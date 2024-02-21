@@ -36,7 +36,7 @@ namespace Match {
     std::shared_ptr<VertexAttributeSet> ResourceFactory::create_vertex_attribute_set(const std::vector<InputBindingInfo> &binding_infos) {
         return std::make_shared<VertexAttributeSet>(binding_infos);
     }
-    
+
     std::shared_ptr<GraphicsShaderProgram> ResourceFactory::create_shader_program(std::weak_ptr<Renderer> renderer, const std::string &subpass_name) {
         return std::make_shared<GraphicsShaderProgram>(renderer, subpass_name);
     }
@@ -113,7 +113,7 @@ namespace Match {
     std::shared_ptr<RayTracingShaderProgram> ResourceFactory::create_ray_tracing_shader_program() {
         return std::make_shared<RayTracingShaderProgram>();
     }
- 
+
     std::shared_ptr<ComputeShaderProgram> ResourceFactory::create_compute_shader_program() {
         return std::make_shared<ComputeShaderProgram>();
     }

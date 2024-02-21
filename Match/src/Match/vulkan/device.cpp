@@ -53,7 +53,7 @@ namespace Match {
                 MCH_FATAL("Cannot find suitable device on this pc")
             }
         }
-        
+
         std::set<uint32_t> queue_family_indices = { graphics_family_index, present_family_index, transfer_family_index, compute_family_index };
         std::vector<vk::DeviceQueueCreateInfo> queue_create_infos(queue_family_indices.size());
         uint32_t i = 0;
@@ -89,7 +89,7 @@ namespace Match {
             { VK_KHR_SWAPCHAIN_EXTENSION_NAME, false },
             { VK_KHR_BIND_MEMORY_2_EXTENSION_NAME, false }
         };
-        
+
         vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features {};
         vk::PhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_pipeline_features {};
         vk::PhysicalDeviceRayQueryFeaturesKHR ray_query_features {};
@@ -200,7 +200,7 @@ namespace Match {
         auto queue_family_idx = 0;
         bool found_family = false;
         for (const auto &queue_family_properties : queue_families_properties) {
-            if ((queue_family_properties.queueFlags & (vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer | vk::QueueFlagBits::eCompute)) && 
+            if ((queue_family_properties.queueFlags & (vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer | vk::QueueFlagBits::eCompute)) &&
                 (device.getSurfaceSupportKHR(queue_family_idx, manager->surface))) {
                 graphics_family_index = queue_family_idx;
                 present_family_index = queue_family_idx;

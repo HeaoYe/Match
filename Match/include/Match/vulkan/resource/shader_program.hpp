@@ -75,7 +75,7 @@ namespace Match {
             this->push_constants = push_constants;
             return *dynamic_cast<SubClass *>(this);
         }
-        
+
         virtual ~ShaderProgramTemplate() override = default;
         virtual SubClass &compile(const OptionType &options = {}) = 0;
     };

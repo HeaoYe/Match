@@ -243,7 +243,7 @@ namespace Match {
         eFloat, eFloat2, eFloat3, eFloat4,
         eDouble, eDouble2, eDouble3, eDouble4,
     };
-    
+
     enum class IndexType {
         eUint16,
         eUint32,
@@ -278,7 +278,7 @@ namespace Match {
         eTriangleList,
         eTriangleFan,
     };
-    
+
     enum class PolygonMode {
         eFill,
         eLine,
@@ -296,7 +296,7 @@ namespace Match {
         eClockwise,
         eCounterClockwise,
     };
-    
+
     enum class ShaderStage : uint32_t {
         eVertex = static_cast<uint32_t>(vk::ShaderStageFlagBits::eVertex),
         eFragment = static_cast<uint32_t>(vk::ShaderStageFlagBits::eFragment),
@@ -306,14 +306,14 @@ namespace Match {
         eIntersection = static_cast<uint32_t>(vk::ShaderStageFlagBits::eIntersectionKHR),
         eCompute = static_cast<uint32_t>(vk::ShaderStageFlagBits::eCompute),
     };
-    
+
     using ShaderStages = Flags<ShaderStage>;
     template <>
     struct FlagTraits<ShaderStage> {
         static VULKAN_HPP_CONST_OR_CONSTEXPR bool             isBitmask = true;
         static VULKAN_HPP_CONST_OR_CONSTEXPR ShaderStages allFlags = ShaderStage::eVertex | ShaderStage::eFragment | ShaderStage::eRaygen | ShaderStage::eMiss | ShaderStage::eClosestHit;
     };
-    
+
     enum class InputRate {
         ePerVertex,
         ePerInstance,

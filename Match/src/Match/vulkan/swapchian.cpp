@@ -48,7 +48,7 @@ namespace Match {
                 break;
             }
         }
-        
+
         switch (present_mode) {
         case vk::PresentModeKHR::eMailbox:
             image_count = 4;

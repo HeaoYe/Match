@@ -116,7 +116,7 @@ namespace Match {
             }
 
             clear_groups();
-            
+
             return count;
         }
 

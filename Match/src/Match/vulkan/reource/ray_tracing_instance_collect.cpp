@@ -52,11 +52,11 @@ namespace Match {
             .setMode(vk::BuildAccelerationStructureModeKHR::eBuild)
             .setFlags(flags)
             .setGeometries(geometry);
-        
+
         auto size_info = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, build, instance_count, manager->dispatcher);
         scratch_buffer = std::make_unique<Buffer>(size_info.buildScratchSize, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
         instance_collect_buffer = std::make_shared<Buffer>(size_info.accelerationStructureSize, vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
-        
+
         vk::AccelerationStructureCreateInfoKHR instance_create_info {};
         instance_create_info.setType(vk::AccelerationStructureTypeKHR::eTopLevel)
             .setSize(size_info.accelerationStructureSize)
@@ -112,13 +112,13 @@ namespace Match {
             .setMode(vk::BuildAccelerationStructureModeKHR::eUpdate)
             .setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace | vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate)
             .setGeometries(geometry);
-        
+
         auto size_info = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, build, instance_count, manager->dispatcher);
         if (scratch_buffer->size < size_info.updateScratchSize) {
             scratch_buffer.reset();
             scratch_buffer = std::make_unique<Buffer>(size_info.updateScratchSize, vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
         }
-        
+
         auto command_buffer = manager->command_pool->allocate_single_use();
         build.setSrcAccelerationStructure(instance_collect)
             .setDstAccelerationStructure(instance_collect)
@@ -170,5 +170,5 @@ namespace Match {
         MCH_WARN("Can't add the model which doesn't have acceleration structure")
         return false;
     }
-    
+
 }

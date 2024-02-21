@@ -108,10 +108,10 @@ int main() {
         auto render_pass_builder = factory->create_render_pass_builder();
         auto &main_subpass = render_pass_builder->add_subpass("Main Subpass");
         main_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
-        
+
         // +++ 创建Renderer
         auto renderer = factory->create_renderer(render_pass_builder);
-        
+
         // +++ 设置背景颜色
         renderer->set_clear_value(Match::SWAPCHAIN_IMAGE_ATTACHMENT, { { 0.3f, 0.7f, 0.4f, 1.0f } });
 
@@ -139,7 +139,7 @@ int main() {
 #### 添加ImGui
 ```cpp
 #include <Match/Match.hpp>
-// +++ 
+// +++
 #include <imgui.h>
 
 int main() {
@@ -160,13 +160,13 @@ int main() {
         auto render_pass_builder = factory->create_render_pass_builder();
         auto &main_subpass = render_pass_builder->add_subpass("Main Subpass");
         main_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
-        
+
         // 创建Renderer
         auto renderer = factory->create_renderer(render_pass_builder);
 
         // +++ 附加ImGui渲染层
         renderer->attach_render_layer<Match::ImGuiLayer>("My ImGui Layer");
-        
+
         // 设置背景颜色
         renderer->set_clear_value(Match::SWAPCHAIN_IMAGE_ATTACHMENT, { { 0.3f, 0.7f, 0.4f, 1.0f } });
 
@@ -218,7 +218,7 @@ int main() {
     {
         // 创建资源工厂
         auto factory = ctx.create_resource_factory("");
-        
+
         // 启用8xMSAA抗锯齿
         Match::runtime_setting->set_multisample_count(Match::SampleCount::e8);
 
@@ -226,13 +226,13 @@ int main() {
         auto render_pass_builder = factory->create_render_pass_builder();
         auto &main_subpass = render_pass_builder->add_subpass("Main Subpass");
         main_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
-        
+
         // 创建Renderer
         auto renderer = factory->create_renderer(render_pass_builder);
-        
+
         // 附加ImGui渲染层
         renderer->attach_render_layer<Match::ImGuiLayer>("My ImGui Layer");
-        
+
         // 设置背景颜色
         renderer->set_clear_value(Match::SWAPCHAIN_IMAGE_ATTACHMENT, { { 0.3f, 0.7f, 0.4f, 1.0f } });
 
@@ -275,7 +275,7 @@ int main() {
 
             // 开始渲染
             renderer->begin_render();
-            
+
             // +++ 绑定着色器程序并绘制三角形
             renderer->bind_shader_program(shader_program);
             renderer->draw(3, 1, 0, 0);
@@ -384,7 +384,7 @@ vkcube
 
 ### 1.安装依赖
 ```bash
-sudo pacman -S code vulkan-devel cmake clang git python 
+sudo pacman -S code vulkan-devel cmake clang git python
 ```
 
 ### 2.配置VSCode

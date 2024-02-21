@@ -75,7 +75,7 @@ namespace Match {
                 .setMode(mode)
                 .setFlags(flags)
                 .setGeometries(info.geometries);
-            
+
             info.size = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, info.build, primitive_count, manager->dispatcher);
             max_scratch_size = std::max(max_scratch_size, is_update ? info.size.updateScratchSize : info.size.buildScratchSize);
         }
@@ -88,7 +88,7 @@ namespace Match {
             }
             auto primitive_count = sphere_collect->aabbs.size();
             auto &info = build_infos.emplace_back(*sphere_collect->acceleration_structure.value());
-            
+
             info.geometry_datas.emplace_back().aabbs
                 .setData(get_buffer_address(sphere_collect->aabbs_buffer->buffer))
                 .setStride(sizeof(SphereCollect::SphereAaBbData))
@@ -106,7 +106,7 @@ namespace Match {
                 .setMode(mode)
                 .setFlags(flags)
                 .setGeometries(info.geometries);
-            
+
             info.size = manager->device->device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, info.build, primitive_count, manager->dispatcher);
             max_scratch_size = std::max(max_scratch_size, is_update ? info.size.updateScratchSize : info.size.buildScratchSize);
         }
@@ -195,7 +195,7 @@ namespace Match {
                 vk::BufferCopy copy {};
                 copy.setSrcOffset(0)
                     .setDstOffset(0);
-                
+
                 copy.setSize(gltf_scene->positions.size() * sizeof(glm::vec3));
                 memcpy(ptr, gltf_scene->positions.data(), copy.size);
                 auto copy_command_buffer = manager->command_pool->allocate_single_use();
@@ -212,7 +212,7 @@ namespace Match {
                 staging->unmap();
             }
         }
-        
+
         vk::QueryPoolCreateInfo query_pool_create_info {};
         query_pool_create_info.setQueryCount(build_infos.size())
             .setQueryType(vk::QueryType::eAccelerationStructureCompactedSizeKHR);

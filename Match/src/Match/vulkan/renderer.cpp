@@ -71,7 +71,7 @@ namespace Match {
 
     void Renderer::acquire_next_image() {
         vk_check(manager->device->device.waitForFences({ in_flight_fences[current_in_flight] }, VK_TRUE, UINT64_MAX));
-        
+
         try {
             auto result = manager->device->device.acquireNextImageKHR(manager->swapchain->swapchain, UINT64_MAX, image_available_semaphores[current_in_flight], VK_NULL_HANDLE, &index);
             if (result == vk::Result::eErrorOutOfDateKHR) {
@@ -82,7 +82,7 @@ namespace Match {
             update_resources();
             return;
         }
-        
+
         manager->device->device.resetFences({ in_flight_fences[current_in_flight] });
 
         current_subpass = 0;
@@ -117,7 +117,7 @@ namespace Match {
     void Renderer::report_submit_info(const vk::SubmitInfo &submit_info) {
         in_flight_submit_infos[current_in_flight].push_back(submit_info);
     }
-    
+
     void Renderer::present(const std::vector<vk::PipelineStageFlags> &wait_stages, const std::vector<vk::Semaphore> &wait_samaphores) {
         current_buffer.end();
 
@@ -284,7 +284,7 @@ namespace Match {
         callbacks.insert(std::make_pair(id, std::move(callback)));
         return id;
     }
-    
+
     void Renderer::remove_resource_recreate_callback(uint32_t id) {
         callbacks.erase(id);
     }
