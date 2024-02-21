@@ -44,7 +44,7 @@ namespace Match {
         manager->descriptor_pool->free_descriptor_sets(descriptor_sets);
         descriptor_sets.clear();
         manager->device->device.destroyDescriptorSetLayout(descriptor_layout);
-        
+
         return *this;
     }
 
@@ -202,7 +202,7 @@ namespace Match {
     DescriptorSet &DescriptorSet::bind_storage_buffer(uint32_t binding, std::shared_ptr<StorageBuffer> storage_buffer) {
         return bind_storage_buffers(binding, { storage_buffer });
     }
- 
+
     DescriptorSet &DescriptorSet::bind_storage_images(uint32_t binding, const std::vector<std::shared_ptr<StorageImage>> &storage_images) {
         auto layout_binding = get_layout_binding(binding);
         if (layout_binding.descriptorType != vk::DescriptorType::eStorageImage) {
@@ -226,11 +226,11 @@ namespace Match {
         }
         return *this;
     }
- 
+
     DescriptorSet &DescriptorSet::bind_storage_image(uint32_t binding, std::shared_ptr<StorageImage> storage_image) {
         return bind_storage_images(binding, { storage_image });
     }
- 
+
     DescriptorSet &DescriptorSet::bind_ray_tracing_instance_collects(uint32_t binding, const std::vector<std::shared_ptr<RayTracingInstanceCollect>> &instance_collects) {
         auto layout_binding = get_layout_binding(binding);
         if (layout_binding.descriptorType != vk::DescriptorType::eAccelerationStructureKHR) {

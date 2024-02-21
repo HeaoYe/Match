@@ -115,7 +115,7 @@ namespace Match {
         manager->device->device.destroyImageView(image_view);
         image.reset();
     }
-    
+
     ImgTexture::ImgTexture(const std::string &filename, uint32_t mip_levels) {
         int width, height, channels;
         stbi_uc* pixels = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha);

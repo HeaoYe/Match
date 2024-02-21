@@ -22,7 +22,7 @@ namespace Match {
             });
         return manager->device->device.createImageView(create_info);
     }
-    
+
     vk::Format find_supported_format(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features) {
         for (const auto &format : candidates) {
             auto properties = manager->device->physical_device.getFormatProperties(format);

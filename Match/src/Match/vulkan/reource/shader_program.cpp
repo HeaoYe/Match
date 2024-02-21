@@ -170,12 +170,12 @@ namespace Match {
         raygen_shader.entry = entry;
         return *this;
     }
-    
+
     RayTracingShaderProgram &RayTracingShaderProgram::attach_miss_shader(std::shared_ptr<Shader> shader, const std::string &entry) {
         miss_shaders.emplace_back(shader, entry);
         return *this;
     }
-    
+
     RayTracingShaderProgram &RayTracingShaderProgram::attach_hit_group(const ShaderStageInfo &closest_hit_shader, const std::optional<ShaderStageInfo> &intersection_shader) {
         hit_groups.push_back({
             .closest_hit_shader = closest_hit_shader,
@@ -187,7 +187,7 @@ namespace Match {
         }
         return *this;
     }
-    
+
     RayTracingShaderProgram &RayTracingShaderProgram::compile(const RayTracingShaderProgramCompileOptions &options) {
         std::vector<vk::RayTracingShaderGroupCreateInfoKHR> shader_groups;
         std::vector<vk::PipelineShaderStageCreateInfo> stages;
@@ -236,7 +236,7 @@ namespace Match {
         };
         uint32_t handle_size = ray_tracing_pipeline_properties.shaderGroupHandleSize;
         uint32_t handle_stride = align_address(handle_size, ray_tracing_pipeline_properties.shaderGroupHandleAlignment);
-        
+
         raygen_region.setStride(align_address(handle_stride, ray_tracing_pipeline_properties.shaderGroupBaseAlignment))
             .setSize(raygen_region.stride);
         miss_region.setStride(handle_stride)
@@ -268,7 +268,7 @@ namespace Match {
 
         return *this;
     }
-    
+
     RayTracingShaderProgram::~RayTracingShaderProgram() {
         raygen_shader.shader.reset();
         miss_shaders.clear();
@@ -292,7 +292,7 @@ namespace Match {
         auto shader_stage_create_info = create_pipeline_shader_stage_create_info(vk::ShaderStageFlagBits::eCompute, compute_shader.shader->module.value(), compute_shader.entry);
 
         compile_pipeline_layout();
-        
+
         vk::ComputePipelineCreateInfo pipeline_create_info {};
         pipeline_create_info.setLayout(layout)
             .setStage(shader_stage_create_info)
@@ -300,7 +300,7 @@ namespace Match {
             .setBasePipelineIndex(0);
 
         pipeline = manager->device->device.createComputePipeline(nullptr, pipeline_create_info).value;
-        
+
         return *this;
     }
 }

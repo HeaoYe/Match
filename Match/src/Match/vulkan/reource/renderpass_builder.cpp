@@ -9,7 +9,7 @@ namespace Match {
     vk::AttachmentReference SubpassBuilder::create_reference(const std::string &name, vk::ImageLayout layout, bool is_attachment_read) {
         return { builder.get_attachment_index(name, is_attachment_read), layout };
     }
-    
+
     SubpassBuilder &SubpassBuilder::bind(vk::PipelineBindPoint bind_point) {
         this->bind_point = bind_point;
         return *this;
@@ -36,7 +36,7 @@ namespace Match {
         resolve_attachments.push_back(create_reference(name, layout, true));
         return *this;
     }
-    
+
     SubpassBuilder &SubpassBuilder::attach_preserve_attachment(const std::string &name) {
         uint32_t idx1 = builder.get_attachment_index(name, false);
         uint32_t idx2 = builder.get_attachment_index(name, true);
@@ -46,7 +46,7 @@ namespace Match {
         }
         return *this;
     }
-    
+
     SubpassBuilder &SubpassBuilder::attach_depth_attachment(const std::string &name, vk::ImageLayout layout) {
         depth_attachment = create_reference(name, layout, false);
         return *this;

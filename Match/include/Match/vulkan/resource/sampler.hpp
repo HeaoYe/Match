@@ -14,7 +14,7 @@ namespace Match {
         SamplerFilter mipmap_mode = SamplerFilter::eLinear;
         uint32_t mip_levels = 1;
     };
-    
+
     class MATCH_API Sampler {
         no_copy_move_construction(Sampler)
     public:

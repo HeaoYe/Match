@@ -22,6 +22,6 @@ namespace Match {
         vk::Queue compute_queue;
         uint32_t compute_family_index = -1;
         vk::Queue transfer_queue;
-        uint32_t transfer_family_index = -1;    
+        uint32_t transfer_family_index = -1;
     };
 }

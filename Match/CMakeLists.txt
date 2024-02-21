@@ -14,7 +14,7 @@ target_link_libraries(Match PUBLIC tinygltf)
 target_link_libraries(Match PRIVATE tinyobjloader)
 
 # Link glm
-target_link_libraries(Match PUBLIC glm::glm)
+target_link_libraries(Match PUBLIC glm::glm-header-only)
 
 # Link KTX-Software
 target_link_libraries(Match PRIVATE ktx)

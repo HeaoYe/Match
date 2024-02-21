@@ -58,7 +58,7 @@ namespace Match {
         std::unique_ptr<Buffer> acceleration_struction_instance_infos_buffer;
 
         vk::AccelerationStructureKHR instance_collect;
-        std::shared_ptr<Buffer> instance_collect_buffer;        
+        std::shared_ptr<Buffer> instance_collect_buffer;
     };
 
     template <class CustomInstanceData>

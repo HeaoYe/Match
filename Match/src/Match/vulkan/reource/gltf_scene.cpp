@@ -42,7 +42,7 @@ namespace Match {
         material_buffer = std::make_shared<Buffer>(materials.size() * sizeof(GLTFMaterial), vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
         memcpy(material_buffer->map(), materials.data(), material_buffer->size);
         material_buffer->unmap();
-        
+
         for (auto &gltf_mesh : gltf_model.meshes) {
             meshes.push_back(std::make_shared<GLTFMesh>(*this, gltf_model, gltf_mesh, load_attributes));
         }
@@ -151,10 +151,10 @@ namespace Match {
 
     GLTFNode::GLTFNode(GLTFScene &scene, const tinygltf::Model &gltf_model, uint32_t gltf_node_index, GLTFNode *parent) : parent(parent) {
         auto &gltf_node = gltf_model.nodes[gltf_node_index];
-        
+
         name = gltf_node.name;
 
-        if (gltf_node.mesh > -1) { 
+        if (gltf_node.mesh > -1) {
             mesh = scene.meshes[gltf_node.mesh];
         }
         if (gltf_node.rotation.size() == 4) {
