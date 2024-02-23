@@ -1,5 +1,5 @@
 # Match
-一个跨平台的Vulkan渲染引擎
+一个跨平台的Vulkan渲染器
 
 A cross platform vulkan renderer
 
