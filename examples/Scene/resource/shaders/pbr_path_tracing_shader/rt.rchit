@@ -59,7 +59,7 @@ float NDF_GGX(vec3 N, vec3 M, float roughness2) {
         return 0;
     }
     float n = 1 + NoM * NoM * (roughness2 - 1);
-    return roughness2 / (PI * n * n + 0.001);
+    return clamp(roughness2 / (PI * n * n + 0.001), 0, 1);
 }
 
 // 几何遮挡函数
@@ -85,10 +85,10 @@ vec3 compute_BRDF_NoL(vec3 direction, vec3 albedo, vec3 N, vec3 V, vec3 F0, floa
 void main() {
     MatchInstanceAddressInfo address_info = addr_info_.infos[gl_InstanceCustomIndexEXT];
     MatchGLTFPrimitiveInstanceData primitive = primitive_.primitive_datas[gl_InstanceCustomIndexEXT];
-    
+
     VertexBuffer vertex_bufer = VertexBuffer(address_info.vertex_buffer_address);
     IndexBuffer index_buffer = IndexBuffer(address_info.index_buffer_address);
-    
+
     MatchGLTFMaterial gltf_material = gltf_material_.materials[primitive.material_index];
     MatchIndex idx = index_buffer.indices[primitive.first_index / 3 + gl_PrimitiveID];
     idx.i0 += primitive.first_vertex;
@@ -100,7 +100,7 @@ void main() {
     const vec3 n0 = normal_.normals[idx.i0];
     const vec3 n1 = normal_.normals[idx.i1];
     const vec3 n2 = normal_.normals[idx.i2];
-    
+
     vec3 W = vec3(1 - attribs.x - attribs.y, attribs.x, attribs.y);
     vec3 pos = W.x * v0 + W.y * v1 + W.z * v2;
     pos = (gl_ObjectToWorldEXT * vec4(pos, 1)).xyz;
@@ -108,7 +108,7 @@ void main() {
     normal = normalize((gl_ObjectToWorldEXT * vec4(normal, 0)).xyz);
 
     float roughness = c.roughness * c.roughness;
-    float roughness2 = clamp(roughness * roughness, 0.001, 0.999);
+    float roughness2 = roughness * roughness;
 
     vec3 random_direction = normalize(vec3(uniform_rnd(ray.rnd_state, 0, 1), uniform_rnd(ray.rnd_state, 0, 1), uniform_rnd(ray.rnd_state, 0, 1)));
     // 这里不是随机采样,而是在法线方向的正态分布采样,为简化pdf的计算,近似认为是随机采样
@@ -130,6 +130,6 @@ void main() {
     float pdf = 1 / (2 * PI);
     // 因为只有c.prob的光线,所以要除以c.prob
     ray.albedo *= brdf_cosine / pdf / c.prob;
-    
+
     ray.origin = pos;
 }
