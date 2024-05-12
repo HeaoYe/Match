@@ -20,10 +20,10 @@ int main() {
     Application app;
     // 第一个注册的Scene为默认加载的Scene
 
+    app.register_scene<RayTracingV2Scene>("简易光线追踪2.0");
     // 蒙特卡洛PBR路径追踪场景
     app.register_scene<PBRPathTracingScene>("蒙特卡洛PBR路径追踪");
     // 简易光线追踪2.0场景
-    app.register_scene<RayTracingV2Scene>("简易光线追踪2.0");
     // 简易光线追踪场景
     app.register_scene<RayTracingScene>("简易光线追踪");
     // 模型加载器场景

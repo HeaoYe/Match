@@ -13,7 +13,16 @@ struct RayInfo {
 
 layout (location = 0) rayPayloadInEXT RayInfo ray;
 
+const vec3 sky_light = vec3(0.9, 1, 1);
+const vec3 sun_light = vec3(5000);
+const vec3 sun_direction = normalize(vec3(0.4, 1, 0.5));
+
 void main() {
     ray.count += 1000;
-    ray.color += ray.albedo * vec3(0.8, 0.8, 0.9);
+
+    if (dot(ray.direction, sun_direction) > 0.99) {
+        ray.color += ray.albedo * sun_light;
+    } else {
+        ray.color += ray.albedo * sky_light;
+    }
 }
