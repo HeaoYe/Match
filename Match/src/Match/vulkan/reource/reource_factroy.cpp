@@ -65,7 +65,7 @@ namespace Match {
         return std::make_shared<UniformBuffer>(size, create_for_each_frame_in_flight);
     }
 
-    std::shared_ptr<StorageBuffer> ResourceFactory::create_storage_buffer(uint64_t size) {
+    std::shared_ptr<TwoStageBuffer> ResourceFactory::create_storage_buffer(uint64_t size) {
         return std::make_shared<TwoStageBuffer>(size, vk::BufferUsageFlagBits::eStorageBuffer);
     }
 

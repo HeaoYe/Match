@@ -17,8 +17,7 @@ class RayTracingV2Scene : public Scene {
 private:
     int frame_count = 0;
     std::unique_ptr<Camera> camera;
-    
-    
+
     Material dragon_material {};
     std::shared_ptr<Match::Model> model;
     std::shared_ptr<Match::SphereCollect> sphere_collect;
