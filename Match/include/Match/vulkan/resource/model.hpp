@@ -143,11 +143,11 @@ namespace Match {
     template <class CustomSphereData>
     SphereCollect &SphereCollect::update(uint32_t group_id, UpdateCustomDataCallback<CustomSphereData> update_callback) {
         registrar->multithread_update(group_id, [=](uint32_t in_group_index, uint32_t batch_begin, uint32_t batch_end) {
-            auto *sphere_data_ptr = static_cast<SphereData *>(registrar->get_custom_data_buffer<SphereData>()->map());
-            sphere_data_ptr += batch_begin;
+            auto *custom_data_ptr = static_cast<CustomSphereData *>(get_custom_data_buffer<CustomSphereData>()->map());
+            custom_data_ptr += batch_begin;
             while (batch_begin < batch_end) {
-                update_callback(in_group_index, *sphere_data_ptr);
-                sphere_data_ptr ++;
+                update_callback(in_group_index, *custom_data_ptr);
+                custom_data_ptr ++;
                 in_group_index ++;
                 batch_begin ++;
             }

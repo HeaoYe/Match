@@ -117,4 +117,12 @@ namespace Match {
     std::shared_ptr<ComputeShaderProgram> ResourceFactory::create_compute_shader_program() {
         return std::make_shared<ComputeShaderProgram>();
     }
+
+    std::shared_ptr<VolumeData> ResourceFactory::load_volume_data(const std::string &filename) {
+        return std::make_shared<VolumeData>(root + "/volume_datas/" + filename);
+    }
+
+    std::shared_ptr<VolumeData> ResourceFactory::create_volume_data(const std::vector<float> &raw_data) {
+        return std::make_shared<VolumeData>(raw_data);
+    }
 }
