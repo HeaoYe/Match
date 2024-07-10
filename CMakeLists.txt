@@ -32,7 +32,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-enable_language(CXX)
 project(Match-Demo)
 add_subdirectory(thirdparty/glm)
 option(SPDLOG_BUILD_SHARED "Build shared library" ON)

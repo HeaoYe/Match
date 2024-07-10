@@ -14,6 +14,7 @@
 #include <Match/vulkan/descriptor_resource/uniform.hpp>
 #include <Match/vulkan/descriptor_resource/texture.hpp>
 #include <Match/vulkan/resource/ray_tracing_instance_collect.hpp>
+#include <Match/vulkan/resource/volume_data.hpp>
 
 namespace Match {
     class MATCH_API ResourceFactory {
@@ -43,6 +44,8 @@ namespace Match {
         std::shared_ptr<RayTracingInstanceCollect> create_ray_tracing_instance_collect(bool allow_update = true);
         std::shared_ptr<RayTracingShaderProgram> create_ray_tracing_shader_program();
         std::shared_ptr<ComputeShaderProgram> create_compute_shader_program();
+        std::shared_ptr<VolumeData> load_volume_data(const std::string &filename);
+        std::shared_ptr<VolumeData> create_volume_data(const std::vector<float> &raw_data);
     INNER_VISIBLE:
         std::string root;
     };

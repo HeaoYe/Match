@@ -2,3 +2,5 @@
 .vscode/settings.json
 *.spv
 build
+vdbs
+*.match_volume_data

@@ -35,17 +35,28 @@ namespace Match {
             expect_present_mode = setting.expect_present_mode.value();
         } else {
             if (runtime_setting->is_vsync()) {
-                expect_present_mode = vk::PresentModeKHR::eMailbox;
+                expect_present_mode = vk::PresentModeKHR::eFifo;
             } else {
-                expect_present_mode = vk::PresentModeKHR::eImmediate;
+                expect_present_mode = vk::PresentModeKHR::eMailbox;
             }
         }
 
+        bool found = false;
         for (auto present_mode : details.present_modes) {
             if (present_mode == expect_present_mode) {
                 MCH_DEBUG("Found expected present mode")
                 this->present_mode = present_mode;
+                found = true;
                 break;
+            }
+        }
+        if (!found) {
+            for (auto present_mode : details.present_modes) {
+                if (present_mode == vk::PresentModeKHR::eImmediate) {
+                    MCH_DEBUG("Select immediate present mode")
+                    this->present_mode = vk::PresentModeKHR::eImmediate;
+                    break;
+                }
             }
         }
 
@@ -89,14 +100,14 @@ namespace Match {
         }
 
         switch (present_mode) {
-        case vk::PresentModeKHR::eMailbox:
-            MCH_DEBUG("V-Sync ON (MailBox) real image_count is {}", image_count)
-            break;
         case vk::PresentModeKHR::eFifo:
             MCH_DEBUG("V-Sync ON (FIFO) real image_count is {}", image_count)
             break;
         case vk::PresentModeKHR::eImmediate:
             MCH_DEBUG("V-Sync OFF (IMMEDIATE) real image_count is {}", image_count)
+            break;
+        case vk::PresentModeKHR::eMailbox:
+            MCH_DEBUG("V-Sync OFF (MailBox) real image_count is {}", image_count)
             break;
         default:
             MCH_DEBUG("Unknown present mode real image_count is {}", image_count)
