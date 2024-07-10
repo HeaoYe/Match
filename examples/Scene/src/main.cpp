@@ -8,6 +8,7 @@
 #include "scenes/ray_tracing_scene.hpp"
 #include "scenes/ray_tracing_v2_scene.hpp"
 #include "scenes/pbr_path_tracing_scene.hpp"
+#include "scenes/volume_rendering_scene.hpp"
 
 int main() {
     // 窗口大小的配置移动到main.cpp中
@@ -19,6 +20,8 @@ int main() {
 
     Application app;
     // 第一个注册的Scene为默认加载的Scene
+    // 体渲染场景
+    app.register_scene<VolumeRenderingScene>("Volume Rendering");
     // 蒙特卡洛PBR路径追踪场景
     app.register_scene<PBRPathTracingScene>("蒙特卡洛PBR路径追踪");
     // 简易光线追踪2.0场景
