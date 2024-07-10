@@ -28,3 +28,6 @@
 [submodule "thirdparty/glfw"]
 	path = thirdparty/glfw
 	url = https://github.com/glfw/glfw
+[submodule "thirdparty/openvdb"]
+	path = thirdparty/openvdb
+	url = https://github.com/AcademySoftwareFoundation/openvdb
