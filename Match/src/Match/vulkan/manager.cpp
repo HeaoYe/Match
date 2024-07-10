@@ -138,6 +138,12 @@ namespace Match {
     void APIManager::recreate_swapchin() {
         vkDeviceWaitIdle(device->device);
         swapchain.reset();
+        int width, height;
+        glfwGetWindowSize(window->get_glfw_window(), &width, &height);
+        while (width == 0 || height == 0) {
+            glfwGetWindowSize(window->get_glfw_window(), &width, &height);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
         swapchain = std::make_unique<Swapchain>();
     }
 
