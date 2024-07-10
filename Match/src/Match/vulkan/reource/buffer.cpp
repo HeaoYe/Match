@@ -72,7 +72,7 @@ namespace Match {
     }
 
     TwoStageBuffer::TwoStageBuffer(uint64_t size, vk::BufferUsageFlags usage, vk::BufferUsageFlags additional_usage) {
-        staging = std::make_unique<Buffer>(size, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
+        staging = std::make_unique<Buffer>(size, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_ONLY, 0);
         buffer = std::make_unique<Buffer>(size, usage | vk::BufferUsageFlagBits::eTransferDst | additional_usage, VMA_MEMORY_USAGE_GPU_ONLY, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
     }
 
