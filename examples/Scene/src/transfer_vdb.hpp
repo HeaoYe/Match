@@ -15,7 +15,13 @@ namespace MatchTF {
     }
 
     template <class T>
-    inline void save_vector(const std::vector<T> &vec, const std::string &name) {
+    inline void save_vector(std::vector<T> &vec, const std::string &name) {
+        if constexpr (std::is_floating_point_v<T>) {
+            auto max = *std::max_element(vec.begin(), vec.end());
+            for (auto &v : vec) {
+                v /= max;
+            }
+        }
         FILE *f = fopen((name + ".match_volume_data").c_str(), "wb");
         fwrite(vec.data(), sizeof(T), vec.size(), f);
         fclose(f);
@@ -40,7 +46,6 @@ namespace MatchTF {
 
             glm::ivec3 bmin_glm;
             glm::vec3 extent;
-            float max;
 
             if (base_grid->valueType() == "float" || base_grid->valueType() == "vec3s") {
                 for (auto iter = base_grid->beginMeta(); iter != base_grid->endMeta(); ++iter) {
@@ -58,8 +63,9 @@ namespace MatchTF {
                 glm::ivec3 bmax_glm = { bmax_[0], bmax_[1], bmax_[2] };
                 bmin_glm = { bmin_[0], bmin_[1], bmin_[2] };
                 extent = bmax_glm - bmin_glm;
-                max = glm::max(glm::max(extent.x, extent.y), extent.z);
+                float max = glm::max(glm::max(extent.x, extent.y), extent.z);
                 auto extent_bounded = extent / max;
+                std::cout << max << "  (((())))  " << volume_raw_data_resolution << std::endl;
                 std::cout << extent_bounded.x << " " << extent_bounded.y << " " << extent_bounded.z << std::endl;
             } else {
                 continue;
@@ -128,7 +134,7 @@ namespace MatchTF {
                                     lerp(v110, v111, pos_f.z),
                                     pos_f.y
                                 ), pos_f.x
-                            ) * max;
+                            );
 
                             raw_data.at(x_i * volume_raw_data_resolution * volume_raw_data_resolution + y_i * volume_raw_data_resolution + z_i) = sample_value;
                         }

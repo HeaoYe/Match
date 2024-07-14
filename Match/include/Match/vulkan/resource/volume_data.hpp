@@ -3,7 +3,7 @@
 #include <Match/vulkan/resource/buffer.hpp>
 
 namespace Match {
-    constexpr size_t volume_raw_data_resolution = 1000;
+    constexpr size_t volume_raw_data_resolution = 640;
 
     class MATCH_API VolumeData {
         no_copy_move_construction(VolumeData)

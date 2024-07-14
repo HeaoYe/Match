@@ -1,4 +1,5 @@
 #include <Match/vulkan/resource/shader_includer.hpp>
+#include <Match/vulkan/resource/volume_data.hpp>
 #include <Match/core/logger.hpp>
 #include <Match/core/utils.hpp>
 
@@ -85,6 +86,25 @@ namespace Match {
                     "    return (float(lcg(prev)) / float(0x01000000));\n"
                     "}\n"
                 );
+            } else if (strcmp(requested_source, "MatchVolume") == 0) {
+                result->source_name = "MatchVolume";
+                contents = new std::string(""
+                    "int pos_to_volume_data_idx(ivec3 idx_pos) {\n"
+                    "    if (idx_pos.x < 0 || idx_pos.y < 0 || idx_pos.z < 0) return -1;\n"
+                    "    if (idx_pos.x >= $ || idx_pos.y >= $ || idx_pos.z >= $) return -1;\n"
+                    "    return idx_pos.x * $ * $ + idx_pos.y * $ + idx_pos.z;\n"
+                    "}\n"
+                    "\n"
+                    "const int volume_data_size = $ * $ * $;\n"
+                    "const int volume_data_resolution = $;\n"
+                );
+                auto p = contents->find_first_of("$");
+                auto vrdr = std::to_string(Match::volume_raw_data_resolution);
+                while (p != contents->npos) {
+                    contents->replace(p, 1, vrdr);
+                    p = contents->find_first_of("$");
+                }
+                printf("%s\n" ,contents->c_str());
             }
         } else {
             result->source_name = requested_source;
