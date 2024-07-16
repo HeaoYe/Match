@@ -1,7 +1,9 @@
 #pragma once
 #include <Match/vulkan/descriptor_resource/texture.hpp>
 #include <Match/vulkan/resource/image.hpp>
-#include <ktxvulkan.h>
+#if defined (MATCH_WITH_KTX)
+    #include <ktxvulkan.h>
+#endif
 
 namespace Match {
     class DataTexture final : public Texture {
@@ -30,6 +32,7 @@ namespace Match {
         std::unique_ptr<DataTexture> texture;
     };
 
+#if defined (MATCH_WITH_KTX)
     class KtxTexture final : public Texture {
         no_copy_move_construction(KtxTexture)
     public:
@@ -43,4 +46,5 @@ namespace Match {
         ktxVulkanTexture vk_texture;
         vk::ImageView image_view;
     };
+#endif
 }

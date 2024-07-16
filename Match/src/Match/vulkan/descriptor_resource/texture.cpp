@@ -130,6 +130,7 @@ namespace Match {
         texture.reset();
     }
 
+#if defined (MATCH_WITH_KTX)
     KtxTexture::KtxTexture(const std::string &filename) {
         auto result = ktxTexture_CreateFromNamedFile(filename.c_str(), KTX_TEXTURE_CREATE_NO_FLAGS, &texture);
         if (result != KTX_SUCCESS) {
@@ -153,4 +154,5 @@ namespace Match {
         ktxTexture_Destroy(texture);
         manager->device->device.destroyImageView(image_view);
     }
+#endif
 }

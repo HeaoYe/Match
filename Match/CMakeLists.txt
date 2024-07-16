@@ -15,10 +15,14 @@ target_link_libraries(Match
         VulkanMemoryAllocator
     PRIVATE
         tinyobjloader
-        ktx
         glslang glslang::SPIRV glslang::glslang-default-resource-limits
 )
 target_include_directories(Match PRIVATE ../thirdparty/stb)
+
+if (MATCH_SUPPORT_KTX)
+    target_compile_definitions(Match PUBLIC MATCH_WITH_KTX)
+    target_link_libraries(Match PRIVATE ktx)
+endif()
 
 target_compile_definitions(Match PRIVATE MATCH_INNER_VISIBLE)
 if (WIN32)
