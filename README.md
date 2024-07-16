@@ -17,8 +17,8 @@ A cross platform vulkan renderer
 git clone https://github.com/HeaoYe/Match
 cd Match
 git submodule update --init --recursive
-cd thirdparty/shaderc
-python ./utils/git-sync-deps
+cd thirdparty/glslang
+python ./update_glslang_sources.py
 ```
 
 # 三、编译与运行
