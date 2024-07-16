@@ -9,29 +9,33 @@
 #include <Match/vulkan/descriptor_resource/descriptor_pool.hpp>
 
 namespace Match {
-    class MATCH_API APIManager {
+    class APIManager {
         no_copy_move_construction(APIManager)
+        friend MATCH_API std::vector<std::string> EnumerateDevices();
+        friend MATCH_API APIManager &Initialize();
+        friend MATCH_API void Destroy();
+        friend Renderer;
     private:
-        APIManager();
+        MATCH_API APIManager();
     public:
-        ~APIManager();
-        std::vector<std::string> enumerate_devices();
-        void initialize();
-        std::shared_ptr<RuntimeSetting> get_runtime_setting();
-        std::shared_ptr<ResourceFactory> create_resource_factory(const std::string &root);
-        CommandPool &get_command_pool();
-        void destroy();
-    INNER_VISIBLE:
-        static APIManager &GetInstance();
-        static void Quit();
-    INNER_VISIBLE:
-        void recreate_swapchin();
+        MATCH_API ~APIManager();
+        MATCH_API std::vector<std::string> enumerate_devices();
+        MATCH_API void initialize();
+        MATCH_API std::shared_ptr<RuntimeSetting> get_runtime_setting();
+        MATCH_API std::shared_ptr<ResourceFactory> create_resource_factory(const std::string &root);
+        MATCH_API CommandPool &get_command_pool();
+        MATCH_API void destroy();
     private:
-        void create_vk_instance();
-        void create_vk_surface();
-        void initialize_vma();
+        MATCH_API static APIManager &GetInstance();
+        MATCH_API static void Quit();
     private:
-        static std::unique_ptr<APIManager> manager;
+        MATCH_API void recreate_swapchin();
+    private:
+        MATCH_API void create_vk_instance();
+        MATCH_API void create_vk_surface();
+        MATCH_API void initialize_vma();
+    private:
+        MATCH_API static std::unique_ptr<APIManager> manager;
     INNER_VISIBLE:
         vk::DispatchLoaderDynamic dispatcher;
         VmaAllocator vma_allocator;

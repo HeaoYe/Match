@@ -5,21 +5,21 @@
 #include <optional>
 
 namespace Match {
-    struct MATCH_API ConstantInfo {
+    struct ConstantInfo {
         std::string name;
         ConstantType type;
     };
 
-    class MATCH_API Shader {
+    class Shader {
         no_copy_move_construction(Shader)
         using binding = uint32_t;
     public:
-        Shader(const std::string &name, const std::string &code, ShaderStage stage);
-        Shader(const std::vector<char> &code);
-        bool is_ready();
-        ~Shader();
+        MATCH_API Shader(const std::string &name, const std::vector<char> &code, ShaderStage stage);
+        MATCH_API Shader(const std::vector<char> &code);
+        MATCH_API bool is_ready();
+        MATCH_API ~Shader();
     private:
-        void create(const uint32_t *data, uint32_t size);
+        MATCH_API void create(const uint32_t *data, uint32_t size);
     INNER_VISIBLE:
         std::optional<vk::ShaderModule> module;
     };

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <typeinfo>
+#include <typeinfo>  // IWYU pragma: export
 
 namespace Match {
     enum class LogLevel {

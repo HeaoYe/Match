@@ -87,7 +87,7 @@ namespace Match {
                     break;
                 }
             }
-            MCH_TRACE("EXT: {}-{}", extension.extensionName, extension.specVersion)
+            MCH_TRACE("EXT: {}-{}", std::string(extension.extensionName), extension.specVersion)
         }
 
         for (auto &required_extension : required_extensions) {
@@ -107,7 +107,7 @@ namespace Match {
                     found = true;
                     instance_create_info.setPEnabledLayerNames(validation_layers);
                 }
-                MCH_TRACE("LYR: {} \"{}\" {}-{}", layer.layerName, layer.description, layer.implementationVersion, layer.specVersion)
+                MCH_TRACE("LYR: {} \"{}\" {}-{}", std::string(layer.layerName), std::string(layer.description), layer.implementationVersion, layer.specVersion)
             }
             if (found == false) {
                 MCH_ERROR("Cannot find Vulkan Validation Layer")

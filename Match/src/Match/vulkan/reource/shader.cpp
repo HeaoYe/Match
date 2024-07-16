@@ -1,48 +1,59 @@
 #include <Match/vulkan/resource/shader.hpp>
-#include <Match/vulkan/resource/shader_includer.hpp>
 #include <Match/core/utils.hpp>
 #include "../inner.hpp"
-#include <shaderc/shaderc.hpp>
+#include <glslang/Public/ShaderLang.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
+#include <glslang/Public/ResourceLimits.h>
 
 namespace Match {
-    Shader::Shader(const std::string &name, const std::string &code, ShaderStage stage) {
-        shaderc_shader_kind kind;
+    Shader::Shader(const std::string &name, const std::vector<char> &code, ShaderStage stage) {
+        EShLanguage kind;
         switch (stage) {
         case Match::ShaderStage::eVertex:
-            kind = shaderc_glsl_vertex_shader;
+            kind = EShLanguage::EShLangVertex;
             break;
         case Match::ShaderStage::eFragment:
-            kind = shaderc_glsl_fragment_shader;
+            kind = EShLanguage::EShLangFragment;
             break;
         case Match::ShaderStage::eRaygen:
-            kind = shaderc_glsl_raygen_shader;
+            kind = EShLanguage::EShLangRayGen;
             break;
         case Match::ShaderStage::eMiss:
-            kind = shaderc_glsl_miss_shader;
+            kind = EShLanguage::EShLangMiss;
             break;
         case Match::ShaderStage::eClosestHit:
-            kind = shaderc_glsl_closesthit_shader;
+            kind = EShLanguage::EShLangClosestHit;
             break;
         case Match::ShaderStage::eIntersection:
-            kind = shaderc_glsl_intersection_shader;
+            kind = EShLanguage::EShLangIntersect;
             break;
         case Match::ShaderStage::eCompute:
-            kind = shaderc_glsl_compute_shader;
+            kind = EShLanguage::EShLangCompute;
             break;
         }
-        shaderc::Compiler compiler {};
-        shaderc::CompileOptions options {};
-        options.SetIncluder(std::make_unique<ShaderIncluder>(name));
-        if (setting.enable_ray_tracing) {
-           options.SetTargetSpirv(shaderc_spirv_version_1_6);
-        }
-        auto module = compiler.CompileGlslToSpv(code.data(), code.size(), kind, name.c_str(), options);
-        if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-            MCH_ERROR("Compile {} faild: {}", name, module.GetErrorMessage());
+        glslang::TShader shader(kind);
+        auto code_ptr = code.data();
+        shader.setStrings(&code_ptr, 1);
+        shader.setEnvInput(glslang::EShSourceGlsl, kind, glslang::EShClientVulkan, 450);
+        shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_3);
+        shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_6);
+        if (!shader.parse(GetDefaultResources(), 450, ENoProfile, true, false, EShMessages::EShMsgDefault)) {
+            MCH_ERROR("{}", shader.getInfoLog())
+            MCH_ERROR("{}", shader.getInfoDebugLog())
             return;
         }
-        std::vector<uint32_t> spirv(module.cbegin(), module.cend());
-        create(spirv.data(), spirv.size() * 4);
+        glslang::TProgram program;
+        program.addShader(&shader);
+        if (!program.link(EShMessages::EShMsgDefault)) {
+            MCH_ERROR("{}", shader.getInfoLog())
+            MCH_ERROR("{}", shader.getInfoDebugLog())
+            return;
+        }
+        const auto intermediate = program.getIntermediate(kind);
+
+        std::vector<uint32_t> spirv;
+        glslang::GlslangToSpv(*intermediate, spirv);
+        create(spirv.data(), spirv.size() * sizeof(uint32_t));
     }
 
     Shader::Shader(const std::vector<char> &code) {

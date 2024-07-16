@@ -26,11 +26,15 @@ namespace Match {
             MCH_ERROR("Faild compile shader {}", filename)
             return nullptr;
         }
-        return std::make_shared<Shader>(root + "/shaders/" + filename, std::string(code.data(), code.size()), stage);
+        code.push_back('\0');
+        return std::make_shared<Shader>(root + "/shaders/" + filename, code, stage);
     }
 
     std::shared_ptr<Shader> ResourceFactory::compile_shader_from_string(const std::string &code, ShaderStage stage) {
-        return std::make_shared<Shader>("string code", code, stage);
+        std::vector<char> code_vector(code.length() + 1);
+        memcpy(code_vector.data(), code.data(), code.length());
+        code_vector.back() = '\0';
+        return std::make_shared<Shader>("string code", code_vector, stage);
     }
 
     std::shared_ptr<VertexAttributeSet> ResourceFactory::create_vertex_attribute_set(const std::vector<InputBindingInfo> &binding_infos) {

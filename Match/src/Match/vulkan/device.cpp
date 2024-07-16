@@ -12,7 +12,7 @@ namespace Match {
         auto idx = 0;
         for (auto &device : devices) {
             properties = device.getProperties();
-            MCH_WARN("No.{} \"{}\"", idx, properties.deviceName)
+            MCH_WARN("No.{} \"{}\"", idx, std::string(properties.deviceName))
             idx ++;
         }
         return device_names;
@@ -27,7 +27,7 @@ namespace Match {
             for (auto &device : devices) {
                 properties = device.getProperties();
                 if (properties.deviceName.data() == setting.device_name) {
-                    MCH_DEBUG("Found device {}", properties.deviceName)
+                    MCH_DEBUG("Found device {}", std::string(properties.deviceName))
                     if (check_device_suitable(device)) {
                         selected_device = true;
                     }
@@ -135,7 +135,7 @@ namespace Match {
                     break;
                 }
             }
-            MCH_TRACE("PHY EXT: {}-{}", extension.extensionName, extension.specVersion)
+            MCH_TRACE("PHY EXT: {}-{}", std::string(extension.extensionName), extension.specVersion)
         }
 
         for (auto &required_extension : required_extensions) {
@@ -178,22 +178,22 @@ namespace Match {
         auto features = device.getFeatures();
 
         if (properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {
-            MCH_DEBUG("{} is not a discrete gpu -- skipping", properties.deviceName)
+            MCH_DEBUG("{} is not a discrete gpu -- skipping", std::string(properties.deviceName))
             return false;
         }
 
         if (!features.samplerAnisotropy) {
-            MCH_DEBUG("{} does not support sampler anisotropy -- skipping", properties.deviceName)
+            MCH_DEBUG("{} does not support sampler anisotropy -- skipping", std::string(properties.deviceName))
             return false;
         }
 
         if (!features.sampleRateShading) {
-            MCH_DEBUG("{} does not support sampler rate shading -- skipping", properties.deviceName)
+            MCH_DEBUG("{} does not support sampler rate shading -- skipping", std::string(properties.deviceName))
             return false;
         }
 
         if (!features.shaderInt64) {
-            MCH_DEBUG("{} does not support type int 64 -- warning", properties.deviceName)
+            MCH_DEBUG("{} does not support type int 64 -- warning", std::string(properties.deviceName))
         }
 
         auto queue_families_properties = device.getQueueFamilyProperties();
@@ -213,13 +213,13 @@ namespace Match {
         }
 
         if (!found_family) {
-            MCH_DEBUG("{} has no suitable queue family -- skipping", properties.deviceName)
+            MCH_DEBUG("{} has no suitable queue family -- skipping", std::string(properties.deviceName))
             return false;
         }
 
-        MCH_DEBUG("{} is suitable", properties.deviceName)
+        MCH_DEBUG("{} is suitable", std::string(properties.deviceName))
         physical_device = device;
-        MCH_INFO("Select Device {}", properties.deviceName)
+        MCH_INFO("Select Device {}", std::string(properties.deviceName))
 
         auto memoryProperties = physical_device.getMemoryProperties();
         MCH_DEBUG("\tDevice Driver Version: {}.{}.{}", VK_VERSION_MAJOR(properties.driverVersion), VK_VERSION_MINOR(properties.driverVersion), VK_VERSION_PATCH(properties.driverVersion))
