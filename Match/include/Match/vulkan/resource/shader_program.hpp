@@ -6,7 +6,7 @@
 #include <Match/vulkan/descriptor_resource/descriptor_set.hpp>
 
 namespace Match {
-    struct MATCH_API GraphicsShaderProgramCompileOptions {
+    struct GraphicsShaderProgramCompileOptions {
         Topology topology = Topology::eTriangleList;
         PolygonMode polygon_mode = PolygonMode::eFill;
         float line_width = 1.0f;
@@ -21,25 +21,25 @@ namespace Match {
         std::vector<vk::DynamicState> dynamic_states;
     };
 
-    struct MATCH_API RayTracingShaderProgramCompileOptions {
+    struct RayTracingShaderProgramCompileOptions {
         uint32_t max_ray_recursion_depth = 1;
     };
 
-    struct MATCH_API ComputeShaderProgramCompileOptions {};
+    struct ComputeShaderProgramCompileOptions {};
 
-    class MATCH_API Renderer;
+    class Renderer;
 
     template <class ShaderProgramClass>
-    struct MATCH_API ShaderProgramBindPoint {
+    struct ShaderProgramBindPoint {
         const static vk::PipelineBindPoint bind_point;
     };
 
-    class MATCH_API ShaderProgram {
+    class ShaderProgram {
         default_no_copy_move_construction(ShaderProgram)
     public:
-        virtual ~ShaderProgram();
+        MATCH_API virtual ~ShaderProgram();
     protected:
-        void compile_pipeline_layout();
+        MATCH_API void compile_pipeline_layout();
     INNER_PROTECT:
         std::vector<std::optional<std::shared_ptr<DescriptorSet>>> descriptor_sets;
         std::optional<std::shared_ptr<PushConstants>> push_constants;
@@ -48,7 +48,7 @@ namespace Match {
     };
 
     template <class SubClass, typename OptionType>
-    class MATCH_API ShaderProgramTemplate : public ShaderProgram {
+    class ShaderProgramTemplate : public ShaderProgram {
         default_no_copy_move_construction(ShaderProgramTemplate)
     INNER_PROTECT:
         struct ShaderStageInfo {
@@ -80,17 +80,15 @@ namespace Match {
         virtual SubClass &compile(const OptionType &options = {}) = 0;
     };
 
-    class MATCH_API GraphicsShaderProgram : public ShaderProgramTemplate<GraphicsShaderProgram, GraphicsShaderProgramCompileOptions> {
+    class GraphicsShaderProgram : public ShaderProgramTemplate<GraphicsShaderProgram, GraphicsShaderProgramCompileOptions> {
         no_copy_move_construction(GraphicsShaderProgram)
     public:
-        GraphicsShaderProgram(std::weak_ptr<Renderer> renderer, const std::string &subpass_name);
-        GraphicsShaderProgram &attach_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set);
-        GraphicsShaderProgram &attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
-        GraphicsShaderProgram &attach_fragment_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
-        GraphicsShaderProgram &compile(const GraphicsShaderProgramCompileOptions &options = {}) override;
-        ~GraphicsShaderProgram() override;
-    INNER_VISIBLE:
-        void update_input_attachments();
+        MATCH_API GraphicsShaderProgram(std::weak_ptr<Renderer> renderer, const std::string &subpass_name);
+        MATCH_API GraphicsShaderProgram &attach_vertex_attribute_set(std::shared_ptr<VertexAttributeSet> attribute_set);
+        MATCH_API GraphicsShaderProgram &attach_vertex_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
+        MATCH_API GraphicsShaderProgram &attach_fragment_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
+        MATCH_API GraphicsShaderProgram &compile(const GraphicsShaderProgramCompileOptions &options = {}) override;
+        MATCH_API ~GraphicsShaderProgram() override;
     INNER_VISIBLE:
         std::weak_ptr<Renderer> renderer;
         std::string subpass_name;
@@ -100,11 +98,11 @@ namespace Match {
     };
 
     template <>
-    struct MATCH_API ShaderProgramBindPoint<GraphicsShaderProgram> {
+    struct ShaderProgramBindPoint<GraphicsShaderProgram> {
         const static vk::PipelineBindPoint bind_point = vk::PipelineBindPoint::eGraphics;
     };
 
-    class MATCH_API RayTracingShaderProgram : public ShaderProgramTemplate<RayTracingShaderProgram, RayTracingShaderProgramCompileOptions> {
+    class RayTracingShaderProgram : public ShaderProgramTemplate<RayTracingShaderProgram, RayTracingShaderProgramCompileOptions> {
         no_copy_move_construction(RayTracingShaderProgram)
     INNER_VISIBLE:
         struct HitGroup {
@@ -112,12 +110,12 @@ namespace Match {
             std::optional<ShaderStageInfo> intersection_shader;
         };
     public:
-        RayTracingShaderProgram();
-        RayTracingShaderProgram &attach_raygen_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
-        RayTracingShaderProgram &attach_miss_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
-        RayTracingShaderProgram &attach_hit_group(const ShaderStageInfo &closest_hit_shader, const std::optional<ShaderStageInfo> &intersection_shader = {});
-        RayTracingShaderProgram &compile(const RayTracingShaderProgramCompileOptions &options = {}) override;
-        ~RayTracingShaderProgram() override;
+        MATCH_API RayTracingShaderProgram();
+        MATCH_API RayTracingShaderProgram &attach_raygen_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
+        MATCH_API RayTracingShaderProgram &attach_miss_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
+        MATCH_API RayTracingShaderProgram &attach_hit_group(const ShaderStageInfo &closest_hit_shader, const std::optional<ShaderStageInfo> &intersection_shader = {});
+        MATCH_API RayTracingShaderProgram &compile(const RayTracingShaderProgramCompileOptions &options = {}) override;
+        MATCH_API ~RayTracingShaderProgram() override;
     INNER_VISIBLE:
         ShaderStageInfo raygen_shader {};
         std::vector<ShaderStageInfo> miss_shaders;
@@ -132,23 +130,23 @@ namespace Match {
     };
 
     template <>
-    struct MATCH_API ShaderProgramBindPoint<RayTracingShaderProgram> {
+    struct ShaderProgramBindPoint<RayTracingShaderProgram> {
         const static vk::PipelineBindPoint bind_point = vk::PipelineBindPoint::eRayTracingKHR;
     };
 
-    class MATCH_API ComputeShaderProgram : public ShaderProgramTemplate<ComputeShaderProgram, ComputeShaderProgramCompileOptions> {
+    class ComputeShaderProgram : public ShaderProgramTemplate<ComputeShaderProgram, ComputeShaderProgramCompileOptions> {
         no_copy_move_construction(ComputeShaderProgram)
     public:
-        ComputeShaderProgram();
-        ComputeShaderProgram &attach_compute_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
-        ComputeShaderProgram &compile(const ComputeShaderProgramCompileOptions &options = {}) override;
-        ~ComputeShaderProgram() override;
+        MATCH_API ComputeShaderProgram();
+        MATCH_API ComputeShaderProgram &attach_compute_shader(std::shared_ptr<Shader> shader, const std::string &entry = "main");
+        MATCH_API ComputeShaderProgram &compile(const ComputeShaderProgramCompileOptions &options = {}) override;
+        MATCH_API ~ComputeShaderProgram() override;
     INNER_VISIBLE:
         ShaderStageInfo compute_shader;
     };
 
     template <>
-    struct MATCH_API ShaderProgramBindPoint<ComputeShaderProgram> {
+    struct ShaderProgramBindPoint<ComputeShaderProgram> {
         const static vk::PipelineBindPoint bind_point = vk::PipelineBindPoint::eCompute;
     };
 }

@@ -1,6 +1,5 @@
 #version 450
 
-
 layout(binding = 0, input_attachment_index = 0) uniform subpassInput buffers[3];
 
 layout(location = 0) out vec4 out_color;

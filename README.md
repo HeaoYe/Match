@@ -17,8 +17,8 @@ A cross platform vulkan renderer
 git clone https://github.com/HeaoYe/Match
 cd Match
 git submodule update --init --recursive
-cd thirdparty/shaderc
-python ./utils/git-sync-deps
+cd thirdparty/glslang
+python ./update_glslang_sources.py
 ```
 
 # 三、编译与运行
@@ -321,23 +321,13 @@ python --version
 ### 2.安装CMake
 [CMake官网](https://cmake.org/)
 1. 点击Download
-2. 下载Windows x64 ZIP	cmake-3.29.0-rc1-windows-x86_64.zip
+2. 下载Windows x64 ZIP	cmake-x.xx.x-rc1-windows-x86_64.zip
 3. 解压到一个文件夹中并记住
 
-### 3.安装MSYS2
-[MAYS2官网](https://www.msys2.org/)
-1. Download the installer: msys2-x86_64-20240113.exe
-2. 运行安装程序，一直下一步就行，记得设置安装位置并记下来
-3. 安装好后点击 立即运行MSYS2
-5. 输入命令，安装c++编译器，安装时一直按回车就行
-```bash
-pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain
-```
-5. 安装好后输入命令验证是否安装成功
-```bash
-gcc --version
-g++ --version
-```
+### 3.安装Clang+LLVM
+[LLVM仓库](https://github.com/llvm/llvm-project/releases)
+1. 下载最新的Release版Clang+LLVM： clang+llvm-xx.x.x-x86_64-pc-windows-msvc.tar.xz
+2. 解压到一个文件夹中并记住
 
 ### 4.安装Git
 [Git官网](https://git-scm.com/)
@@ -350,17 +340,17 @@ g++ --version
 ### 5.安装VulkanSDK
 [VulkanSDK官网](https://vulkan.lunarg.com/)
 1. 点击SDK
-2. 下载并运行 VulkanSDK-1.3.275.0-Installer.exe (160MB)
+2. 下载并运行 VulkanSDK-x.x.xxx.x-Installer.exe (160MB)
 3. 设置安装位置并记下来
 4. 根据需求选择要安装的组件
 
 ### 6.设置环境变量
 1. 设置 -> 系统 -> 关于 -> 高级系统设置 -> 环境变量
-2. 需要在Path中添加 CMake的bin目录 & MSYS2的bin目录 & VulkanSDK的Bin目录
+2. 需要在Path中添加 CMake的bin目录 & Clang+LLVM的bin目录 & VulkanSDK的Bin目录
 - CMake的bin目录:
 例如 ```E:\CMake\cmake-3.29.0-rc1-windows-x86_64\bin```
-- MSYS2的bin目录:
-例如 ```E:\msys64\ucrt64\bin```
+- Clang+LLVM的bin目录:
+例如 ```E:\clang+llvm-18.1.8-x86_64-pc-windows-msvc\bin```
 - VulkanSDK的Bin目录:
 例如 ```E:\VulkanSDK\1.3.275.0\Bin```
 3. 点击新建 -> 输入路径 -> 点击上移 移动到最上面
@@ -368,8 +358,8 @@ g++ --version
 5. 输入命令验证安装是否成功
 ```bash
 cmake --version
-gcc --version
-g++ --version
+clang --version
+clang++ --version
 vkcube
 ```
 
@@ -410,7 +400,7 @@ sudo pacman -S code vulkan-devel cmake clang git python
 3. 如何编译
     - 按F7编译带有CMakeLists.txt的项目。
     - 如果按F7没反应，确认打开的文件夹中有CMakeLists.txt，然后重启VSCode
-    - 第一次编译需要选择C++编译器，Windows用户选择从MSYS2下载的gcc，linux选择gcc或clang
+    - 第一次编译需要选择C++编译器，Windows和Linux用户统一选择Clang
 4. 如何运行
     - 在项目的CPP文件或头文件中，按F5运行
     - 第一次运行会生成.vscode/launch.json

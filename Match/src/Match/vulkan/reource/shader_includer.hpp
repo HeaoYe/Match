@@ -1,22 +1,22 @@
-#include <Match/vulkan/resource/shader_includer.hpp>
-#include <Match/core/logger.hpp>
+#pragma once
+
+#include <Match/commons.hpp>
 #include <Match/core/utils.hpp>
+#include <Match/vulkan/resource/volume_data.hpp>
+#include <glslang/Public/ShaderLang.h>
+#include <filesystem>
 
 namespace Match {
-    ShaderIncluder::ShaderIncluder(const std::string &filename) {
-        if (filename.find('/') == std::string::npos) {
-            filepath = "./";
-        } else {
-            filepath = filename.substr(0, filename.find_last_of('/') + 1);
+    class ShaderIncluder final : public glslang::TShader::Includer {
+    public:
+        ShaderIncluder(const std::filesystem::path &filename) {
+            filepath = filename.parent_path();
         }
-    }
 
-    shaderc_include_result* ShaderIncluder::GetInclude(const char* requested_source, shaderc_include_type type, const char* requesting_source, size_t include_depth) {
-        auto result = new shaderc_include_result();
-        std::string *contents;
-        if (type == shaderc_include_type_standard) {
-            if (strcmp(requested_source, "MatchTypes") == 0) {
-                result->source_name = "MatchTypes";
+        IncludeResult* includeSystem(const char* header_name, const char* includer_name, size_t inclusion_depth) {
+            std::string *contents;
+
+            if (strcmp(header_name, "MatchTypes") == 0) {
                 contents = new std::string(""
                     "#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable\n"
                     "\n"
@@ -59,8 +59,7 @@ namespace Match {
                     "    int metallic_roughness_texture;\n"
                     "};\n"
                 );
-            } else if (strcmp(requested_source, "MatchRandom") == 0) {
-                result->source_name = "MatchRandom";
+            } else if (strcmp(header_name, "MatchRandom") == 0) {
                 contents = new std::string(""
                     "uint tea(uint val0, uint val1) {\n"
                     "    uint v0 = val0;\n"
@@ -85,21 +84,46 @@ namespace Match {
                     "    return (float(lcg(prev)) / float(0x01000000));\n"
                     "}\n"
                 );
+            } else if (strcmp(header_name, "MatchVolume") == 0) {
+                contents = new std::string(""
+                    "int pos_to_volume_data_idx(ivec3 idx_pos) {\n"
+                    "    if (idx_pos.x < 0 || idx_pos.y < 0 || idx_pos.z < 0) return -1;\n"
+                    "    if (idx_pos.x >= $ || idx_pos.y >= $ || idx_pos.z >= $) return -1;\n"
+                    "    return idx_pos.x * $ * $ + idx_pos.y * $ + idx_pos.z;\n"
+                    "}\n"
+                    "\n"
+                    "const int volume_data_size = $ * $ * $;\n"
+                    "const int volume_data_resolution = $;\n"
+                );
+                auto p = contents->find_first_of("$");
+                auto vrdr = std::to_string(Match::volume_raw_data_resolution);
+                while (p != contents->npos) {
+                    contents->replace(p, 1, vrdr);
+                    p = contents->find_first_of("$");
+                }
+            } else {
+                header_name = "null";
+                contents = new std::string("");
             }
-        } else {
-            result->source_name = requested_source;
-            auto data = read_binary_file(filepath + std::string(requested_source));
-            contents = new std::string(data.data(), data.size());
-        }
-        result->source_name_length = strlen(result->source_name);
-        result->content = contents->data();
-        result->content_length = contents->size();
-        result->user_data = contents;
-        return result;
-    }
 
-    void ShaderIncluder::ReleaseInclude(shaderc_include_result* data) {
-        delete static_cast<std::string *>(data->user_data);
-        delete data;
-    }
+            return new IncludeResult(header_name, contents->c_str(), contents->length(), static_cast<void *>(contents));
+        }
+
+        IncludeResult* includeLocal(const char* header_name, const char* includer_name, size_t inclusion_depth) {
+            auto data = read_binary_file((filepath / std::string(header_name)).string());
+            auto *contents = new std::string(data.data(), data.size());
+            return new IncludeResult(header_name, contents->c_str(), contents->length(), static_cast<void *>(contents));
+        }
+
+        void releaseInclude(IncludeResult *result) {
+            if (result) {
+                delete static_cast<std::string *>(result->userData);
+                delete result;
+            }
+        }
+
+        ~ShaderIncluder() {}
+    private:
+        std::filesystem::path filepath;
+    };
 }

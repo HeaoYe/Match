@@ -1,5 +1,6 @@
 #version 460
 
+#extension GL_GOOGLE_include_directive : require
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_buffer_reference : require
@@ -45,13 +46,13 @@ void main() {
 
     VertexBuffer vertex_bufer = VertexBuffer(address_info.vertex_buffer_address);
     IndexBuffer index_buffer = IndexBuffer(address_info.index_buffer_address);
-    
+
     // 获取命中的三角形的顶点信息
     MatchIndex idx = index_buffer.indices[gl_PrimitiveID];
     MatchVertex v0 = vertex_bufer.vertices[idx.i0];
     MatchVertex v1 = vertex_bufer.vertices[idx.i1];
     MatchVertex v2 = vertex_bufer.vertices[idx.i2];
-    
+
     // 获取命中点的信息(位置,法向量)
     vec3 W = vec3(1 - attribs.x - attribs.y, attribs.x, attribs.y);
     // 获取模型坐标系下的位置

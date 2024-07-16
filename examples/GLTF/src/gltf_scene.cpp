@@ -9,7 +9,7 @@ GLTFScene::GLTFScene(const std::string &filename) {
 
     size_t pos = filename.find_last_of('/');
 	path = filename.substr(0, pos);
-    
+
     auto ret = loader.LoadASCIIFromFile(&gltf_model, &err, &warn, filename);
     if (!warn.empty()) {
         MCH_WARN("Warn: {} {}", warn, filename);
@@ -28,7 +28,7 @@ GLTFScene::GLTFScene(const std::string &filename) {
 
     load_images(gltf_model);
     load_materials(gltf_model);
-    
+
     for (auto &gltf_mesh : gltf_model.meshes) {
         meshes.push_back(std::make_shared<GLTFMesh>(*this, gltf_model, gltf_mesh));
     }
@@ -72,7 +72,7 @@ void GLTFScene::load_images(const tinygltf::Model &gltf_model) {
         }
         textures.push_back(std::make_shared<Match::DataTexture>(rgba_readonly, gltf_image.width, gltf_image.height, 0));
     }
-    
+
     uint8_t empty_data[] = { 0, 0, 0, 0 };
     empty_texture = factory->create_texture(empty_data, 1, 1, 1);
 }

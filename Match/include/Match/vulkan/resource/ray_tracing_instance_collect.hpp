@@ -7,7 +7,7 @@
 #include <Match/core/utils.hpp>
 
 namespace Match {
-    class MATCH_API RayTracingInstanceCollect {
+    class RayTracingInstanceCollect {
         no_copy_move_construction(RayTracingInstanceCollect)
     INNER_VISIBLE:
         struct InstanceCreateInfo {
@@ -26,7 +26,7 @@ namespace Match {
         template <class CustomInstanceData>
         using UpdateCustomDataCallback = std::function<void(uint32_t, CustomInstanceData &)>;
     public:
-        RayTracingInstanceCollect(bool allow_update);
+        MATCH_API RayTracingInstanceCollect(bool allow_update);
         template <class CustomInstanceData>
         RayTracingInstanceCollect &register_custom_instance_data();
         RayTracingInstanceCollect &register_gltf_primitive_instance_data() {
@@ -40,14 +40,14 @@ namespace Match {
         std::shared_ptr<Buffer> get_custom_instance_data_buffer();
         std::shared_ptr<Buffer> get_instance_address_data_buffer() { return get_custom_instance_data_buffer<InstanceAddressData>(); }
         std::shared_ptr<Buffer> get_gltf_primitive_data_buffer() { return get_custom_instance_data_buffer<GLTFPrimitiveInstanceData>(); }
-        RayTracingInstanceCollect &build();
-        RayTracingInstanceCollect &update(uint32_t group_id, UpdateCallback update_callback);
+        MATCH_API RayTracingInstanceCollect &build();
+        MATCH_API RayTracingInstanceCollect &update(uint32_t group_id, UpdateCallback update_callback);
         template <class CustomInstanceData>
         RayTracingInstanceCollect &update(uint32_t group_id, UpdateCustomDataCallback<CustomInstanceData> update_callback);
-        ~RayTracingInstanceCollect();
-    INNER_VISIBLE:
-        InstanceAddressData create_instance_address_data(RayTracingModel &model);
-        bool check_model_suitable(RayTracingModel &model);
+        MATCH_API ~RayTracingInstanceCollect();
+    private:
+        MATCH_API InstanceAddressData create_instance_address_data(RayTracingModel &model);
+        MATCH_API bool check_model_suitable(RayTracingModel &model);
     INNER_VISIBLE:
         bool allow_update;
 

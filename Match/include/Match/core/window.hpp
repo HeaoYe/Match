@@ -4,15 +4,15 @@
 #include <GLFW/glfw3.h>
 
 namespace Match {
-    class MATCH_API Window {
+    class Window {
         no_copy_move_construction(Window)
     public:
-        Window();
+        MATCH_API Window();
         GLFWwindow *get_glfw_window() const { return window; }
         bool is_alive() const { return !glfwWindowShouldClose(window); }
-        void poll_events() const;
-        void close() const;
-        ~Window();
+        MATCH_API void poll_events() const;
+        MATCH_API void close() const;
+        MATCH_API ~Window();
     INNER_VISIBLE:
         GLFWwindow *window;
     };

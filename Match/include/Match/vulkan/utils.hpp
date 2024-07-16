@@ -7,7 +7,7 @@ namespace Match {
 
     MATCH_API vk::Format find_supported_format(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
 
-    struct MATCH_API TransitionInfo {
+    struct TransitionInfo {
         vk::ImageLayout layout;
         vk::AccessFlags access;
         vk::PipelineStageFlags stage;

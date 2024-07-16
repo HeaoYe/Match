@@ -4,14 +4,14 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    class MATCH_API Device {
+    class Device {
         no_copy_move_construction(Device)
     public:
-        Device();
-        std::vector<std::string> enumerate_devices() const;
-        ~Device();
+        MATCH_API Device();
+        MATCH_API std::vector<std::string> enumerate_devices() const;
+        MATCH_API ~Device();
     private:
-        bool check_device_suitable(vk::PhysicalDevice device);
+        MATCH_API bool check_device_suitable(vk::PhysicalDevice device);
     INNER_VISIBLE:
         vk::PhysicalDevice physical_device;
         vk::Device device;

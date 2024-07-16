@@ -10,7 +10,16 @@
 #include "scenes/pbr_path_tracing_scene.hpp"
 #include "scenes/volume_rendering_scene.hpp"
 
+// #include "transfer_vdb.hpp"
+
 int main() {
+    // 转换.vdb数据为.match_volume_data
+    // MatchTF::initialize();
+    // MatchTF::transfer("resource/vdbs/bunny_cloud.vdb", Match::volume_raw_data_resolution);
+    // MatchTF::transfer("resource/vdbs/wdas_cloud/wdas_cloud.vdb", Match::volume_raw_data_resolution);
+    // MatchTF::transfer("resource/vdbs/explosion.vdb", Match::volume_raw_data_resolution);
+    // return 0;
+
     // 窗口大小的配置移动到main.cpp中
     Match::setting.window_size = { 1920, 1080 };
     // 关闭debug_moed和MSAA可以提高一点性能

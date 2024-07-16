@@ -8,7 +8,7 @@ class PBRPathTracingScene : public Scene {
 private:
     int frame_count = 0;
     std::unique_ptr<Camera> camera;
-    
+
     std::shared_ptr<Match::GLTFScene> gltf_scene;
 
     std::shared_ptr<Match::StorageImage> ray_tracing_result_image;

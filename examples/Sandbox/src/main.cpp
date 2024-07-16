@@ -26,7 +26,7 @@ int main() {
     {
         // 初始化资源工厂，会在${root}/shaders文件夹下寻找Shader文件，，会在${root}/textures文件夹下寻找图片文件
         auto factory = context.create_resource_factory("./resource");
-        
+
         // 配置Vulkan的RenderPass
         auto builder = factory->create_render_pass_builder();
         // Attchment --> Attachment   之前拼错了
@@ -70,7 +70,7 @@ int main() {
         // factory->compile_shader("xxx.vert", ShaderStage)
         auto vert_shader = factory->compile_shader("shader.vert", Match::ShaderStage::eVertex);
         auto frag_shader = factory->compile_shader("shader.frag", Match::ShaderStage::eFragment);
-        
+
         // 创建顶点数据结构体
         struct Vertex {
             glm::vec3 pos;
@@ -149,7 +149,7 @@ int main() {
                 { "pad", Match::ConstantType::eFloat },
                 { "t", Match::ConstantType::eFloat },
         });
-        
+
         // 为renderer创建shader_program
         auto shader_program = factory->create_shader_program(renderer, "MainSubpass");
         // 绑定顶点数据描述符

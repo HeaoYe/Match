@@ -44,7 +44,7 @@ void ShaderToyScene::initialize() {
     updata_shader_program();
 }
 
-void ShaderToyScene::updata_shader_program() {    
+void ShaderToyScene::updata_shader_program() {
     auto data = Match::read_binary_file("resource/shaders/shadertoy/ShaderToy.frag");
     auto head_file = std::string(data.data(), data.size());
     data.clear();

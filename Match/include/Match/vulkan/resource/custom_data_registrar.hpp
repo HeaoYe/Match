@@ -5,7 +5,7 @@
 
 namespace Match {
     template <class CustomCreateInfo>
-    class MATCH_API CustomDataRegistrar {
+    class CustomDataRegistrar {
         default_no_copy_move_construction(CustomDataRegistrar)
     INNER_VISIBLE:
         struct CustomDataWrapper {

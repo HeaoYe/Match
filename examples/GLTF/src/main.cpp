@@ -55,7 +55,7 @@ int main() {
                 .front_face = Match::FrontFace::eCounterClockwise,
                 .depth_test_enable = VK_TRUE,
             });
-        
+
         auto vertex_buffer = factory->create_vertex_buffer(sizeof(glm::vec3), scene->positions.size());
         vertex_buffer->upload_data_from_vector(scene->positions);
         auto index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, scene->indices.size());

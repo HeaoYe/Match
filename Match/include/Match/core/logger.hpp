@@ -5,13 +5,13 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace Match {
-    class MATCH_API Logger {
+    class Logger {
         default_no_copy_move_construction(Logger)
     public:
-        void initialize();
-        void destroy();
+        MATCH_API void initialize();
+        MATCH_API void destroy();
 
-        void set_level(LogLevel level);
+        MATCH_API void set_level(LogLevel level);
 
         template<typename... Args>
         void trace(Args &&... args) {

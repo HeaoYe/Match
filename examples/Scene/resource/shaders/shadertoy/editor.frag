@@ -46,14 +46,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec3 cf = normalize(-ro);
     vec3 cs = normalize(cross(cf,vec3(0.,1.,0.)));
     vec3 cu = normalize(cross(cf,cs));
-    
+
     vec3 uuv = ro+cf*3. + uv.x*cs + uv.y*cu;
-    
+
     vec3 rd = normalize(uuv-ro);
-    
+
     vec4 col = rm(ro,rd);
-    
-    
+
+
     fragColor = col;
 }
 

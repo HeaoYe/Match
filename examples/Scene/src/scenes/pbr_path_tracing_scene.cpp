@@ -18,7 +18,7 @@ void PBRPathTracingScene::initialize() {
     builder->add_scene(gltf_scene);
     builder->build();
     builder.reset();
-    
+
     instance_collect = factory->create_ray_tracing_instance_collect();
     instance_collect->register_custom_instance_data<Match::GLTFPrimitiveInstanceData>();
     instance_collect->add_scene(0, gltf_scene, 0);
@@ -41,7 +41,7 @@ void PBRPathTracingScene::initialize() {
     auto closest_hit_shader = factory->compile_shader("pbr_path_tracing_shader/rt.rchit", Match::ShaderStage::eClosestHit);
 
     ray_tracing_shader_program_constants = factory->create_push_constants(
-        Match::ShaderStage::eRaygen | Match::ShaderStage::eClosestHit, 
+        Match::ShaderStage::eRaygen | Match::ShaderStage::eClosestHit,
         {
             { "time", Match::ConstantType::eFloat },
             { "sample_count", Match::ConstantType::eInt32 },
@@ -72,7 +72,7 @@ void PBRPathTracingScene::initialize() {
         .bind_storage_buffer(4, instance_collect->get_custom_instance_data_buffer<Match::GLTFPrimitiveInstanceData>())
         .bind_storage_buffer(5, gltf_scene->get_materials_buffer())
         .bind_storage_buffer(6, gltf_scene->get_attribute_buffer("NORMAL"));
-    
+
     ray_tracing_shader_program = factory->create_ray_tracing_shader_program();
     ray_tracing_shader_program->attach_raygen_shader(raygen_shader)
         .attach_miss_shader(miss_shader)

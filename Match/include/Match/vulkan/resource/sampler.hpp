@@ -3,7 +3,7 @@
 #include <Match/vulkan/commons.hpp>
 
 namespace Match {
-    struct MATCH_API SamplerOptions {
+    struct SamplerOptions {
         SamplerFilter mag_filter = SamplerFilter::eLinear;
         SamplerFilter min_filter = SamplerFilter::eLinear;
         SamplerAddressMode address_mode_u = SamplerAddressMode::eRepeat;
@@ -15,11 +15,11 @@ namespace Match {
         uint32_t mip_levels = 1;
     };
 
-    class MATCH_API Sampler {
+    class Sampler {
         no_copy_move_construction(Sampler)
     public:
-        Sampler(const SamplerOptions &options);
-        ~Sampler();
+        MATCH_API Sampler(const SamplerOptions &options);
+        MATCH_API ~Sampler();
     INNER_VISIBLE:
         vk::Sampler sampler;
     };

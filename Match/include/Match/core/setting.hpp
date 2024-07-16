@@ -4,7 +4,7 @@
 #include <optional>
 
 namespace Match {
-    struct MATCH_API Setting {
+    struct Setting {
         bool debug_mode = false;
         std::string device_name = "auto";
         std::string app_name = "Match App";
@@ -23,17 +23,17 @@ namespace Match {
         std::vector<std::string> device_extensions {};
     };
 
-    class MATCH_API RuntimeSetting {
+    class RuntimeSetting {
         default_no_copy_move_construction(RuntimeSetting)
     public:
-        RuntimeSetting &set_vsync(bool n);
+        MATCH_API RuntimeSetting &set_vsync(bool n);
         bool is_vsync() { return vsync; }
         const WindowSize &get_window_size() { return window_size; }
-        bool is_msaa_enabled();
-        RuntimeSetting &set_multisample_count(SampleCount count);
+        MATCH_API bool is_msaa_enabled();
+        MATCH_API RuntimeSetting &set_multisample_count(SampleCount count);
         SampleCount get_multisample_count() { return multisample_count; }
     INNER_VISIBLE:
-        void resize(const WindowSize &size);
+        void resize(const WindowSize &size) { window_size = size; }
     INNER_VISIBLE:
         bool vsync = true;
         WindowSize window_size;

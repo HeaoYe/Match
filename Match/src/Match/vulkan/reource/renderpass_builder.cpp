@@ -251,25 +251,4 @@ namespace Match {
             .setDependencies(final_dependencies);
         return std::move(create_info);
     }
-
-    uint32_t RenderPassBuilder::get_attachment_index(const std::string &name, bool is_attachment_read) {
-        auto idx = attachments_map.find(name);
-        if (idx == attachments_map.end()) {
-            MCH_ERROR("No attachemnt named {}", name);
-            return -1u;
-        }
-        if (is_attachment_read && attachments[idx->second].description_read.has_value()) {
-            return attachments[idx->second].offset + attachments.size();
-        }
-        return idx->second;
-    }
-
-    uint32_t RenderPassBuilder::get_subpass_index(const std::string &name) {
-        auto idx = subpass_builders_map.find(name);
-        if (idx == subpass_builders_map.end()) {
-            MCH_ERROR("No subpass named {}", name);
-            return -1u;
-        }
-        return idx->second;
-    }
 }
