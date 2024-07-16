@@ -31,13 +31,12 @@ option(SPDLOG_FMT_EXTERNAL_HO "Use external fmt header-only library instead of b
 option(SPDLOG_NO_EXCEPTIONS "Compile with -fno-exceptions. Call abort() on any spdlog exceptions" OFF)
 add_subdirectory(spdlog)
 
-set(BUILD_SHARED_LIBS ON)
+set(GLFW_LIBRARY_TYPE SHARED)
 option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
 option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
 option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
 option(GLFW_INSTALL "Generate installation target" OFF)
 add_subdirectory(glfw)
-set(BUILD_SHARED_LIBS OFF)
 
 add_subdirectory(VulkanMemoryAllocator)
 add_subdirectory(glslang)
@@ -49,7 +48,6 @@ option(TINYGLTF_BUILD_BUILDER_EXAMPLE "Build glTF builder example" OFF)
 option(TINYGLTF_HEADER_ONLY "On: header-only mode. Off: create tinygltf library(No TINYGLTF_IMPLEMENTATION required in your project)" OFF)
 option(TINYGLTF_INSTALL "Install tinygltf files during install step. Usually set to OFF if you include tinygltf through add_subdirectory()" OFF)
 add_subdirectory(tinygltf)
-# set(BUILD_SHARED_LIBS ON)
 
 add_subdirectory(imgui)
 
