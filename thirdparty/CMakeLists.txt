@@ -1,5 +1,5 @@
 set(BUILD_SHARED_LIBS OFF)
-set(POSITION_INDEPENDENT_CODE ON)
+find_package(Vulkan REQUIRED GLOBAL)
 
 option(GLM_BUILD_LIBRARY "Build dynamic/static library" OFF)
 option(GLM_BUILD_TESTS "Build the test programs" OFF)

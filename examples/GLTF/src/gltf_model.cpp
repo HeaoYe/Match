@@ -9,7 +9,7 @@ GLTFModel::GLTFModel(const std::string &filename, float scale) {
 
     size_t pos = filename.find_last_of('/');
 	path = filename.substr(0, pos);
-    
+
     auto ret = loader.LoadASCIIFromFile(&model, &err, &warn, filename);
     if (!warn.empty()) {
         MCH_WARN("Warn: {} {}", warn, filename);
@@ -34,7 +34,7 @@ GLTFModel::GLTFModel(const std::string &filename, float scale) {
     }
 
     load_skins(model);
-    
+
     for (auto node : all_node_references) {
         if (node->skin_index > -1) {
             MCH_WARN("UNIMPL SKIN")
@@ -208,7 +208,7 @@ void GLTFModel::load_node(const tinygltf::Model &model, GLTFNode *parent, const 
 
     if (node.matrix.size() == 16) {
         new_node->matrix = glm::make_mat4x4(node.matrix.data());
-        glm::scale(new_node->matrix, glm::vec3(global_scale));
+        new_node->matrix = glm::scale(new_node->matrix, glm::vec3(global_scale));
     }
 
     if (node.children.size() > 0) {

@@ -62,6 +62,6 @@ void main() {
         );
         final_ray_color += ray_color;
     }
-    
+
     imageStore(ray_tracing_result_image, ivec2(gl_LaunchIDEXT.xy), vec4(final_ray_color / float(constant.sample_count), 1));
 }

@@ -1,3 +1,5 @@
+#extension GL_GOOGLE_include_directive : require
+
 #include "args.glsl"
 
 // 从0到255，一共256个数字，打乱重排，组成的数组

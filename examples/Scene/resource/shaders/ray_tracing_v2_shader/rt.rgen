@@ -1,5 +1,6 @@
 #version 460
 
+#extension GL_GOOGLE_include_directive : require
 #extension GL_EXT_ray_tracing : require
 
 #include <MatchRandom>
@@ -72,7 +73,7 @@ void main() {
 
         final_color += ray.color;
     }
-    
+
     float scale = 1.0 / float(c.frame_count + 1);
     vec3 old_color = imageLoad(ray_tracing_result_image, ivec2(gl_LaunchIDEXT.xy)).xyz;
     final_color = sqrt(final_color / float(c.sample_count));

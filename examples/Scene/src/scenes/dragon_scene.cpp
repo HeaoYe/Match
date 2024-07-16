@@ -1,5 +1,4 @@
 #include "dragon_scene.hpp"
-#include "Match/core/setting.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>
 #include <imgui.h>
@@ -27,10 +26,10 @@ void DragonScene::initialize() {
 
     post_subpass.wait_for(
         "main",
-        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentRead }, 
+        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentRead },
         { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite }
     );
-    
+
     renderer = factory->create_renderer(builder);
     renderer->attach_render_layer<Match::ImGuiLayer>("imgui layer");
 

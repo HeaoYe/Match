@@ -13,7 +13,7 @@ Application::Application() {
     // 启用了8xMSAA
     Match::runtime_setting->set_multisample_count(Match::SampleCount::e8);
     Match::runtime_setting->set_vsync(true);
-    
+
     auto factory = context.create_resource_factory("resource");
     scene_manager = std::make_unique<SceneManager>(factory);
 }

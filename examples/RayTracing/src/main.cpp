@@ -100,7 +100,7 @@ public:
         auto vs = factory->compile_shader("shader.vert", Match::ShaderStage::eVertex);
         auto fs = factory->compile_shader("shader.frag", Match::ShaderStage::eFragment);
         ds_ra = factory->create_descriptor_set(renderer);
-        ds_ra->add_descriptors({  
+        ds_ra->add_descriptors({
             { Match::ShaderStage::eFragment, 0, Match::DescriptorType::eTexture },
         });
         sp->attach_vertex_shader(vs)
@@ -215,7 +215,7 @@ public:
 
                 auto [width, height] = Match::runtime_setting->get_window_size();
                 g_info->window_size = { static_cast<float>(width), static_cast<float>(height) };
-                
+
                 renderer->bind_shader_program(rtp);
                 renderer->trace_rays(width, height, 1);
 

@@ -12,7 +12,7 @@ void ModelViewerScene::initialize() {
     camera = std::make_unique<Camera>(*factory);
     camera->data.pos = { 0, 0, -3 };
     camera->upload_data();
-    
+
     auto shader_program_ds = factory->create_descriptor_set(renderer);
     shader_program = factory->create_shader_program(renderer, "main");
     auto vert_shader = factory->compile_shader("model_viewer_shader/shader.vert", Match::ShaderStage::eVertex);
@@ -38,7 +38,7 @@ void ModelViewerScene::initialize() {
             .depth_test_enable = VK_TRUE,
         });
     shader_program_ds->bind_uniform(0, camera->uniform);
-    
+
     vertex_buffer = factory->create_vertex_buffer(sizeof(Match::Vertex), 4096000);
     index_buffer = factory->create_index_buffer(Match::IndexType::eUint32, 4096000);
 }
@@ -88,7 +88,7 @@ void ModelViewerScene::render_imgui() {
             ));
             MCH_WARN("加载模型：{}", filename)
         }
-        
+
         auto instance_pos = instance_querys.find(instance_name);
         if (instance_pos == instance_querys.end()) {
             instance_querys.insert(std::make_pair(instance_name, std::make_pair(filename, model_infos[filename].instances_info.size())));
@@ -136,4 +136,3 @@ void ModelViewerScene::render_imgui() {
 
 void ModelViewerScene::destroy() {
 }
-

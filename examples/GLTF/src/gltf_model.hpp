@@ -143,7 +143,7 @@ public:
     glm::mat4 local_matrix() {
         return glm::translate(glm::mat4(1.0f), translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) * matrix;
     }
-    
+
     glm::mat4 get_matrix() {
         auto m = local_matrix();
         auto *node = parent;
@@ -153,7 +153,7 @@ public:
         }
         return m;
     }
-    
+
     void update();
 
     ~GLTFNode() {

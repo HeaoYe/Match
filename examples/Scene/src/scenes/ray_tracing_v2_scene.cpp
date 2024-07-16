@@ -35,8 +35,8 @@ void RayTracingV2Scene::initialize() {
             color_distribution(generator)
         };
         sphere_collect->add_sphere(
-            0, 
-            { distribution(generator) * 4, r + (distribution(generator) > 0 ? 4 : 0), distribution(generator) * 4 }, 
+            0,
+            { distribution(generator) * 4, r + (distribution(generator) > 0 ? 4 : 0), distribution(generator) * 4 },
             r,
             Material {
                 .albedo = color,
@@ -102,7 +102,7 @@ void RayTracingV2Scene::initialize() {
     auto gltf_closest_hit_shader = factory->compile_shader("ray_tracing_v2_shader/gltf.rchit", Match::ShaderStage::eClosestHit);
 
     ray_tracing_shader_program_constants = factory->create_push_constants(
-        Match::ShaderStage::eRaygen, 
+        Match::ShaderStage::eRaygen,
         {
             { "time", Match::ConstantType::eFloat },
             { "sample_count", Match::ConstantType::eInt32 },
@@ -142,7 +142,7 @@ void RayTracingV2Scene::initialize() {
         .bind_storage_buffer(9, gltf_scene->get_attribute_buffer("NORMAL"))
         .bind_storage_buffer(10, gltf_scene->get_attribute_buffer("TEXCOORD_0"));
     gltf_scene->bind_textures(ray_tracing_shader_program_ds, 11);
-    
+
     ray_tracing_shader_program = factory->create_ray_tracing_shader_program();
     ray_tracing_shader_program->attach_raygen_shader(raygen_shader)
         .attach_miss_shader(miss_shader)

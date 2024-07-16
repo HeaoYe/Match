@@ -36,9 +36,9 @@ function(COPYDLL TARGET_NAME PATH_PREFIX)
         TARGET ${TARGET_NAME}
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${PATH_PREFIX}"/Match/Match.dll"
-        ${PATH_PREFIX}"/thirdparty/imgui/imgui.dll"
-        ${PATH_PREFIX}"/thirdparty/glfw/src/glfw3.dll"
+        ${PATH_PREFIX}/Match/Match.dll
+        ${PATH_PREFIX}/thirdparty/imgui/imgui.dll
+        ${PATH_PREFIX}/thirdparty/glfw/src/glfw3.dll
         $<TARGET_FILE_DIR:${TARGET_NAME}>
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )

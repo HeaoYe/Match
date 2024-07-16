@@ -41,7 +41,6 @@ project(
 
 option(MATCH_BUILD_EXAMPLES "Build Match Examples" ON)
 
-find_package(Vulkan REQUIRED)
 add_subdirectory(thirdparty)
 
 add_subdirectory(Match)

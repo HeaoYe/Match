@@ -1,5 +1,6 @@
 #include <Match/vulkan/resource/shader.hpp>
 #include <Match/core/utils.hpp>
+#include "shader_includer.hpp"
 #include "../inner.hpp"
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
@@ -34,10 +35,15 @@ namespace Match {
         glslang::TShader shader(kind);
         auto code_ptr = code.data();
         shader.setStrings(&code_ptr, 1);
-        shader.setEnvInput(glslang::EShSourceGlsl, kind, glslang::EShClientVulkan, 450);
+        auto version = 450;
+        if (setting.enable_ray_tracing) {
+            version = 460;
+        }
+        shader.setEnvInput(glslang::EShSourceGlsl, kind, glslang::EShClientVulkan, version);
         shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_3);
         shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_6);
-        if (!shader.parse(GetDefaultResources(), 450, ENoProfile, true, false, EShMessages::EShMsgDefault)) {
+        ShaderIncluder includer(name);
+        if (!shader.parse(GetDefaultResources(), version, ENoProfile, false, false, EShMessages::EShMsgDefault, includer)) {
             MCH_ERROR("{}", shader.getInfoLog())
             MCH_ERROR("{}", shader.getInfoDebugLog())
             return;

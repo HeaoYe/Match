@@ -21,7 +21,7 @@ void SSAOScene::initialize() {
     ssao_subpass.attach_output_attachment("SSAOBuffer");
     ssao_subpass.wait_for(
         "prepare",
-        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentRead }, 
+        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentRead },
         { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite }
     );
 
@@ -31,8 +31,8 @@ void SSAOScene::initialize() {
     main_subpass.attach_input_attachment("SSAOBuffer");
     main_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
     main_subpass.wait_for(
-        "prepare", 
-        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentRead }, 
+        "prepare",
+        { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentRead },
         { vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite }
     );
 

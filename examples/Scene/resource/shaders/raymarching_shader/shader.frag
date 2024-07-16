@@ -22,7 +22,7 @@ float compute_dist(vec3 point) {
 }
 
 vec3 compute_normal(vec3 point) {
-    float dist = compute_dist(point);    
+    float dist = compute_dist(point);
     vec3 n = dist - vec3(
         compute_dist(point - vec3(data.epsillon_dist, 0, 0)),
         compute_dist(point - vec3(0, data.epsillon_dist, 0)),
@@ -37,10 +37,10 @@ float ray_match(vec3 pos, vec3 direction) {
         vec3 point = pos + dist * direction;
         float min_dist = compute_dist(point);
         dist += min_dist;
-        if(dist > data.max_dist || min_dist < data.epsillon_dist) 
-            break;           
+        if(dist > data.max_dist || min_dist < data.epsillon_dist)
+            break;
     }
-    return dist;     
+    return dist;
 }
 
 void main() {
@@ -49,7 +49,7 @@ void main() {
     vec3 view_direction = normalize(inverse(camera.view) * vec4(uv, -1, 0)).xyz;
     float dist = ray_match(camera.pos, view_direction);
     vec3 pos = camera.pos + view_direction * dist;
-    
+
     vec3 L_D = data.light - pos;
     float L_L = length(L_D);
     vec3 L = normalize(L_D);

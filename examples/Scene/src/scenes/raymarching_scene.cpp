@@ -8,7 +8,7 @@ void RayMarchingScene::initialize() {
     main_subpass.attach_output_attachment(Match::SWAPCHAIN_IMAGE_ATTACHMENT);
     renderer = factory->create_renderer(builder);
     renderer->attach_render_layer<Match::ImGuiLayer>("imgui layer");
-    
+
     auto vert_shader = factory->compile_shader("raymarching_shader/shader.vert", Match::ShaderStage::eVertex);
     auto frag_shader = factory->compile_shader("raymarching_shader/shader.frag", Match::ShaderStage::eFragment);
     auto shader_program_ds = factory->create_descriptor_set(renderer);
@@ -64,4 +64,3 @@ void RayMarchingScene::render_imgui() {
 
 void RayMarchingScene::destroy() {
 }
-

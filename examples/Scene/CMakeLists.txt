@@ -9,7 +9,7 @@ add_executable(Scene ${source} ${headers})
 target_link_libraries(Scene PRIVATE Match)
 
 # 转换 openvdb格式
-find_package(OpenVDB)
+find_package(OpenVDB QUIET)
 if (OpenVDB_FOUND)
     target_link_libraries(Scene PRIVATE openvdb Imath tbb)
     target_compile_definitions(Scene PRIVATE WITH_OPENVDB)
