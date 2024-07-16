@@ -81,14 +81,20 @@ namespace Match {
         auto pos = filename.find_last_of('.') + 1;
         auto filetype = filename.substr(pos, filename.size() - pos);
         std::string path = root + "/textures/" + filename;
-        if (filetype == "jpg") {
+        if (filetype == "jpg" || filetype == "png") {
             return std::make_shared<ImgTexture>(path, mip_levels);
         }
         if (filetype == "ktx") {
+#if defined (MATCH_WITH_KTX)
             if (mip_levels != 0) {
                 MCH_WARN("Ktx Texture doesn't support custom mip_levels")
             }
             return std::make_shared<KtxTexture>(path);
+#else
+            MCH_ERROR("Please set MATCH_SUPPORT_KTX to ON to support ktx in Resource Factory.")
+            uint8_t data[4] = { 255, 0, 0, 255 };
+            return std::make_shared<DataTexture>(data, 1, 1, 1);
+#endif
         }
         MCH_ERROR("Unsupported texture format .{}", filetype);
         return nullptr;

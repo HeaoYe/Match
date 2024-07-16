@@ -40,6 +40,7 @@ project(
 )
 
 option(MATCH_BUILD_EXAMPLES "Build Match Examples" ON)
+option(MATCH_SUPPORT_KTX "Support KTX" ON)
 
 add_subdirectory(thirdparty)
 

@@ -44,7 +44,11 @@ void GLTFScene::load_images(const tinygltf::Model &gltf_model) {
         std::string::size_type pos;
         if ((pos = gltf_image.uri.find_last_of('.')) != std::string::npos) {
             if (gltf_image.uri.substr(pos + 1) == "ktx") {
+#if defined (MATCH_WITH_KTX)
                 textures.push_back(std::make_shared<Match::KtxTexture>(path + "/" + gltf_image.uri));
+#else
+                MCH_ERROR("Please set MATCH_SUPPORT_KTX to ON to support ktx in gltf scene.")
+#endif
                 continue;
             }
         }
