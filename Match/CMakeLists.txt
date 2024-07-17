@@ -2,9 +2,9 @@
 file(GLOB_RECURSE source CONFIGURE_DEPENDS src/Match/*.cpp)
 file(GLOB_RECURSE headers CONFIGURE_DEPENDS include/Match/*.hpp)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_library(Match SHARED ${source} ${headers})
 target_include_directories(Match PUBLIC include)
-target_compile_options(Match PRIVATE -fPIC)
 
 target_link_libraries(Match
     PUBLIC
