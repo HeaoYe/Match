@@ -4,6 +4,7 @@ file(GLOB_RECURSE headers CONFIGURE_DEPENDS include/Match/*.hpp)
 
 add_library(Match SHARED ${source} ${headers})
 target_include_directories(Match PUBLIC include)
+target_compile_options(Match PRIVATE -fPIC)
 
 target_link_libraries(Match
     PUBLIC
