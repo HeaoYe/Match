@@ -1,5 +1,5 @@
 set(BUILD_SHARED_LIBS OFF)
-add_compile_options(-fPIC)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 find_package(Vulkan REQUIRED GLOBAL)
 
 option(GLM_BUILD_LIBRARY "Build dynamic/static library" OFF)
