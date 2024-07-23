@@ -1,5 +1,5 @@
 #include <Match/vulkan/resource/model.hpp>
-#include <tiny_obj_loader.h>
+#include <rapidobj/rapidobj.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
@@ -37,18 +37,10 @@ namespace Match {
     }
 
     Model::Model(const std::string &filename) : vertex_count(0), index_count(0) {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string warn, err;
-
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename.c_str())) {
-            MCH_ERROR("Faild load model: {}", filename)
-            return;
-        }
+        rapidobj::Result parsed_obj = rapidobj::ParseFile(filename, rapidobj::MaterialLibrary::Ignore());
 
         uint32_t size = 0;
-        for (const auto& shape : shapes) {
+        for (const auto& shape : parsed_obj.shapes) {
             size += shape.mesh.indices.size();
         }
 
@@ -56,20 +48,20 @@ namespace Match {
         unique_vertices.reserve(size);
         vertices.reserve(size);
 
-        for (const auto& shape : shapes) {
+        for (const auto& shape : parsed_obj.shapes) {
             std::unique_ptr<Mesh> mesh = std::make_unique<Mesh>();
             mesh->indices.reserve(shape.mesh.indices.size());
             for (const auto& index : shape.mesh.indices) {
                 Vertex vertex {};
                 vertex.pos = {
-                    attrib.vertices[3 * index.vertex_index + 0],
-                    attrib.vertices[3 * index.vertex_index + 1],
-                    attrib.vertices[3 * index.vertex_index + 2]
+                    parsed_obj.attributes.positions[3 * index.position_index + 0],
+                    parsed_obj.attributes.positions[3 * index.position_index + 1],
+                    parsed_obj.attributes.positions[3 * index.position_index + 2]
                 };
                 vertex.normal = {
-                    attrib.normals[3 * index.normal_index + 0],
-                    attrib.normals[3 * index.normal_index + 1],
-                    attrib.normals[3 * index.normal_index + 2]
+                    parsed_obj.attributes.normals[3 * index.normal_index + 0],
+                    parsed_obj.attributes.normals[3 * index.normal_index + 1],
+                    parsed_obj.attributes.normals[3 * index.normal_index + 2]
                 };
                 vertex.color = { 1, 1, 1 };
 

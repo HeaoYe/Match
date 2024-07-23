@@ -52,7 +52,10 @@ add_subdirectory(tinygltf)
 
 add_subdirectory(imgui)
 
-add_subdirectory(tinyobjloader)
+option(RAPIDOBJ_BuildTests "Build Tests." OFF)
+option(RAPIDOBJ_BuildTools "Build Tools." OFF)
+option(RAPIDOBJ_BuildExamples "Build Examples." OFF)
+add_subdirectory(rapidobj)
 
 if (MATCH_SUPPORT_KTX)
     option(KTX_FEATURE_TOOLS "Create KTX tools" ON )
