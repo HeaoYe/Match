@@ -71,11 +71,10 @@ void main() {
             );
         }
 
-        final_color += ray.color;
+        final_color += ray.color / float(c.sample_count);
     }
 
     float scale = 1.0 / float(c.frame_count + 1);
     vec3 old_color = imageLoad(ray_tracing_result_image, ivec2(gl_LaunchIDEXT.xy)).xyz;
-    final_color = sqrt(final_color / float(c.sample_count));
     imageStore(ray_tracing_result_image, ivec2(gl_LaunchIDEXT.xy), vec4(mix(old_color, final_color, scale), 1));
 }

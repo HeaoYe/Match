@@ -149,3 +149,13 @@
     3.体渲染，渲染 柏林噪音
 
     4.体渲染，渲染 烟、云
+
+本期大纲
+
+    1.将tinyobjloader库改为rapidobj库，支持多线程加载obj格式文件
+
+    2.修复之前错误的gamma矫正时期，导致蒙特卡洛估计器不是无偏的了
+
+    3.让体渲染更好看（bushi）
+
+    4.使用cosine重要性采样，改进pbr_path_tracing_scene和ray_tracing_v2_scene

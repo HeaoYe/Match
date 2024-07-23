@@ -9,5 +9,5 @@ layout (binding = 0) uniform sampler2D ray_tracing_result_image;
 void main () {
     vec2 uv = ndc_pos * 0.5 + 0.5;
     uv.y = 1 - uv.y;
-    out_color = texture(ray_tracing_result_image, uv);
+    out_color = vec4(sqrt(texture(ray_tracing_result_image, uv).rgb), 1);
 }

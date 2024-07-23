@@ -15,7 +15,7 @@ target_link_libraries(Match
         Vulkan::Vulkan
         VulkanMemoryAllocator
     PRIVATE
-        tinyobjloader
+        rapidobj
         glslang glslang::SPIRV glslang::glslang-default-resource-limits
 )
 target_include_directories(Match PRIVATE ../thirdparty/stb)
