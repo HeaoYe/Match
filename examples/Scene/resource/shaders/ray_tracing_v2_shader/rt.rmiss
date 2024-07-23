@@ -14,7 +14,7 @@ struct RayInfo {
 layout (location = 0) rayPayloadInEXT RayInfo ray;
 
 const vec3 sky_light = vec3(0.9, 1, 1);
-const vec3 sun_light = vec3(5000);
+const vec3 sun_light = vec3(500);
 const vec3 sun_direction = normalize(vec3(0.4, 1, 0.5));
 
 void main() {

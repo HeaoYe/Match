@@ -191,9 +191,9 @@ void VolumeRenderingScene::render_imgui() {
     changed |= ImGui::SliderFloat("C Sigma S", &ptr->sigma_s_cloud, 0, 10);
     changed |= ImGui::SliderFloat("C G", &ptr->g_cloud, -0.999, 0.999);
     ImGui::SeparatorText("Smoke");
-    changed |= ImGui::SliderFloat("S Sigma Maj", &ptr->sigma_maj_smoke, 0, 30);
-    changed |= ImGui::SliderFloat("S Sigma A", &ptr->sigma_a_smoke, 0, 20);
-    changed |= ImGui::SliderFloat("S Sigma S", &ptr->sigma_s_smoke, 0, 10);
+    changed |= ImGui::SliderFloat("S Sigma Maj", &ptr->sigma_maj_smoke, 0, 30 * 5);
+    changed |= ImGui::SliderFloat("S Sigma A", &ptr->sigma_a_smoke, 0, 10 * 5);
+    changed |= ImGui::SliderFloat("S Sigma S", &ptr->sigma_s_smoke, 0, 20 * 5);
     changed |= ImGui::SliderFloat("S G", &ptr->g_smoke, -0.999, 0.999);
 
 

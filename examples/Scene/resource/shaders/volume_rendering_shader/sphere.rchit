@@ -31,13 +31,10 @@ vec3 sample_direction_from_phase_function(vec3 direction, float g) {
     float phi = 2 * PI * rnd(ray.rnd_state);
 
     vec3 result = vec3(sin_theta * cos(phi), cos_theta, sin_theta * sin(phi));
-    if (direction != (vec3(0, 1, 0))) {
-        vec3 X = normalize(cross(direction, vec3(0, 0, 1)));
-        vec3 Z = normalize(cross(X, direction));
-        return normalize(result.x * X + result.y * direction + result.z * Z);
-    } else {
-        return normalize(result);
-    }
+    vec3 up = abs(direction.y) < 0.999 ? vec3(0, 1, 0) : vec3(1, 0, 0);
+    vec3 X = normalize(cross(up, direction));
+    vec3 Z = normalize(cross(X, direction));
+    return normalize(result.x * X + result.y * direction + result.z * Z);
 }
 
 // 使用 null scattering(零散射) 和 delta tracking(增量跟踪) 算法，评估VRE(体渲染方程)
@@ -57,6 +54,11 @@ void render_particular_medium(MatchSphere sphere, int sphere_type) {
     } else if (sphere_type == 4) {
         sigma_maj = args.sigma_maj_smoke;
         g = args.g_smoke;
+    }
+
+    // 防止sigma_maj=0导致的除零错误
+    if (sigma_maj < 1e-3) {
+        sigma_maj = 1e-3;
     }
 
     while (true) {
@@ -86,8 +88,13 @@ void render_particular_medium(MatchSphere sphere, int sphere_type) {
                 sigma_s = args.sigma_s_cloud * volume_data;
             } else if (sphere_type == 4) {
                 float volume_data = sample_volume_data(sample_point, sphere, sphere_type);
-                sigma_a = args.sigma_a_smoke * volume_data;
                 sigma_s = args.sigma_s_smoke * volume_data;
+
+                // 减少边缘的吸收系数
+                if (volume_data < 0.18) {
+                    volume_data *= smoothstep(0.09, 0.18, volume_data);
+                }
+                sigma_a = args.sigma_a_smoke * volume_data;
             }
 
             float u = rnd(ray.rnd_state);

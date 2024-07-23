@@ -33,6 +33,10 @@ float NDF_GGX(vec3 N, vec3 M, float roughness2) {
     if (NoM <= 0) {
         return 0;
     }
+    // 确保不会0/0
+    if (roughness2 < 1e-3) {
+        return 1;
+    }
     float n = 1 + NoM * NoM * (roughness2 - 1);
     return clamp(roughness2 / (PI * n * n + 0.001), 0, 1);
 }
@@ -105,19 +109,46 @@ void main() {
 
     ray.count += 1;
 
-    vec3 random_direction = normalize(vec3(uniform_rnd(ray.rnd_state, 0, 1), uniform_rnd(ray.rnd_state, 0, 1), uniform_rnd(ray.rnd_state, 0, 1)));
-    vec3 diff_direction = normalize(normal + random_direction);
+    // cosine重要性采样，得到局部空间的采样方向
+    float r = sqrt(rnd(ray.rnd_state));
+    float theta = 2 * PI * rnd(ray.rnd_state);
+    vec3 cosine_direction_local = vec3(r * cos(theta), sqrt(1 - r * r), r * sin(theta));
+    // 将局部空间转为世界空间
+    vec3 up = abs(normal.y) < 0.999 ? vec3(0, 1, 0) : vec3(1, 0, 0);
+    vec3 X = normalize(cross(up, normal));
+    vec3 Z = normalize(cross(X, normal));
+    vec3 cosine_direction = normalize(X * cosine_direction_local.x + normal * cosine_direction_local.y + Z * cosine_direction_local.z);
+    // cosine重要性采样的pdf由出射方向与法线夹角的cos得出
+    // 因为夹角的cosine值在出射半球上的积分为PI，所以pdf=cosine/PI
+    float cosine_pdf = dot(cosine_direction, normal) / PI;
+
+    // 对于完美的漫反射，cosine重要性采样可以很好的降低方差
+    // 但对于roughness不为1的物体，也就是光滑的物体
+    // 越光滑，cosine重要性采样的效果越差
+    // 所以同样使用完美镜面反射采样一个出射方向
+    vec3 reflect_direction = reflect(ray.direction, normal);
+    // 对于完美镜面反射，他的pdf为狄拉克delta分布
+    // 对应的brdf也是狄拉克delta分布，即 取值无限大(?)
+    // 所以上下抵消，可将pdf设为1
+    float reflect_pdf = 1;
+
+    // 最后根据roughness的值，得到最终的 采样方向 和 pdf
     ray.direction = normalize(mix(
-        reflect(gl_WorldRayDirectionEXT, normal),
-        diff_direction,
+        reflect_direction,
+        cosine_direction,
         roughness
     ));
+
+    float pdf = mix(
+        reflect_pdf,
+        cosine_pdf,
+        roughness
+    );
 
     ray.color += ray.albedo * gltf_material.emissive_factor * emissive_color;
     vec3 F0 = albedo * metallic + (vec3(0.04) * (1 - metallic));
     float roughness2 = roughness * roughness;
     vec3 brdf_cosine = compute_BRDF_NoL(ray.direction, albedo, normal, normalize(ray.origin - pos), F0, roughness2, metallic);
-    float pdf = 1 / (2 * PI);
     ray.albedo *= brdf_cosine / pdf;
 
     ray.origin = pos;
