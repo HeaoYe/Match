@@ -36,8 +36,19 @@ namespace Match {
         }
     }
 
-    Model::Model(const std::string &filename) : vertex_count(0), index_count(0) {
+    Model::Model(const std::string &filename, const std::vector<std::string> &backlist) : vertex_count(0), index_count(0) {
         rapidobj::Result parsed_obj = rapidobj::ParseFile(filename, rapidobj::MaterialLibrary::Ignore());
+
+        for (const auto &backlist_shape_name : backlist) {
+            auto iter = parsed_obj.shapes.begin();
+            while (iter != parsed_obj.shapes.end()) {
+                if (iter->name == backlist_shape_name) {
+                    parsed_obj.shapes.erase(iter);
+                    break;
+                }
+                iter ++;
+            }
+        }
 
         uint32_t size = 0;
         for (const auto& shape : parsed_obj.shapes) {

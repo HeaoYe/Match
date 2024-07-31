@@ -63,7 +63,7 @@ namespace Match {
     class Model final : public RayTracingModel {
         no_copy_move_construction(Model)
     public:
-        MATCH_API Model(const std::string &filename);
+        MATCH_API Model(const std::string &filename, const std::vector<std::string> &backlist = {});
         MATCH_API BufferPosition upload_data(std::shared_ptr<VertexBuffer> vertex_buffer, std::shared_ptr<IndexBuffer> index_buffer, BufferPosition position = { 0, 0 });
         MATCH_API std::shared_ptr<const Mesh> get_mesh_by_name(const std::string &name) const;
         MATCH_API std::vector<std::string> enumerate_meshes_name() const;
