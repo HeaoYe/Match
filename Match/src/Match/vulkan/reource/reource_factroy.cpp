@@ -104,8 +104,8 @@ namespace Match {
         return std::make_shared<DataTexture>(data, width, height, mip_levels);
     }
 
-    std::shared_ptr<Model> ResourceFactory::load_model(const std::string &filename) {
-        return std::make_shared<Model>(root + "/models/" + filename);
+    std::shared_ptr<Model> ResourceFactory::load_model(const std::string &filename, const std::vector<std::string> &backlist) {
+        return std::make_shared<Model>(root + "/models/" + filename, backlist);
     }
 
     std::shared_ptr<SphereCollect> ResourceFactory::create_sphere_collect() {

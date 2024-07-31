@@ -38,7 +38,7 @@ namespace Match {
         MATCH_API std::shared_ptr<Sampler> create_sampler(const SamplerOptions &options = {});
         MATCH_API std::shared_ptr<Texture> load_texture(const std::string &filename, uint32_t mip_levels = 0);
         MATCH_API std::shared_ptr<Texture> create_texture(const uint8_t *data, uint32_t width, uint32_t height, uint32_t mip_levels = 0);
-        MATCH_API std::shared_ptr<Model> load_model(const std::string &filename);
+        MATCH_API std::shared_ptr<Model> load_model(const std::string &filename, const std::vector<std::string> &backlist = {});
         MATCH_API std::shared_ptr<SphereCollect> create_sphere_collect();
         MATCH_API std::shared_ptr<GLTFScene> load_gltf_scene(const std::string &filename, const std::vector<std::string> &load_attributes = {});
         MATCH_API std::shared_ptr<AccelerationStructureBuilder> create_acceleration_structure_builder();
