@@ -1,0 +1,76 @@
+#version 460
+
+#extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_ray_tracing : require
+
+#include "ray.glsl"
+#include <MatchRandom>
+
+layout (binding = 0, rgba32f) uniform image2D ray_tracing_result_image;
+layout (binding = 1) uniform accelerationStructureEXT instance;
+layout (binding = 2) uniform CameraUniform {
+    vec3 pos;
+    mat4 view;
+    mat4 project;
+} camera;
+
+layout (push_constant) uniform C {
+    float time;
+    int sample_count;
+    int frame_count;
+    float view_depth;
+    float view_depth_strength;
+    float prob;
+} c;
+
+layout (location = 0) rayPayloadEXT RayInfo ray;
+
+void main() {
+    vec3 final_color = vec3(0);
+    ray.rnd_state = uint((c.time + 1) * gl_LaunchIDEXT.x * gl_LaunchIDEXT.y);
+    for (int i = 0; i < c.sample_count; i ++) {
+        vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(rnd(ray.rnd_state), rnd(ray.rnd_state));
+        center /= vec2(gl_LaunchSizeEXT.xy);
+        center.y = 1 - center.y;
+        center = center * 2 - 1;
+        mat4 inverse_view = inverse(camera.view);
+        vec3 camera_view_point = (inverse(camera.project) * vec4(center, -1, 1)).xyz;
+        camera_view_point *= c.view_depth / -camera_view_point.z;
+        vec3 view_point = (inverse_view * vec4(camera_view_point, 1)).xyz;
+        vec2 camera_random_point = vec2(
+            c.view_depth_strength * (rnd(ray.rnd_state) - 0.5),
+            c.view_depth_strength * (rnd(ray.rnd_state) - 0.5)
+        );
+        vec3 random_camera_pos = (inverse_view * vec4(camera_random_point, 0, 1)).xyz;
+
+        ray.end = false;
+        ray.color = vec3(0);
+        ray.albedo = vec3(1);
+        ray.origin = random_camera_pos;
+        ray.direction = normalize(view_point - random_camera_pos);
+        while (!ray.end) {
+            traceRayEXT(
+                instance,
+                gl_RayFlagsOpaqueEXT,
+                0xff,
+                0, 0,
+                0,
+                ray.origin,
+                0.001,
+                ray.direction,
+                10000.0,
+                0
+            );
+            if (!ray.end) {
+                ray.end = rnd(ray.rnd_state) > c.prob;
+                ray.albedo /= c.prob;
+            }
+        }
+
+        final_color += ray.color / float(c.sample_count);
+    }
+
+    float scale = 1.0 / float(c.frame_count + 1);
+    vec3 old_color = imageLoad(ray_tracing_result_image, ivec2(gl_LaunchIDEXT.xy)).xyz;
+    imageStore(ray_tracing_result_image, ivec2(gl_LaunchIDEXT.xy), vec4(mix(old_color, final_color, scale), 1));
+}

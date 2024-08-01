@@ -159,3 +159,15 @@
     3.让体渲染更好看（bushi）
 
     4.使用cosine重要性采样，改进pbr_path_tracing_scene和ray_tracing_v2_scene
+
+本期大纲
+
+    1.添加折射效果
+
+    2.严格区分电介质和导体
+
+    3.根据菲涅尔定律采样反射和折射
+
+    4.Microfacet Theory（微表面理论）的应用
+
+    5.重要性采样微表面可见法线
