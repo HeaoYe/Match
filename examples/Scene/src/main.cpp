@@ -9,6 +9,7 @@
 #include "scenes/ray_tracing_v2_scene.hpp"
 #include "scenes/pbr_path_tracing_scene.hpp"
 #include "scenes/volume_rendering_scene.hpp"
+#include "scenes/microfacet_theory_scene.hpp"
 
 // #include "transfer_vdb.hpp"
 
@@ -29,6 +30,8 @@ int main() {
 
     Application app;
     // 第一个注册的Scene为默认加载的Scene
+    // 微表面理论场景
+    app.register_scene<MicrofacetTheoryScene>("Microfacet Theory");
     // 体渲染场景
     app.register_scene<VolumeRenderingScene>("Volume Rendering");
     // 蒙特卡洛PBR路径追踪场景
