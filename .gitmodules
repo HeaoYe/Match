@@ -1,9 +1,6 @@
 [submodule "thirdparty/glm"]
 	path = thirdparty/glm
 	url = https://github.com/g-truc/glm
-[submodule "thirdparty/VulkanMemoryAllocator"]
-	path = thirdparty/VulkanMemoryAllocator
-	url = https://github.com/LunarG/VulkanMemoryAllocator
 [submodule "thirdparty/stb/stb"]
 	path = thirdparty/stb/stb
 	url = https://github.com/nothings/stb
@@ -28,3 +25,6 @@
 [submodule "thirdparty/rapidobj"]
 	path = thirdparty/rapidobj
 	url = https://github.com/guybrush77/rapidobj
+[submodule "thirdparty/VulkanMemoryAllocator"]
+	path = thirdparty/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
