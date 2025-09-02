@@ -23,7 +23,7 @@ python ./update_glslang_sources.py
 
 # 三、编译与运行
 1. 用VSCode打开Match
-2. Windows需要修改CMakeLists.txt第86行，修改为set(BASH_EXECUTABLE "你安装的Git中的bash.exe的完整路径")
+2. 若CMakeLists.txt中MATCH_SUPPORT_KTX为ON，那么对于Windows系统需要修改thirdparty/CMakeLists.txt第74行，修改为set(BASH_EXECUTABLE "你安装的Git中的bash.exe的完整路径")
 3. F7编译
 4. 点击左侧Run And Debug按钮
 5. 选择要运行的程序
